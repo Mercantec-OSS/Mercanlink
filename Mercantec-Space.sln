@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.12.35527.113 d17.12
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Backend", "Backend\Backend.csproj", "{AC6DA891-5AD8-4FA8-8965-2C63A0B73D15}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mercantec-Space.AppHost", "Mercantec-Space.AppHost\Mercantec-Space.AppHost.csproj", "{977D6856-5B6F-4E52-B700-F8D9F8491DBD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mercantec-Space.ServiceDefaults", "Mercantec-Space.ServiceDefaults\Mercantec-Space.ServiceDefaults.csproj", "{3D24CF0F-EAE8-4C3E-BE11-7E4DD4227F44}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{AC6DA891-5AD8-4FA8-8965-2C63A0B73D15}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AC6DA891-5AD8-4FA8-8965-2C63A0B73D15}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AC6DA891-5AD8-4FA8-8965-2C63A0B73D15}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AC6DA891-5AD8-4FA8-8965-2C63A0B73D15}.Release|Any CPU.Build.0 = Release|Any CPU
+		{977D6856-5B6F-4E52-B700-F8D9F8491DBD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{977D6856-5B6F-4E52-B700-F8D9F8491DBD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{977D6856-5B6F-4E52-B700-F8D9F8491DBD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{977D6856-5B6F-4E52-B700-F8D9F8491DBD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3D24CF0F-EAE8-4C3E-BE11-7E4DD4227F44}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3D24CF0F-EAE8-4C3E-BE11-7E4DD4227F44}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3D24CF0F-EAE8-4C3E-BE11-7E4DD4227F44}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3D24CF0F-EAE8-4C3E-BE11-7E4DD4227F44}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
