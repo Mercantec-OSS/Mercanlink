@@ -1,4 +1,3 @@
-
 namespace Backend;
 
 public class Program
@@ -14,7 +13,18 @@ public class Program
         // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
         builder.Services.AddOpenApi();
 
+        builder.Services.AddHostedService<DiscordHostedService>();
+        builder.Services.AddSingleton<DiscordBotService>();
+
+        // Tilføj logging konfiguration
+        builder.Logging.AddConsole();
+        builder.Logging.SetMinimumLevel(LogLevel.Information);
+
         var app = builder.Build();
+
+        // Log at Discord botten starter
+        var logger = app.Services.GetRequiredService<ILogger<Program>>();
+        logger.LogInformation("Discord bot starter op...");
 
         app.MapDefaultEndpoints();
 
@@ -27,7 +37,6 @@ public class Program
         app.UseHttpsRedirection();
 
         app.UseAuthorization();
-
 
         app.MapControllers();
 
