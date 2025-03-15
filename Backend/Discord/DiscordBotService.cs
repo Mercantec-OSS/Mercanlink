@@ -1,10 +1,13 @@
+using Backend.DiscordBot.Commands;
 using Discord;
+using Discord.Commands;
 using Discord.WebSocket;
 
 public class DiscordBotService
 {
     private readonly DiscordSocketClient _client;
     private readonly string _token;
+    private readonly string _prefix = "!"; // Prefix for kommandoer
 
     public DiscordBotService(IConfiguration config)
     {
@@ -30,8 +33,40 @@ public class DiscordBotService
             return Task.CompletedTask;
         };
 
+        // Tilføj message handler
+        _client.MessageReceived += HandleCommandAsync;
+
         await _client.LoginAsync(TokenType.Bot, _token);
         await _client.StartAsync();
+    }
+
+    private async Task HandleCommandAsync(SocketMessage messageParam)
+    {
+        // Ignorer beskeder fra bots
+        if (messageParam is not SocketUserMessage message || message.Author.IsBot)
+            return;
+
+        // Tjek om beskeden starter med prefixet
+        int argPos = 0;
+        if (!message.HasStringPrefix(_prefix, ref argPos))
+            return;
+
+        // Få kommandoen og argumenterne
+        string commandText = message.Content.Substring(argPos);
+        string[] args = commandText.Split(' ');
+        string command = args[0].ToLower();
+
+        // Håndter kommandoen via Commands klassen
+        if (Commands.CommandExists(command))
+        {
+            await Commands.ExecuteCommand(command, message, _client);
+        }
+        else
+        {
+            await message.Channel.SendMessageAsync(
+                $"Ukendt kommando. Skriv `{_prefix}hjælp` for at se tilgængelige kommandoer."
+            );
+        }
     }
 
     private Task LogAsync(LogMessage log)

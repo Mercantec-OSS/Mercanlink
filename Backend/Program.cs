@@ -1,5 +1,9 @@
 namespace Backend;
 
+using Backend.Data;
+using Backend.DiscordServices.Services;
+using Microsoft.EntityFrameworkCore;
+
 public class Program
 {
     public static void Main(string[] args)
@@ -8,13 +12,19 @@ public class Program
         builder.AddServiceDefaults();
 
         // Add services to the container.
-
         builder.Services.AddControllers();
+
+        // Tilføj PostgreSQL DbContext
+        builder.Services.AddDbContext<ApplicationDbContext>(options =>
+            options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"))
+        );
+
         // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
         builder.Services.AddOpenApi();
 
         builder.Services.AddHostedService<DiscordHostedService>();
         builder.Services.AddSingleton<DiscordBotService>();
+        builder.Services.AddScoped<UserService>();
 
         // Tilføj logging konfiguration
         builder.Logging.AddConsole();
