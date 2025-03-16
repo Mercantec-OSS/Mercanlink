@@ -1,56 +1,15 @@
-name: Feature Request
-description: Foreslå en ny feature.
-title: "[Feature]: "
-labels: ["feature", "enhancement", "triage"]
-projects: ["Mercantec-OSS/projects/14"]
-assignees:
-  - MAGS-DH
-body:
-  - type: markdown
-    attributes:
-      value: |
-        Tak for at foreslå en ny feature! Udfyld venligst nedenstående felter med så mange detaljer som muligt.
-  - type: input
-    id: contact
-    attributes:
-      label: Kontaktinformation
-      description: Hvordan kan vi kontakte dig, hvis vi har brug for flere oplysninger?
-      placeholder: f.eks. email@example.com
-    validations:
-      required: false
-  - type: textarea
-    id: feature-description
-    attributes:
-      label: Beskrivelse af feature
-      description: Beskriv den feature, du foreslår. Hvilket problem løser den, og hvordan skal den fungere?
-      placeholder: Giv en detaljeret forklaring af din idé.
-    validations:
-      required: true
-  - type: textarea
-    id: motivation
-    attributes:
-      label: Motivation
-      description: Hvorfor mener du, at denne feature er nødvendig? Hvilke fordele bringer den?
-      placeholder: Forklar hvorfor denne feature er vigtig.
-    validations:
-      required: true
-  - type: dropdown
-    id: priority
-    attributes:
-      label: Prioritet
-      description: Hvor vigtig er denne feature for dig?
-      options:
-        - Low
-        - Medium
-        - High
-      default: Medium
-    validations:
-      required: true
-  - type: checkboxes
-    id: terms
-    attributes:
-      label: Code of Conduct
-      description: Ved at indsende denne feature request accepterer du vores [Code of Conduct](https://example.com).
-      options:
-        - label: Jeg accepterer at følge projektets Code of Conduct
-          required: true
+blank_issues_enabled: false
+contact_links:
+  - name: Mercantec Space Discord
+    url: https://discord.gg/uHkYDgsKcm
+    about: Besøg vores Discord for hurtigere support og diskussion
+  - name: Mercantec Space Hjemmeside
+    url: https://space.mercantec.tech
+    about: Besøg vores hjemmeside for yderligere information
+templates:
+  - name: Bug Report
+    about: Rapporter en fejl i Mercantec Space Discord Bot
+    filename: bug.yaml
+  - name: Feature Request
+    about: Foreslå en ny feature til Mercantec Space Discord Bot
+    filename: feature.yaml
