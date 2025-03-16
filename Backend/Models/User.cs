@@ -25,6 +25,10 @@ public class User : Common
     // Metadata
     public DateTime LastUpdated { get; set; } = DateTime.UtcNow;
     public bool IsActive { get; set; } = true;
+
+    // XP og Level system
+    public int Experience { get; set; } = 0;
+    public int Level { get; set; } = 1;
 }
 
 public enum UserRole

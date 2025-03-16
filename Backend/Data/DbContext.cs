@@ -9,6 +9,8 @@ public class ApplicationDbContext : DbContext
         : base(options) { }
 
     public DbSet<User> Users { get; set; }
+    public DbSet<UserActivity> UserActivities { get; set; }
+    public DbSet<UserDailyActivity> UserDailyActivities { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -16,5 +18,6 @@ public class ApplicationDbContext : DbContext
 
         // Konfigurer dine entity mappings her
         modelBuilder.Entity<User>().HasIndex(u => u.DiscordId).IsUnique();
+
     }
 }
