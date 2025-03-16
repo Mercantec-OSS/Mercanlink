@@ -2,9 +2,9 @@ name: Feature Request
 description: Foreslå en ny feature.
 title: "[Feature]: "
 labels: ["feature", "enhancement", "triage"]
-projects: ["octo-org/1", "octo-org/44"]
+projects: ["Mercantec-OSS/projects/14"]
 assignees:
-  - octocat
+  - MAGS-DH
 body:
   - type: markdown
     attributes:
