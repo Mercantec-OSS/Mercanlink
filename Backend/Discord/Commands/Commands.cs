@@ -10,6 +10,7 @@ using Backend.DiscordServices.Services;
 using Microsoft.Extensions.Logging;
 using Backend.Data;
 using Backend.Models;
+using Microsoft.EntityFrameworkCore;
 
 public partial class Commands
 {
@@ -36,7 +37,8 @@ public partial class Commands
             { "register", RegisterCommand },
             { "givexp", GiveXPCommand },
             { "testxp", TestXPCommand },
-            { "daily", DailyCommand }
+            { "daily", DailyCommand },
+            { "leaderboard", LeaderboardCommand }
         };
 
     // Metode til at hente alle kommandoer 
@@ -94,6 +96,7 @@ public partial class Commands
             .AddField($"{prefix}givexp", "Giv XP til en bruger")
             .AddField($"{prefix}testxp", "Test XP-systemet")
             .AddField($"{prefix}daily", "Få daglig XP-bonus")
+            .AddField($"{prefix}leaderboard", "Vis top 5 brugere og din placering")
             .WithFooter(footer => footer.Text = "Brug præfiks ! før hver kommando");
 
         await message.Channel.SendMessageAsync(embed: embedBuilder.Build());
@@ -341,6 +344,108 @@ public partial class Commands
             }
             catch (Exception ex)
             {
+                await message.Channel.SendMessageAsync($"Der opstod en fejl: {ex.Message}");
+            }
+        }
+    }
+
+    // Leaderboard kommando - !leaderboard
+    private static async Task LeaderboardCommand(SocketMessage message, DiscordSocketClient client)
+    {
+        if (_serviceProvider == null)
+        {
+            await message.Channel.SendMessageAsync("Fejl: Service provider er ikke konfigureret.");
+            return;
+        }
+
+        using (var scope = _serviceProvider.CreateScope())
+        {
+            var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var logger = scope.ServiceProvider.GetRequiredService<ILogger<Commands>>();
+            var levelSystem = scope.ServiceProvider.GetRequiredService<LevelSystem>();
+
+            try
+            {
+                // Hent top 5 brugere sorteret efter XP - ændret for at undgå GetValueOrDefault
+                var topUsers = await dbContext.Users
+                    .Where(u => u.IsBot == null || u.IsBot == false)  // Ændret fra GetValueOrDefault
+                    .OrderByDescending(u => u.Experience)
+                    .Take(5)
+                    .Select(u => new
+                    {
+                        u.Id,
+                        u.Username,
+                        u.GlobalName,
+                        u.DiscordId,
+                        u.Experience,
+                        u.Level,
+                        RequiredXP = levelSystem.CalculateRequiredXP(u.Level)
+                    })
+                    .ToListAsync();
+
+                // Find brugerens data
+                var userData = await dbContext.Users
+                    .Where(u => u.DiscordId == message.Author.Id.ToString())
+                    .Select(u => new
+                    {
+                        u.Username,
+                        u.GlobalName,
+                        u.Experience,
+                        u.Level,
+                        RequiredXP = levelSystem.CalculateRequiredXP(u.Level)
+                    })
+                    .FirstOrDefaultAsync();
+
+                // Hvis brugeren ikke findes, vis en fejlmeddelelse
+                if (userData == null)
+                {
+                    await message.Channel.SendMessageAsync("Du er ikke registreret. Brug !register først.");
+                    return;
+                }
+
+                // Find brugerens position - ændret for at undgå GetValueOrDefault
+                var userPosition = await dbContext.Users
+                    .Where(u => (u.IsBot == null || u.IsBot == false) &&
+                           u.Experience >= userData.Experience)
+                    .CountAsync();
+
+                // Byg embed besked
+                var embed = new EmbedBuilder()
+                    .WithTitle("🏆 XP Leaderboard 🏆")
+                    .WithDescription($"Top {topUsers.Count} brugere med mest XP")
+                    .WithColor(Color.Gold)
+                    .WithCurrentTimestamp();
+
+                // Tilføj top brugere
+                for (int i = 0; i < topUsers.Count; i++)
+                {
+                    var user = topUsers[i];
+                    string displayName = !string.IsNullOrEmpty(user.GlobalName) ? user.GlobalName : user.Username;
+                    string medal = i == 0 ? "🥇" : i == 1 ? "🥈" : i == 2 ? "🥉" : "🏅";
+
+                    // Marker hvis det er brugeren selv
+                    string userIndicator = user.DiscordId == message.Author.Id.ToString() ? " (Dig)" : "";
+
+                    embed.AddField($"{medal} #{i + 1} {displayName}{userIndicator}",
+                        $"Level: {user.Level} | XP: {user.Experience}/{user.RequiredXP}");
+                }
+
+                // Tilføj en separator
+                if (userPosition > 5 && userData != null)
+                {
+                    embed.AddField("⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯", "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯");
+
+                    // Tilføj brugerens position
+                    string displayName = !string.IsNullOrEmpty(userData.GlobalName) ? userData.GlobalName : userData.Username;
+                    embed.AddField($"#{userPosition} {displayName} (Dig)",
+                        $"Level: {userData.Level} | XP: {userData.Experience}/{userData.RequiredXP}");
+                }
+
+                await message.Channel.SendMessageAsync(embed: embed.Build());
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Fejl ved leaderboard kommando");
                 await message.Channel.SendMessageAsync($"Der opstod en fejl: {ex.Message}");
             }
         }
