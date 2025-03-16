@@ -1,20 +1,23 @@
 ---
-name: Feature request
-about: Suggest an idea for this project
-title: ''
-labels: ''
+name: 💡 Feature forslag
+about: Foreslå en ny funktion eller forbedring til Mercantec Space
+title: '[FEATURE] '
+labels: 'enhancement'
 assignees: ''
 
 ---
 
-**Is your feature request related to a problem? Please describe.**
-A clear and concise description of what the problem is. Ex. I'm always frustrated when [...]
+## 💭 Er dit feature-forslag relateret til et problem?
+En klar og præcis beskrivelse af problemet. F.eks. "Jeg bliver altid frustreret når [...]"
 
-**Describe the solution you'd like**
-A clear and concise description of what you want to happen.
+## 💡 Beskriv løsningen du ønsker
+En klar og præcis beskrivelse af hvad du gerne vil have skal ske.
 
-**Describe alternatives you've considered**
-A clear and concise description of any alternative solutions or features you've considered.
+## 🔄 Beskriv alternativer du har overvejet
+En klar og præcis beskrivelse af alternative løsninger eller funktioner du har overvejet.
 
-**Additional context**
-Add any other context or screenshots about the feature request here.
+## 👥 Hvem vil drage fordel af denne feature?
+Beskriv hvilke brugere der vil have gavn af denne feature (f.eks. studerende, undervisere, administratorer).
+
+## 📝 Yderligere kontekst
+Tilføj eventuel anden kontekst eller skærmbilleder om feature-forslaget her.

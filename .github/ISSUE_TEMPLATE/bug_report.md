@@ -1,38 +1,34 @@
 ---
-name: Bug report
-about: Create a report to help us improve
-title: ''
-labels: ''
+name: 🐛 Bug rapport
+about: Rapporter en fejl i Mercantec Space projektet
+title: '[BUG] '
+labels: 'bug, needs triage'
 assignees: ''
 
 ---
 
-**Describe the bug**
-A clear and concise description of what the bug is.
+## 🐛 Beskrivelse af fejlen
+En klar og præcis beskrivelse af hvad fejlen er.
 
-**To Reproduce**
-Steps to reproduce the behavior:
-1. Go to '...'
-2. Click on '....'
-3. Scroll down to '....'
-4. See error
+## 🔄 Sådan genskaber du fejlen
+Trin for at genskabe fejlen:
+1. Gå til '...'
+2. Klik på '...'
+3. Scroll ned til '...'
+4. Se fejlen
 
-**Expected behavior**
-A clear and concise description of what you expected to happen.
+## ✅ Forventet adfærd
+En klar og præcis beskrivelse af hvad du forventede ville ske.
 
-**Screenshots**
-If applicable, add screenshots to help explain your problem.
+## 📱 Miljø
+- **Enhed:** [f.eks. PC, iPhone 12]
+- **OS:** [f.eks. Windows 11, iOS 15]
+- **Browser:** [f.eks. Chrome, Safari]
+- **Version:** [f.eks. 98]
+- **Bot version/commit:** [hvis relevant]
 
-**Desktop (please complete the following information):**
- - OS: [e.g. iOS]
- - Browser [e.g. chrome, safari]
- - Version [e.g. 22]
+## 📷 Skærmbilleder
+Hvis muligt, tilføj skærmbilleder for at hjælpe med at forklare dit problem.
 
-**Smartphone (please complete the following information):**
- - Device: [e.g. iPhone6]
- - OS: [e.g. iOS8.1]
- - Browser [e.g. stock browser, safari]
- - Version [e.g. 22]
-
-**Additional context**
-Add any other context about the problem here.
+## 📝 Yderligere information
+Tilføj eventuel anden kontekst om problemet her.
