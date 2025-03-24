@@ -1,5 +1,5 @@
-using Backend.DiscordServices.Services;
 using Backend.DiscordBot.Commands;
+using Backend.DiscordServices.Services;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
@@ -16,7 +16,7 @@ public class DiscordBotService
 
     public DiscordBotService(IConfiguration config, IServiceProvider serviceProvider)
     {
-        _token = config["Discord:Token"];
+        _token = config["Discord:Token1"];
         _client = new DiscordSocketClient(
             new DiscordSocketConfig
             {
@@ -24,8 +24,6 @@ public class DiscordBotService
             }
         );
 
-        // Vi bruger IServiceProvider for at undgå cirkulære afhængigheder
-        // XPService er scoped, så vi skal hente den når vi har brug for den
         _serviceProvider = serviceProvider;
 
         // Sæt service provider i Commands klassen
@@ -90,7 +88,8 @@ public class DiscordBotService
     private async Task HandleMessageXpAsync(SocketMessage message)
     {
         // Ignorer beskeder fra bots
-        if (message.Author.IsBot) return;
+        if (message.Author.IsBot)
+            return;
 
         // Brug en scope for at få XPService
         using (var scope = _serviceProvider.CreateScope())
@@ -106,11 +105,15 @@ public class DiscordBotService
     }
 
     // XP for reaktioner
-    private async Task HandleReactionXpAsync(Cacheable<IUserMessage, ulong> cachedMessage,
-        Cacheable<IMessageChannel, ulong> cachedChannel, SocketReaction reaction)
+    private async Task HandleReactionXpAsync(
+        Cacheable<IUserMessage, ulong> cachedMessage,
+        Cacheable<IMessageChannel, ulong> cachedChannel,
+        SocketReaction reaction
+    )
     {
         // Ignorer reaktioner fra bots
-        if (reaction.User.IsSpecified && reaction.User.Value.IsBot) return;
+        if (reaction.User.IsSpecified && reaction.User.Value.IsBot)
+            return;
 
         using (var scope = _serviceProvider.CreateScope())
         {
@@ -127,10 +130,15 @@ public class DiscordBotService
     }
 
     // XP for voice chat
-    private async Task HandleVoiceXpAsync(SocketUser user, SocketVoiceState oldState, SocketVoiceState newState)
+    private async Task HandleVoiceXpAsync(
+        SocketUser user,
+        SocketVoiceState oldState,
+        SocketVoiceState newState
+    )
     {
         // Ignorer bots
-        if (user.IsBot) return;
+        if (user.IsBot)
+            return;
 
         // Bruger tilslutter voice
         if (oldState.VoiceChannel == null && newState.VoiceChannel != null)
@@ -161,7 +169,10 @@ public class DiscordBotService
                         // Giv XP for hvert minut i voice
                         for (int i = 0; i < minutesInVoice; i++)
                         {
-                            await xpService.AddXPAsync(user.Id.ToString(), XPActivityType.VoiceMinute);
+                            await xpService.AddXPAsync(
+                                user.Id.ToString(),
+                                XPActivityType.VoiceMinute
+                            );
                         }
                     }
                 }
@@ -180,7 +191,8 @@ public class DiscordBotService
     public async Task SendLevelUpMessage(string discordId, int newLevel)
     {
         var user = _client.GetUser(ulong.Parse(discordId));
-        if (user == null) return;
+        if (user == null)
+            return;
 
         try
         {
