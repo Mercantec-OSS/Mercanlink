@@ -69,7 +69,7 @@ public partial class Commands
     // Ping kommando - !ping
     private static async Task PingCommand(SocketMessage message, DiscordSocketClient client)
     {
-        await message.Channel.SendMessageAsync("Pong! 🏓");
+        await message.Channel.SendMessageAsync("Pong! 🏓🏓");
     }
 
     // Hej kommando
