@@ -7,3 +7,4 @@ appsettings.Production.json
 appsettings.Staging.json
 appsettings.Testing.json
 appsettings.Local.json
+docker-compose.yaml

@@ -3,14 +3,14 @@ namespace Backend.DiscordBot.Commands;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Backend.Data;
+using Backend.DiscordServices.Services;
+using Backend.Models;
 using Discord;
 using Discord.WebSocket;
-using Microsoft.Extensions.DependencyInjection;
-using Backend.DiscordServices.Services;
-using Microsoft.Extensions.Logging;
-using Backend.Data;
-using Backend.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 public partial class Commands
 {
@@ -41,7 +41,7 @@ public partial class Commands
             { "leaderboard", LeaderboardCommand }
         };
 
-    // Metode til at hente alle kommandoer 
+    // Metode til at hente alle kommandoer
     public static Dictionary<string, Func<SocketMessage, DiscordSocketClient, Task>> GetCommands()
     {
         return _commands;
@@ -69,7 +69,7 @@ public partial class Commands
     // Ping kommando - !ping
     private static async Task PingCommand(SocketMessage message, DiscordSocketClient client)
     {
-        await message.Channel.SendMessageAsync("Pong! 🏓");
+        await message.Channel.SendMessageAsync("Pong! 🏓🏓");
     }
 
     // Hej kommando
@@ -135,9 +135,13 @@ public partial class Commands
 
             var embed = new EmbedBuilder()
                 .WithTitle($"{message.Author.Username}'s Rank")
-                .WithDescription($"Level: {progress.Level}\nXP: {progress.XP}/{progress.RequiredXP}")
+                .WithDescription(
+                    $"Level: {progress.Level}\nXP: {progress.XP}/{progress.RequiredXP}"
+                )
                 .WithColor(Color.Gold)
-                .WithThumbnailUrl(message.Author.GetAvatarUrl() ?? message.Author.GetDefaultAvatarUrl())
+                .WithThumbnailUrl(
+                    message.Author.GetAvatarUrl() ?? message.Author.GetDefaultAvatarUrl()
+                )
                 .WithCurrentTimestamp();
 
             // Tilføj daglige aktiviteter
@@ -199,18 +203,28 @@ public partial class Commands
 
                 // Byg embed besked
                 var embed = new EmbedBuilder()
-                    .WithTitle(isNewUser ? "Velkommen til Mercantec Space!" : "Du er allerede registreret!")
-                    .WithDescription(isNewUser
-                        ? "Din Discord-konto er nu registreret i vores system. Du kan nu optjene XP og stige i level!"
-                        : "Din Discord-konto er allerede registreret i vores system.")
+                    .WithTitle(
+                        isNewUser ? "Velkommen til Mercantec Space!" : "Du er allerede registreret!"
+                    )
+                    .WithDescription(
+                        isNewUser
+                            ? "Din Discord-konto er nu registreret i vores system. Du kan nu optjene XP og stige i level!"
+                            : "Din Discord-konto er allerede registreret i vores system."
+                    )
                     .WithColor(isNewUser ? Color.Green : Color.Blue)
                     .WithThumbnailUrl(guildUser.GetAvatarUrl() ?? guildUser.GetDefaultAvatarUrl())
                     .WithCurrentTimestamp();
 
                 if (isNewUser)
                 {
-                    embed.AddField("Næste skridt", "Senere vil du kunne forbinde din konto med vores hjemmeside for at få adgang til flere funktioner.");
-                    embed.AddField("XP System", "Du optjener XP ved at være aktiv på serveren. Brug !rank for at se dit level og XP.");
+                    embed.AddField(
+                        "Næste skridt",
+                        "Senere vil du kunne forbinde din konto med vores hjemmeside for at få adgang til flere funktioner."
+                    );
+                    embed.AddField(
+                        "XP System",
+                        "Du optjener XP ved at være aktiv på serveren. Brug !rank for at se dit level og XP."
+                    );
                 }
 
                 await message.Channel.SendMessageAsync(embed: embed.Build());
@@ -239,16 +253,25 @@ public partial class Commands
             try
             {
                 // Giv XP for en besked
-                bool success = await xpService.AddXPAsync(message.Author.Id.ToString(), XPActivityType.Message);
+                bool success = await xpService.AddXPAsync(
+                    message.Author.Id.ToString(),
+                    XPActivityType.Message
+                );
 
                 if (success)
                 {
-                    var progress = await xpService.GetUserProgressAsync(message.Author.Id.ToString());
-                    await message.Channel.SendMessageAsync($"Du fik XP! Du er nu level {progress.Level} med {progress.XP}/{progress.RequiredXP} XP.");
+                    var progress = await xpService.GetUserProgressAsync(
+                        message.Author.Id.ToString()
+                    );
+                    await message.Channel.SendMessageAsync(
+                        $"Du fik XP! Du er nu level {progress.Level} med {progress.XP}/{progress.RequiredXP} XP."
+                    );
                 }
                 else
                 {
-                    await message.Channel.SendMessageAsync("Kunne ikke give XP. Tjek logs for detaljer.");
+                    await message.Channel.SendMessageAsync(
+                        "Kunne ikke give XP. Tjek logs for detaljer."
+                    );
                 }
             }
             catch (Exception ex)
@@ -280,7 +303,9 @@ public partial class Commands
                 var user = await userService.GetUserByDiscordIdAsync(message.Author.Id.ToString());
                 if (user == null)
                 {
-                    await message.Channel.SendMessageAsync("Du er ikke registreret. Brug !register først.");
+                    await message.Channel.SendMessageAsync(
+                        "Du er ikke registreret. Brug !register først."
+                    );
                     return;
                 }
 
@@ -306,7 +331,9 @@ public partial class Commands
                 await dbContext.SaveChangesAsync();
 
                 // Bekræft at det virkede
-                await message.Channel.SendMessageAsync($"Test XP tilføjet! Du har nu {user.Experience} XP. Tjek !rank for at se om aktiviteten blev registreret.");
+                await message.Channel.SendMessageAsync(
+                    $"Test XP tilføjet! Du har nu {user.Experience} XP. Tjek !rank for at se om aktiviteten blev registreret."
+                );
             }
             catch (Exception ex)
             {
@@ -315,6 +342,7 @@ public partial class Commands
             }
         }
     }
+
     // Daily kommando - !daily (opdateret)
     private static async Task DailyCommand(SocketMessage message, DiscordSocketClient client)
     {
@@ -330,16 +358,25 @@ public partial class Commands
 
             try
             {
-                bool success = await xpService.AddXPAsync(message.Author.Id.ToString(), XPActivityType.DailyLogin);
+                bool success = await xpService.AddXPAsync(
+                    message.Author.Id.ToString(),
+                    XPActivityType.DailyLogin
+                );
 
                 if (success)
                 {
-                    var progress = await xpService.GetUserProgressAsync(message.Author.Id.ToString());
-                    await message.Channel.SendMessageAsync($"Du har fået din daglige XP bonus! Du er nu level {progress.Level} med {progress.XP}/{progress.RequiredXP} XP.");
+                    var progress = await xpService.GetUserProgressAsync(
+                        message.Author.Id.ToString()
+                    );
+                    await message.Channel.SendMessageAsync(
+                        $"Du har fået din daglige XP bonus! Du er nu level {progress.Level} med {progress.XP}/{progress.RequiredXP} XP."
+                    );
                 }
                 else
                 {
-                    await message.Channel.SendMessageAsync("Du har allerede fået din daglige XP bonus i dag. Kom tilbage i morgen!");
+                    await message.Channel.SendMessageAsync(
+                        "Du har allerede fået din daglige XP bonus i dag. Kom tilbage i morgen!"
+                    );
                 }
             }
             catch (Exception ex)
@@ -367,8 +404,8 @@ public partial class Commands
             try
             {
                 // Hent top 5 brugere sorteret efter XP - ændret for at undgå GetValueOrDefault
-                var topUsers = await dbContext.Users
-                    .Where(u => u.IsBot == null || u.IsBot == false)  // Ændret fra GetValueOrDefault
+                var topUsers = await dbContext
+                    .Users.Where(u => u.IsBot == null || u.IsBot == false) // Ændret fra GetValueOrDefault
                     .OrderByDescending(u => u.Experience)
                     .Take(5)
                     .Select(u => new
@@ -384,8 +421,8 @@ public partial class Commands
                     .ToListAsync();
 
                 // Find brugerens data
-                var userData = await dbContext.Users
-                    .Where(u => u.DiscordId == message.Author.Id.ToString())
+                var userData = await dbContext
+                    .Users.Where(u => u.DiscordId == message.Author.Id.ToString())
                     .Select(u => new
                     {
                         u.Username,
@@ -399,14 +436,17 @@ public partial class Commands
                 // Hvis brugeren ikke findes, vis en fejlmeddelelse
                 if (userData == null)
                 {
-                    await message.Channel.SendMessageAsync("Du er ikke registreret. Brug !register først.");
+                    await message.Channel.SendMessageAsync(
+                        "Du er ikke registreret. Brug !register først."
+                    );
                     return;
                 }
 
                 // Find brugerens position - ændret for at undgå GetValueOrDefault
-                var userPosition = await dbContext.Users
-                    .Where(u => (u.IsBot == null || u.IsBot == false) &&
-                           u.Experience >= userData.Experience)
+                var userPosition = await dbContext
+                    .Users.Where(u =>
+                        (u.IsBot == null || u.IsBot == false) && u.Experience >= userData.Experience
+                    )
                     .CountAsync();
 
                 // Byg embed besked
@@ -420,14 +460,26 @@ public partial class Commands
                 for (int i = 0; i < topUsers.Count; i++)
                 {
                     var user = topUsers[i];
-                    string displayName = !string.IsNullOrEmpty(user.GlobalName) ? user.GlobalName : user.Username;
-                    string medal = i == 0 ? "🥇" : i == 1 ? "🥈" : i == 2 ? "🥉" : "🏅";
+                    string displayName = !string.IsNullOrEmpty(user.GlobalName)
+                        ? user.GlobalName
+                        : user.Username;
+                    string medal =
+                        i == 0
+                            ? "🥇"
+                            : i == 1
+                                ? "🥈"
+                                : i == 2
+                                    ? "🥉"
+                                    : "🏅";
 
                     // Marker hvis det er brugeren selv
-                    string userIndicator = user.DiscordId == message.Author.Id.ToString() ? " (Dig)" : "";
+                    string userIndicator =
+                        user.DiscordId == message.Author.Id.ToString() ? " (Dig)" : "";
 
-                    embed.AddField($"{medal} #{i + 1} {displayName}{userIndicator}",
-                        $"Level: {user.Level} | XP: {user.Experience}/{user.RequiredXP}");
+                    embed.AddField(
+                        $"{medal} #{i + 1} {displayName}{userIndicator}",
+                        $"Level: {user.Level} | XP: {user.Experience}/{user.RequiredXP}"
+                    );
                 }
 
                 // Tilføj en separator
@@ -436,9 +488,13 @@ public partial class Commands
                     embed.AddField("⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯", "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯");
 
                     // Tilføj brugerens position
-                    string displayName = !string.IsNullOrEmpty(userData.GlobalName) ? userData.GlobalName : userData.Username;
-                    embed.AddField($"#{userPosition} {displayName} (Dig)",
-                        $"Level: {userData.Level} | XP: {userData.Experience}/{userData.RequiredXP}");
+                    string displayName = !string.IsNullOrEmpty(userData.GlobalName)
+                        ? userData.GlobalName
+                        : userData.Username;
+                    embed.AddField(
+                        $"#{userPosition} {displayName} (Dig)",
+                        $"Level: {userData.Level} | XP: {userData.Experience}/{userData.RequiredXP}"
+                    );
                 }
 
                 await message.Channel.SendMessageAsync(embed: embed.Build());
