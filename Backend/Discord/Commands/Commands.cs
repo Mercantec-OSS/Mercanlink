@@ -75,7 +75,7 @@ public partial class Commands
     // Hej kommando
     private static async Task HejCommand(SocketMessage message, DiscordSocketClient client)
     {
-        await message.Channel.SendMessageAsync($"Hej {message.Author.Mention}! 👋");
+        await message.Channel.SendMessageAsync($"Hejsa {message.Author.Mention}! 👋");
     }
 
     // Hjælp kommando - !help
