@@ -6,8 +6,6 @@ services:
       context: .
       dockerfile: Dockerfile
     restart: always
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Production
     networks:
       - bot-network
 
