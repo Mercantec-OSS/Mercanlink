@@ -79,7 +79,7 @@ public class DiscordBotService
         else
         {
             await message.Channel.SendMessageAsync(
-                $"Ukendt kommando. Skriv `{_prefix}hjælp` for at se tilgængelige kommandoer."
+                $"Ukendt kommando. Skriv `{_prefix}help` for at se tilgængelige kommandoer."
             );
         }
     }
