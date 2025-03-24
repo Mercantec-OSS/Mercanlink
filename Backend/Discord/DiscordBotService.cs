@@ -16,7 +16,7 @@ public class DiscordBotService
 
     public DiscordBotService(IConfiguration config, IServiceProvider serviceProvider)
     {
-        _token = config["Discord:Token1"];
+        _token = config["Discord:Token"];
         _client = new DiscordSocketClient(
             new DiscordSocketConfig
             {
