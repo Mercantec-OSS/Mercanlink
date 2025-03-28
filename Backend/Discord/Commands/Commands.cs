@@ -11,10 +11,14 @@ using Microsoft.Extensions.Logging;
 using Backend.Data;
 using Backend.Models;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json.Linq;
 
 public partial class Commands
 {
     private static IServiceProvider _serviceProvider;
+
+    // Meme command - !meme
+    private static readonly HttpClient _httpClient = new HttpClient();
 
     // Sæt service provider
     public static void SetServiceProvider(IServiceProvider serviceProvider)
@@ -38,7 +42,8 @@ public partial class Commands
             { "givexp", GiveXPCommand },
             { "testxp", TestXPCommand },
             { "daily", DailyCommand },
-            { "leaderboard", LeaderboardCommand }
+            { "leaderboard", LeaderboardCommand },
+            { "meme", MemeCommand }
         };
 
     // Metode til at hente alle kommandoer 
@@ -97,6 +102,7 @@ public partial class Commands
             .AddField($"{prefix}testxp", "Test XP-systemet")
             .AddField($"{prefix}daily", "Få daglig XP-bonus")
             .AddField($"{prefix}leaderboard", "Vis top 5 brugere og din placering")
+            .AddField($"{prefix}meme", "Få memes")
             .WithFooter(footer => footer.Text = "Brug præfiks ! før hver kommando");
 
         await message.Channel.SendMessageAsync(embed: embedBuilder.Build());
@@ -450,4 +456,43 @@ public partial class Commands
             }
         }
     }
+
+    private static async Task MemeCommand(SocketMessage message, DiscordSocketClient client)
+    {
+
+        string url = "https://meme-api.com/gimme";
+        HttpResponseMessage response = await _httpClient.GetAsync(url);
+
+        if (response.IsSuccessStatusCode)
+        {
+            string jsonResponse = await response.Content.ReadAsStringAsync();
+            JObject json = JObject.Parse(jsonResponse);
+
+            string memeTitle = json["title"]?.ToString();
+            string memeUrl = json["url"]?.ToString();
+            string subreddit = json["subreddit"]?.ToString();
+
+            if (!string.IsNullOrEmpty(memeUrl))
+            {
+                var embed = new EmbedBuilder()
+                    .WithTitle(memeTitle)
+                    .WithUrl($"https://reddit.com/r/{subreddit}")
+                    .WithImageUrl(memeUrl)
+                    .WithColor(Color.Green)
+                    .WithFooter($"From r/{subreddit}")
+                    .Build();
+
+                await message.Channel.SendMessageAsync(embed: embed);
+            }
+            else
+            {
+                await message.Channel.SendMessageAsync("Could not fetch a meme at the moment. Try again later!");
+            }
+        }
+        else
+        {
+            await message.Channel.SendMessageAsync("Failed to retrieve meme. API might be down.");
+        }
+    }
+
 }
