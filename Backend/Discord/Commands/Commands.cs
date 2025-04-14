@@ -160,7 +160,7 @@ public partial class Commands
         }
     }
 
-    // Register kommando - !register
+    // Register kommando - !register -- DELETE
     private static async Task RegisterCommand(SocketMessage message, DiscordSocketClient client)
     {
         if (_serviceProvider == null)
