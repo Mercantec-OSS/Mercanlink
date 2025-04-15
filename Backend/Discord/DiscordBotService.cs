@@ -10,6 +10,12 @@ public class DiscordBotService
     private readonly DiscordSocketClient _client;
     private readonly string _token;
     private readonly string _prefix = "!"; // Prefix for kommandoer
+    private readonly ulong _roleSelectionChannelId = 1358696771596980326;
+    private readonly Dictionary<string, ulong> _roleMap = new()
+{
+    { "👍", 1353709131500093532 }
+};
+    private readonly ulong _guildId = 1351185531836436541;
     private readonly IServiceProvider _serviceProvider;
     private readonly XPService _xpService;
     private readonly Dictionary<ulong, DateTime> _voiceUsers = new Dictionary<ulong, DateTime>();
@@ -33,14 +39,22 @@ public class DiscordBotService
     public async Task StartAsync()
     {
         _client.Log += LogAsync;
-        _client.Ready += () =>
+        _client.Ready += async () =>
         {
             Console.WriteLine($"Bot er forbundet til {_client.Guilds.Count} servere!");
             foreach (var guild in _client.Guilds)
             {
                 Console.WriteLine($" - {guild.Name} (ID: {guild.Id})");
             }
-            return Task.CompletedTask;
+
+            var channel = _client.GetChannel(_roleSelectionChannelId) as SocketTextChannel;
+
+            if (channel != null)
+            {
+                await SendRoleMessageAsync(channel);
+            }
+
+            return;
         };
 
         // Tilføj message handler
@@ -50,9 +64,14 @@ public class DiscordBotService
         _client.MessageReceived += HandleMessageXpAsync;
         _client.ReactionAdded += HandleReactionXpAsync;
         _client.UserVoiceStateUpdated += HandleVoiceXpAsync;
+      
+        // Tilføj reaction handlers
+        _client.ReactionAdded += ReactionAddedAsync;
+        _client.ReactionRemoved += ReactionRemovedAsync;
 
         // Registrer bruger 
         _client.UserJoined += HandleRegisterAsync;
+
 
         await _client.LoginAsync(TokenType.Bot, _token);
         await _client.StartAsync();
@@ -84,6 +103,57 @@ public class DiscordBotService
             await message.Channel.SendMessageAsync(
                 $"Ukendt kommando. Skriv `{_prefix}help` for at se tilgængelige kommandoer."
             );
+        }
+    }
+
+    private async Task SendRoleMessageAsync(SocketTextChannel channel)
+    {
+        var messages = await channel.GetMessagesAsync(50).FlattenAsync();
+        var existing = messages.FirstOrDefault(m =>
+            m.Author.Id == _client.CurrentUser.Id &&
+            m.Content.Contains("Get roles corresponding to reactions"));
+
+        if (existing != null) return;
+
+        var newMessage = await channel.SendMessageAsync("Get roles corresponding to reactions");
+        await newMessage.AddReactionAsync(new Emoji("👍"));
+    }
+
+    private async Task ReactionAddedAsync(Cacheable<IUserMessage, ulong> cachedMessage,
+                                      Cacheable<IMessageChannel, ulong> cachedChannel,
+                                      SocketReaction reaction)
+    {
+        if (reaction.User.Value.IsBot) return;
+
+        if (_roleMap.TryGetValue(reaction.Emote.Name, out ulong roleId))
+        {
+            var guild = _client.GetGuild(_guildId);
+            var user = guild.GetUser(reaction.UserId);
+            var role = guild.GetRole(roleId);
+
+            if (role != null && user != null)
+            {
+                await user.AddRoleAsync(role);
+            }
+        }
+    }
+
+    private async Task ReactionRemovedAsync(Cacheable<IUserMessage, ulong> cachedMessage,
+                                            Cacheable<IMessageChannel, ulong> cachedChannel,
+                                            SocketReaction reaction)
+    {
+        if (reaction.User.Value.IsBot) return;
+
+        if (_roleMap.TryGetValue(reaction.Emote.Name, out ulong roleId))
+        {
+            var guild = _client.GetGuild(_guildId);
+            var user = guild.GetUser(reaction.UserId);
+            var role = guild.GetRole(roleId);
+
+            if (role != null && user != null)
+            {
+                await user.RemoveRoleAsync(role);
+            }
         }
     }
 
@@ -255,6 +325,7 @@ public class DiscordBotService
         await _client.LogoutAsync();
         await _client.StopAsync();
     }
+
 }
 
 public class DiscordHostedService : IHostedService
@@ -276,3 +347,5 @@ public class DiscordHostedService : IHostedService
         await _discordBotService.StopAsync();
     }
 }
+
+
