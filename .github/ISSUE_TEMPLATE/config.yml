@@ -1,0 +1,14 @@
+contact_links:
+  - name: Mercantec Space Discord
+    url: https://discord.gg/uHkYDgsKcm
+    about: Besøg vores Discord for hurtigere support og diskussion
+  - name: Mercantec Space Hjemmeside
+    url: https://space.mercantec.tech
+    about: Besøg vores hjemmeside for yderligere information
+templates:
+  - name: Bug Report
+    about: Rapporter en fejl i Mercantec Space Discord Bot
+    filename: bug.yaml
+  - name: Feature Request
+    about: Foreslå en ny feature til Mercantec Space Discord Bot
+    filename: feature.yaml

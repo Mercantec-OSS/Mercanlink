@@ -1,0 +1,7 @@
+name: Bug Report
+description: Report a bug in the Mercantec Space Discord Bot
+title: "[Bug]: "
+labels: ["bug", "triage"]
+projects: ["octo-org/1", "octo-org/44"]
+assignees:
+  - octocat
