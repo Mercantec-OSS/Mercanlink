@@ -26,7 +26,7 @@ public class DiscordBotService
         _client = new DiscordSocketClient(
             new DiscordSocketConfig
             {
-                GatewayIntents = GatewayIntents.AllUnprivileged | GatewayIntents.MessageContent
+                GatewayIntents = GatewayIntents.AllUnprivileged | GatewayIntents.MessageContent | GatewayIntents.GuildMembers
             }
         );
 
@@ -64,10 +64,14 @@ public class DiscordBotService
         _client.MessageReceived += HandleMessageXpAsync;
         _client.ReactionAdded += HandleReactionXpAsync;
         _client.UserVoiceStateUpdated += HandleVoiceXpAsync;
-
+      
         // Tilføj reaction handlers
         _client.ReactionAdded += ReactionAddedAsync;
         _client.ReactionRemoved += ReactionRemovedAsync;
+
+        // Registrer bruger 
+        _client.UserJoined += HandleRegisterAsync;
+
 
         await _client.LoginAsync(TokenType.Bot, _token);
         await _client.StartAsync();
@@ -248,6 +252,49 @@ public class DiscordBotService
 
                 _voiceUsers.Remove(user.Id);
             }
+        }
+    }
+
+    private async Task HandleRegisterAsync(SocketGuildUser guildUser)
+    {
+        if (_serviceProvider == null)
+        {
+            await guildUser.SendMessageAsync("Fejl: Service provider er ikke konfigureret.");
+            return;
+        }
+
+        using var scope = _serviceProvider.CreateScope();
+        var userService = scope.ServiceProvider.GetRequiredService<UserService>();
+        var xpService = scope.ServiceProvider.GetRequiredService<XPService>();
+
+        try
+        {
+            var user = await userService.CreateDiscordUserAsync(guildUser);
+            bool isNewUser = user.CreatedAt > DateTime.UtcNow.AddMinutes(-1);
+
+            var embed = new EmbedBuilder()
+                .WithTitle(isNewUser ? "Velkommen til Mercantec Space!" : "Du er allerede registreret!")
+                .WithDescription(
+                    isNewUser
+                        ? "Din Discord-konto er nu registreret i vores system. Du kan nu optjene XP og stige i level!"
+                        : "Din Discord-konto er allerede registreret i vores system."
+                )
+                .WithColor(isNewUser ? Color.Green : Color.Blue)
+                .WithThumbnailUrl(guildUser.GetAvatarUrl() ?? guildUser.GetDefaultAvatarUrl())
+                .WithCurrentTimestamp();
+
+            if (isNewUser)
+            {
+                await xpService.AddXPAsync(guildUser.Id.ToString(), XPActivityType.DailyLogin);
+                embed.AddField("Næste skridt", "Senere vil du kunne forbinde din konto med vores hjemmeside for at få adgang til flere funktioner.");
+                embed.AddField("XP System", "Du optjener XP ved at være aktiv på serveren. Brug !rank for at se dit level og XP.");
+            }
+
+            await guildUser.SendMessageAsync(embed: embed.Build());
+        }
+        catch (Exception ex)
+        {
+            await guildUser.SendMessageAsync($"Der opstod en fejl under registrering: {ex.Message}");
         }
     }
 
