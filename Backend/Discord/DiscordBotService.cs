@@ -228,7 +228,6 @@ public class DiscordBotService
         }
     }
 
-
     private Task LogAsync(LogMessage log)
     {
         Console.WriteLine(log);
