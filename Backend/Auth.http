@@ -1,0 +1,64 @@
+### Mercantec-Space Authentication Tests
+
+@baseUrl = https://localhost:7000/api
+@accessToken = 
+
+### Register en ny bruger
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "email": "test@mercantec.dk",
+  "username": "testbruger",
+  "password": "TestPassword123!"
+}
+
+### Register med Discord ID
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "email": "discord@mercantec.dk", 
+  "username": "discordbruger",
+  "password": "TestPassword123!",
+  "discordId": "123456789012345678"
+}
+
+### Login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "emailOrUsername": "test@mercantec.dk",
+  "password": "TestPassword123!"
+}
+
+### Get current user (requires token)
+GET {{baseUrl}}/auth/me
+Authorization: Bearer {{accessToken}}
+
+### Link Discord til eksisterende bruger
+POST {{baseUrl}}/auth/link-discord
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "discordId": "987654321098765432"
+}
+
+### Refresh token
+POST {{baseUrl}}/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "din-refresh-token-her"
+}
+
+### Logout
+POST {{baseUrl}}/auth/logout
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "refreshToken": "din-refresh-token-her"
+} 

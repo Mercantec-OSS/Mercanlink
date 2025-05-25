@@ -5,6 +5,11 @@ using Backend.DiscordServices.Services;
 using Microsoft.EntityFrameworkCore;
 using Backend.Models;
 using Backend.Jobs;
+using Backend.Config;
+using Backend.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 public class Program
 {
@@ -13,13 +18,74 @@ public class Program
         var builder = WebApplication.CreateBuilder(args);
         builder.AddServiceDefaults();
 
-        // Add services to the container.
-        builder.Services.AddControllers();
+        // Add services to the container.        
+        builder.Services.AddControllers();        
+        // Tilføj CORS        
+        builder.Services.AddCors(options =>        
+        {            
+            options.AddPolicy("AllowFrontend", policy =>            
+            {                
+                policy.WithOrigins("http://localhost:5173", "http://localhost:3000", "http://localhost:4200")                      
+                .AllowAnyHeader()                      
+                .AllowAnyMethod()                      
+                .AllowCredentials();            
+            });        
+        });
 
         // Tilføj PostgreSQL DbContext
         builder.Services.AddDbContext<ApplicationDbContext>(options =>
             options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"))
         );
+
+        // Tilføj JWT konfiguration
+        builder.Services.Configure<JwtConfig>(options =>
+        {
+            if (builder.Configuration.GetSection("JwtConfig").GetChildren().Count() == 0)
+            {
+                // Standard konfiguration hvis ingen findes
+                options.SecretKey = builder.Configuration["JWT_SECRET"] ?? "din-super-hemmelige-noegle-der-skal-vaere-mindst-32-karakterer-lang";
+                options.Issuer = "MercantecSpace";
+                options.Audience = "MercantecSpaceUsers";
+                options.ExpiryMinutes = 60;
+                options.RefreshTokenExpiryDays = 7;
+            }
+            else
+            {
+                builder.Configuration.GetSection("JwtConfig").Bind(options);
+            }
+        });
+
+        // Tilføj JWT Authentication
+        var jwtConfig = new JwtConfig();
+        builder.Configuration.GetSection("JwtConfig").Bind(jwtConfig);
+        if (string.IsNullOrEmpty(jwtConfig.SecretKey))
+        {
+            jwtConfig.SecretKey = builder.Configuration["JWT_SECRET"] ?? "din-super-hemmelige-noegle-der-skal-vaere-mindst-32-karakterer-lang";
+            jwtConfig.Issuer = "MercantecSpace";
+            jwtConfig.Audience = "MercantecSpaceUsers";
+        }
+
+        builder.Services.AddAuthentication(options =>
+        {
+            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+        })
+        .AddJwtBearer(options =>
+        {
+            options.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(jwtConfig.SecretKey)),
+                ValidateIssuer = true,
+                ValidIssuer = jwtConfig.Issuer,
+                ValidateAudience = true,
+                ValidAudience = jwtConfig.Audience,
+                ValidateLifetime = true,
+                ClockSkew = TimeSpan.Zero
+            };
+        });
+
+        builder.Services.AddAuthorization();
 
         // Tilføj XP konfiguration
         builder.Services.Configure<XPConfig>(options =>
@@ -66,13 +132,65 @@ public class Program
 
         // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
         builder.Services.AddOpenApi();
+        
+        // Tilføj Swagger med XML kommentarer
+        builder.Services.AddSwaggerGen(c =>
+        {
+            c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo 
+            { 
+                Title = "Mercantec-Space API", 
+                Version = "v1",
+                Description = "En platform til socialt og fagligt fællesskab for nuværende og tidligere elever på Mercantec"
+            });
+            
+            // Inkluder XML kommentarer
+            var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
+            var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+            if (File.Exists(xmlPath))
+            {
+                c.IncludeXmlComments(xmlPath);
+            }
+            
+            // JWT Authentication i Swagger
+            c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+            {
+                Description = "JWT Authorization header using the Bearer scheme. Eksempel: \"Authorization: Bearer {token}\"",
+                Name = "Authorization",
+                In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+                Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey,
+                Scheme = "Bearer"
+            });
+            
+            c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement()
+            {
+                {
+                    new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+                    {
+                        Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                        {
+                            Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                            Id = "Bearer"
+                        },
+                        Scheme = "oauth2",
+                        Name = "Bearer",
+                        In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+                    },
+                    new List<string>()
+                }
+            });
+        });
 
-        builder.Services.AddHostedService<DiscordHostedService>();
-        builder.Services.AddSingleton<DiscordBotService>(provider =>
-            new DiscordBotService(builder.Configuration, provider));
-        builder.Services.AddScoped<UserService>();
-        builder.Services.AddScoped<XPService>();
-        builder.Services.AddSingleton<LevelSystem>();
+        // Tilføj Discord services        
+        builder.Services.AddHostedService<DiscordHostedService>();        
+        builder.Services.AddSingleton<DiscordBotService>(provider =>            
+        new DiscordBotService(builder.Configuration, provider));        
+        builder.Services.AddScoped<UserService>();        
+        builder.Services.AddScoped<XPService>();        
+        builder.Services.AddSingleton<LevelSystem>();        
+        // Tilføj authentication services        
+        builder.Services.AddScoped<JwtService>();        
+        builder.Services.AddScoped<AuthService>();        
+        builder.Services.AddScoped<DiscordVerificationService>();
 
         // Tilføj cleanup job
         builder.Services.AddHostedService<CleanupJob>();
@@ -80,6 +198,9 @@ public class Program
         // Tilføj logging konfiguration
         builder.Logging.AddConsole();
         builder.Logging.SetMinimumLevel(LogLevel.Information);
+
+        // Tilføj HttpClient til DI container
+        builder.Services.AddHttpClient();
 
         var app = builder.Build();
 
@@ -93,10 +214,21 @@ public class Program
         if (app.Environment.IsDevelopment())
         {
             app.MapOpenApi();
+            app.UseSwagger();
+            app.UseSwaggerUI(c =>
+            {
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "Mercantec-Space API v1");
+                c.RoutePrefix = "swagger"; // Swagger UI vil være tilgængelig på /swagger
+            });
         }
 
         app.UseHttpsRedirection();
 
+        // Tilføj CORS - skal være før Authentication og Authorization
+        app.UseCors("AllowFrontend");
+
+        // Vigtig rækkefølge: Authentication før Authorization
+        app.UseAuthentication();
         app.UseAuthorization();
 
         app.MapControllers();

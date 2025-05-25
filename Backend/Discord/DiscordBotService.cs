@@ -193,7 +193,6 @@ public class DiscordBotService
         var user = _client.GetUser(ulong.Parse(discordId));
         if (user == null)
             return;
-
         try
         {
             await user.SendMessageAsync($"Tillykke! Du er steget til level {newLevel}! 🎉");
@@ -201,6 +200,41 @@ public class DiscordBotService
         catch (Exception ex)
         {
             Console.WriteLine($"Kunne ikke sende level-up besked til {discordId}: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Sender verification kode til Discord bruger
+    /// </summary>
+    /// <returns>True hvis beskeden blev sendt succesfuldt</returns>
+    public async Task<bool> SendVerificationCodeAsync(string discordId, string verificationCode)
+    {
+        try
+        {
+            if (!ulong.TryParse(discordId, out var userIdUlong))
+            {
+                Console.WriteLine($"Ugyldig Discord ID format: {discordId}");
+                return false;
+            }
+            var user = _client.GetUser(userIdUlong);
+            if (user == null)
+            {
+                Console.WriteLine($"Kunne ikke finde Discord bruger: {discordId}");
+                return false;
+            }
+            var message = $"🔐 **Mercantec-Space Verification**\n\n" +
+                         $"Din verification kode er: **{verificationCode}**\n\n" +
+                         $"Indtast denne kode på websiden for at linke din Discord konto.\n" +
+                         $"Koden udløber om 15 minutter.\n\n" +
+                         $"Hvis du ikke har anmodet om denne kode, kan du ignorere denne besked.";
+            await user.SendMessageAsync(message);
+            Console.WriteLine($"Verification kode sendt til Discord bruger: {discordId}");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Kunne ikke sende verification kode til {discordId}: {ex.Message}");
+            return false;
         }
     }
 

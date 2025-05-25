@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using Backend.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -12,9 +13,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Backend.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250523190553_AddRefreshTokensWithConditionalIndices")]
+    partial class AddRefreshTokensWithConditionalIndices
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -22,48 +25,6 @@ namespace Backend.Data.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
-
-            modelBuilder.Entity("Backend.Models.DiscordVerification", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("DiscordId")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("ExpiresAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<bool>("IsUsed")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("IsVerified")
-                        .HasColumnType("boolean");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("VerificationCode")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("VerificationCode")
-                        .IsUnique();
-
-                    b.HasIndex("UserId", "DiscordId");
-
-                    b.ToTable("DiscordVerifications");
-                });
 
             modelBuilder.Entity("Backend.Models.RefreshToken", b =>
                 {
@@ -111,17 +72,11 @@ namespace Backend.Data.Migrations
                     b.Property<string>("Id")
                         .HasColumnType("text");
 
-                    b.Property<DateTime?>("AdCreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
                     b.Property<string>("AvatarUrl")
                         .HasColumnType("text");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Department")
-                        .HasColumnType("text");
 
                     b.Property<string>("DiscordId")
                         .HasColumnType("text");
@@ -136,19 +91,10 @@ namespace Backend.Data.Migrations
                     b.Property<bool>("EmailConfirmed")
                         .HasColumnType("boolean");
 
-                    b.Property<string>("EmployeeType")
-                        .HasColumnType("text");
-
                     b.Property<int>("Experience")
                         .HasColumnType("integer");
 
-                    b.Property<string>("FirstName")
-                        .HasColumnType("text");
-
                     b.Property<string>("GlobalName")
-                        .HasColumnType("text");
-
-                    b.Property<string>("InitialPassword")
                         .HasColumnType("text");
 
                     b.Property<bool>("IsActive")
@@ -163,9 +109,6 @@ namespace Backend.Data.Migrations
                     b.Property<DateTime?>("JoinedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<DateTime?>("LastAdSync")
-                        .HasColumnType("timestamp with time zone");
-
                     b.Property<DateTime>("LastUpdated")
                         .HasColumnType("timestamp with time zone");
 
@@ -174,9 +117,6 @@ namespace Backend.Data.Migrations
 
                     b.Property<string>("Nickname")
                         .HasColumnType("text");
-
-                    b.Property<bool>("PasswordChanged")
-                        .HasColumnType("boolean");
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()
@@ -189,12 +129,6 @@ namespace Backend.Data.Migrations
                         .IsRequired()
                         .HasColumnType("text[]");
 
-                    b.Property<string>("StudentId")
-                        .HasColumnType("text");
-
-                    b.Property<string>("SurnameInitial")
-                        .HasColumnType("text");
-
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -203,17 +137,6 @@ namespace Backend.Data.Migrations
                         .HasColumnType("text");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("DiscordId")
-                        .IsUnique();
-
-                    b.HasIndex("Email")
-                        .IsUnique()
-                        .HasFilter("\"Email\" != ''");
-
-                    b.HasIndex("Username")
-                        .IsUnique()
-                        .HasFilter("\"Username\" != ''");
 
                     b.ToTable("Users");
                 });

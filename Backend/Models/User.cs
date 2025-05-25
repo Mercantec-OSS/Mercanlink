@@ -19,6 +19,17 @@ public class User : Common
     public DateTime? JoinedAt { get; set; }
     public bool? IsBoosting { get; set; }
 
+    // Active Directory integration (GDPR-sikker)
+    public string? FirstName { get; set; }           // Kun første navn fra Given Name
+    public string? SurnameInitial { get; set; }      // Kun første bogstav af efternavn
+    public string? InitialPassword { get; set; }     // Midlertidigt password fra AD
+    public bool PasswordChanged { get; set; } = false; // Om bruger har ændret initial password
+    public string? StudentId { get; set; }           // Student ID fra AD/skole system
+    public string? Department { get; set; }          // Afdeling/klasse
+    public string? EmployeeType { get; set; }        // Student, Teacher, etc.
+    public DateTime? AdCreatedAt { get; set; }       // Hvornår bruger blev oprettet i AD
+    public DateTime? LastAdSync { get; set; }        // Sidste gang synkroniseret med AD
+
     // Sikkerhed og roller
     public List<string> Roles { get; set; } = new();
 

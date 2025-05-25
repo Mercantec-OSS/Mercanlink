@@ -1,15 +1,6 @@
 namespace Backend.Jobs;
 
-using System;
-using System.Threading;
-using System.Threading.Tasks;
-using Backend.Data;
-using Backend.Models;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using System.Linq;
+using System;using System.Threading;using System.Threading.Tasks;using Backend.Data;using Backend.Models;using Backend.Services;using Microsoft.EntityFrameworkCore;using Microsoft.Extensions.DependencyInjection;using Microsoft.Extensions.Hosting;using Microsoft.Extensions.Logging;using System.Linq;
 
 public class CleanupJob : BackgroundService
 {
@@ -31,10 +22,7 @@ public class CleanupJob : BackgroundService
 
         while (!stoppingToken.IsCancellationRequested)
         {
-            try
-            {
-                await CleanupOldActivityData();
-            }
+                        try            {                await CleanupOldActivityData();                await CleanupExpiredVerifications();            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error occurred during cleanup");
@@ -60,7 +48,4 @@ public class CleanupJob : BackgroundService
         {
             _logger.LogInformation("Removing {Count} old activity records", oldActivities.Count);
             dbContext.RemoveRange(oldActivities);
-            await dbContext.SaveChangesAsync();
-        }
-    }
-}
+                        await dbContext.SaveChangesAsync();        }    }    private async Task CleanupExpiredVerifications()    {        using var scope = _serviceProvider.CreateScope();        var verificationService = scope.ServiceProvider.GetRequiredService<DiscordVerificationService>();                await verificationService.CleanupExpiredVerificationsAsync();    }}
