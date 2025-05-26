@@ -7,9 +7,9 @@ using System.Text;
 using Backend.Config;
 using Backend.Data;
 using Backend.Models;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.EntityFrameworkCore;
 
 public class JwtService
 {
@@ -22,7 +22,19 @@ public class JwtService
         _context = context;
     }
 
-        public string GenerateAccessToken(User user)    {        var tokenHandler = new JwtSecurityTokenHandler();        var key = Encoding.ASCII.GetBytes(_jwtConfig.SecretKey);        var claims = new List<Claim>        {            new(ClaimTypes.NameIdentifier, user.Id),            new(ClaimTypes.Email, user.Email),            new(ClaimTypes.Name, user.Username),            new("discord_id", user.DiscordId ?? string.Empty),            new("level", user.Level.ToString()),            new("experience", user.Experience.ToString())        };
+    public string GenerateAccessToken(User user)
+    {
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var key = Encoding.ASCII.GetBytes(_jwtConfig.SecretKey);
+        var claims = new List<Claim>
+        {
+            new(ClaimTypes.NameIdentifier, user.Id),
+            new(ClaimTypes.Email, user.Email),
+            new(ClaimTypes.Name, user.Username),
+            new("discord_id", user.DiscordId ?? string.Empty),
+            new("level", user.Level.ToString()),
+            new("experience", user.Experience.ToString())
+        };
 
         // Tilføj roller som claims
         foreach (var role in user.Roles)
@@ -38,7 +50,8 @@ public class JwtService
             Audience = _jwtConfig.Audience,
             SigningCredentials = new SigningCredentials(
                 new SymmetricSecurityKey(key),
-                SecurityAlgorithms.HmacSha256Signature)
+                SecurityAlgorithms.HmacSha256Signature
+            )
         };
 
         var token = tokenHandler.CreateToken(tokenDescriptor);
@@ -70,13 +83,15 @@ public class JwtService
 
     public async Task<User?> ValidateRefreshTokenAsync(string refreshToken)
     {
-        var tokenEntity = await _context.RefreshTokens
-            .Include(rt => rt.User)
+        var tokenEntity = await _context
+            .RefreshTokens.Include(rt => rt.User)
             .FirstOrDefaultAsync(rt => rt.Token == refreshToken);
 
-        if (tokenEntity == null || 
-            tokenEntity.IsRevoked || 
-            tokenEntity.ExpiresAt <= DateTime.UtcNow)
+        if (
+            tokenEntity == null
+            || tokenEntity.IsRevoked
+            || tokenEntity.ExpiresAt <= DateTime.UtcNow
+        )
         {
             return null;
         }
@@ -86,8 +101,9 @@ public class JwtService
 
     public async Task RevokeRefreshTokenAsync(string refreshToken, string? replacedByToken = null)
     {
-        var tokenEntity = await _context.RefreshTokens
-            .FirstOrDefaultAsync(rt => rt.Token == refreshToken);
+        var tokenEntity = await _context.RefreshTokens.FirstOrDefaultAsync(rt =>
+            rt.Token == refreshToken
+        );
 
         if (tokenEntity != null)
         {
@@ -100,8 +116,8 @@ public class JwtService
 
     public async Task RevokeAllUserTokensAsync(string userId)
     {
-        var userTokens = await _context.RefreshTokens
-            .Where(rt => rt.UserId == userId && !rt.IsRevoked)
+        var userTokens = await _context
+            .RefreshTokens.Where(rt => rt.UserId == userId && !rt.IsRevoked)
             .ToListAsync();
 
         foreach (var token in userTokens)
@@ -140,4 +156,4 @@ public class JwtService
             return null;
         }
     }
-} 
+}
