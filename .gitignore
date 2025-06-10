@@ -7,3 +7,6 @@ appsettings.Production.json
 appsettings.Staging.json
 appsettings.Testing.json
 appsettings.Local.json
+/AdminHub/node_modules
+/React/admin-dashboard/node_modules
+/AdminHub/.svelte-kit
