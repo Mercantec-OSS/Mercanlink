@@ -8,3 +8,6 @@ appsettings.Staging.json
 appsettings.Testing.json
 appsettings.Local.json
 docker-compose.yaml
+/AdminHub/node_modules
+/React/admin-dashboard/node_modules
+/AdminHub/.svelte-kit
