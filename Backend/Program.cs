@@ -10,6 +10,7 @@ using Backend.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using Backend.DBAccess;
 
 public class Program
 {
@@ -191,6 +192,10 @@ public class Program
         builder.Services.AddScoped<JwtService>();        
         builder.Services.AddScoped<AuthService>();        
         builder.Services.AddScoped<DiscordVerificationService>();
+        // Tilføj DBAccess        
+        builder.Services.AddScoped<JWTDBAccess>();
+        builder.Services.AddScoped<AuthDBAccess>();
+        builder.Services.AddScoped<DiscordVerificationDBAccess>();
 
         // Tilføj cleanup job
         builder.Services.AddHostedService<CleanupJob>();
