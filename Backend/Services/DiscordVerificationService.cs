@@ -1,6 +1,7 @@
 namespace Backend.Services;
 
 using Backend.Data;
+using Backend.DBAccess;
 using Backend.Models;
 using Backend.Models.DTOs;
 using Microsoft.EntityFrameworkCore;
@@ -10,13 +11,13 @@ using Microsoft.EntityFrameworkCore;
 /// </summary>
 public class DiscordVerificationService
 {
-    private readonly ApplicationDbContext _context;
+    private readonly DiscordVerificationDBAccess _discordVerificationDBAccess;
     private readonly ILogger<DiscordVerificationService> _logger;
 
-    public DiscordVerificationService(ApplicationDbContext context, ILogger<DiscordVerificationService> logger)
+    public DiscordVerificationService(ILogger<DiscordVerificationService> logger, DiscordVerificationDBAccess discordVerificationDBAccess)
     {
-        _context = context;
         _logger = logger;
+        _discordVerificationDBAccess = discordVerificationDBAccess;
     }
 
     /// <summary>
@@ -26,11 +27,7 @@ public class DiscordVerificationService
     {
         try
         {
-            // Tjek om Discord ID allerede er verificeret
-            var existingUser = await _context.Users
-                .FirstOrDefaultAsync(u => u.DiscordId == discordId && !string.IsNullOrEmpty(u.Email));
-
-            if (existingUser != null)
+            if (_discordVerificationDBAccess.CheckExistingUser(discordId) != null)
             {
                 return new StartVerificationResponse
                 {
@@ -39,15 +36,7 @@ public class DiscordVerificationService
                 };
             }
 
-            // Slet eventuelt eksisterende verification for denne bruger og Discord ID
-            var existingVerifications = await _context.DiscordVerifications
-                .Where(dv => (dv.UserId == userId || dv.DiscordId == discordId) && !dv.IsUsed)
-                .ToListAsync();
-
-            if (existingVerifications.Any())
-            {
-                _context.DiscordVerifications.RemoveRange(existingVerifications);
-            }
+            await _discordVerificationDBAccess.RemoveExistingVerifications(userId, discordId);
 
             // Generer 6-cifret kode
             var verificationCode = GenerateVerificationCode();
@@ -64,8 +53,7 @@ public class DiscordVerificationService
                 UpdatedAt = DateTime.UtcNow
             };
 
-            await _context.DiscordVerifications.AddAsync(verification);
-            await _context.SaveChangesAsync();
+            await _discordVerificationDBAccess.AddVerification(verification);
 
             _logger.LogInformation("Discord verification startet for bruger {UserId} og Discord {DiscordId}", userId, discordId);
 
@@ -94,13 +82,7 @@ public class DiscordVerificationService
     {
         try
         {
-            var verification = await _context.DiscordVerifications
-                .FirstOrDefaultAsync(dv => 
-                    dv.UserId == userId && 
-                    dv.DiscordId == discordId && 
-                    dv.VerificationCode == code &&
-                    !dv.IsUsed &&
-                    dv.ExpiresAt > DateTime.UtcNow);
+            var verification = await _discordVerificationDBAccess.CheckVerificationCode(userId, discordId, code);
 
             if (verification == null)
             {
@@ -113,7 +95,7 @@ public class DiscordVerificationService
             verification.IsVerified = true;
             verification.UpdatedAt = DateTime.UtcNow;
 
-            await _context.SaveChangesAsync();
+            await _discordVerificationDBAccess.UpdateVerificationCode(verification);
 
             _logger.LogInformation("Discord verification gennemført for bruger {UserId} og Discord {DiscordId}", userId, discordId);
             return true;
@@ -130,12 +112,7 @@ public class DiscordVerificationService
     /// </summary>
     public async Task<DiscordVerification?> GetActiveVerificationAsync(string userId, string discordId)
     {
-        return await _context.DiscordVerifications
-            .FirstOrDefaultAsync(dv => 
-                dv.UserId == userId && 
-                dv.DiscordId == discordId && 
-                !dv.IsUsed &&
-                dv.ExpiresAt > DateTime.UtcNow);
+        return await _discordVerificationDBAccess.GetActiveVerification(userId, discordId);
     }
 
     /// <summary>
@@ -143,15 +120,11 @@ public class DiscordVerificationService
     /// </summary>
     public async Task CleanupExpiredVerificationsAsync()
     {
-        var expired = await _context.DiscordVerifications
-            .Where(dv => dv.ExpiresAt <= DateTime.UtcNow || dv.CreatedAt < DateTime.UtcNow.AddDays(-1))
-            .ToListAsync();
+        var expiredCount = await _discordVerificationDBAccess.CleanupExpiredVerifications();
 
-        if (expired.Any())
+        if (expiredCount > 0)
         {
-            _context.DiscordVerifications.RemoveRange(expired);
-            await _context.SaveChangesAsync();
-            _logger.LogInformation("Fjernede {Count} udløbne Discord verifications", expired.Count);
+            _logger.LogInformation("Fjernede {Count} udløbne Discord verifications", expiredCount);
         }
     }
 
