@@ -16,7 +16,6 @@ public class Program
     public static void Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
-        builder.AddServiceDefaults();
 
         // Add services to the container.        
         builder.Services.AddControllers();        
@@ -25,7 +24,7 @@ public class Program
         {            
             options.AddPolicy("AllowFrontend", policy =>            
             {                
-                policy.WithOrigins("http://localhost:5173", "http://localhost:3000", "http://localhost:4200")                      
+                policy.WithOrigins("http://localhost:5173", "http://localhost:3000", "http://localhost:4200", "https://hub.mercantec.tech")                      
                 .AllowAnyHeader()                      
                 .AllowAnyMethod()                      
                 .AllowCredentials();            
@@ -208,19 +207,15 @@ public class Program
         var logger = app.Services.GetRequiredService<ILogger<Program>>();
         logger.LogInformation("Discord bot starter op...");
 
-        app.MapDefaultEndpoints();
-
         // Configure the HTTP request pipeline.
-        if (app.Environment.IsDevelopment())
+        app.MapOpenApi();
+        app.UseSwagger();
+        app.UseSwaggerUI(c =>
         {
-            app.MapOpenApi();
-            app.UseSwagger();
-            app.UseSwaggerUI(c =>
-            {
-                c.SwaggerEndpoint("/swagger/v1/swagger.json", "Mercantec-Space API v1");
-                c.RoutePrefix = "swagger"; // Swagger UI vil være tilgængelig på /swagger
-            });
-        }
+            c.SwaggerEndpoint("/swagger/v1/swagger.json", "Mercantec-Space API v1");
+            c.RoutePrefix = "swagger"; // Swagger UI vil være tilgængelig på /swagger
+        });
+        
 
         app.UseHttpsRedirection();
 

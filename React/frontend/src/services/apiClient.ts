@@ -1,6 +1,6 @@
 import { storageService } from "./storageService"
 
-const API_BASE_URL = "http://localhost:5053/api"
+const API_BASE_URL = "https://apihub.mercantec.tech/api"
 
 export async function apiClient<T>(
   url: string,

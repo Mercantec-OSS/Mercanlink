@@ -1,14 +1,45 @@
 version: "3.8"
 
 services:
-  discord-bot:
+  backend:
     build:
-      context: .
+      context: ./Backend
       dockerfile: Dockerfile
-    restart: always
+    ports:
+      - "5053:8080"
+    environment:
+      - ASPNETCORE_URLS=http://+:8080
+    depends_on:
+      - db
     networks:
-      - bot-network
+      - app-network
+
+  frontend:
+    build:
+      context: ./React/frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - app-network
+
+  db:
+    image: postgres:17
+    restart: always
+    environment:
+      POSTGRES_DB: appdb
+      POSTGRES_USER: appuser
+      POSTGRES_PASSWORD: apppassword
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app-network
 
 networks:
-  bot-network:
+  app-network:
     driver: bridge
+
+volumes:
+  postgres_data:
