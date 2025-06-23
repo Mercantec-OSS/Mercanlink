@@ -1,29 +1,28 @@
 namespace Backend.Services;
 
 using Backend.Data;
+using Backend.DBAccess;
 using Backend.Models;
 using Backend.Models.DTOs;
-using Microsoft.EntityFrameworkCore;
 using BCrypt.Net;
+using Microsoft.EntityFrameworkCore;
 
 public class AuthService
 {
-    private readonly ApplicationDbContext _context;
+
+    private readonly AuthDBAccess _authDBAccess;
     private readonly JwtService _jwtService;
 
-    public AuthService(ApplicationDbContext context, JwtService jwtService)
+    public AuthService(JwtService jwtService, AuthDBAccess authDBAccess)
     {
-        _context = context;
+        _authDBAccess = authDBAccess;
         _jwtService = jwtService;
     }
 
     public async Task<AuthResponse?> LoginAsync(LoginRequest request)
     {
         // Find bruger via email eller username
-        var user = await _context.Users
-            .FirstOrDefaultAsync(u => 
-                u.Email == request.EmailOrUsername || 
-                u.Username == request.EmailOrUsername);
+        var user = await _authDBAccess.Login(request);
 
         if (user == null || !BCrypt.Verify(request.Password, user.PasswordHash))
         {
@@ -51,12 +50,7 @@ public class AuthService
     public async Task<AuthResponse?> RegisterAsync(RegisterRequest request)
     {
         // Tjek om email eller username allerede eksisterer
-        var existingUser = await _context.Users
-            .FirstOrDefaultAsync(u => 
-                u.Email == request.Email || 
-                u.Username == request.Username);
-
-        if (existingUser != null)
+        if (await _authDBAccess.CheckForExistingUser(request))
         {
             throw new InvalidOperationException("Email eller brugernavn er allerede i brug");
         }
@@ -64,10 +58,8 @@ public class AuthService
         // Tjek om Discord ID allerede er linket
         if (!string.IsNullOrEmpty(request.DiscordId))
         {
-            var discordUser = await _context.Users
-                .FirstOrDefaultAsync(u => u.DiscordId == request.DiscordId);
             
-            if (discordUser != null && !string.IsNullOrEmpty(discordUser.Email))
+            if (await _authDBAccess.CheckForExistingDiscordIdLink(request))
             {
                 throw new InvalidOperationException("Discord konto er allerede linket til en anden bruger");
             }
@@ -81,8 +73,7 @@ public class AuthService
         // Hvis Discord ID er angivet, prøv at finde og opdatere eksisterende Discord bruger
         if (!string.IsNullOrEmpty(request.DiscordId))
         {
-            var discordUser = await _context.Users
-                .FirstOrDefaultAsync(u => u.DiscordId == request.DiscordId);
+            var discordUser = await _authDBAccess.GetDiscordUser(request.DiscordId);
 
             if (discordUser != null)
             {
@@ -94,6 +85,8 @@ public class AuthService
                 discordUser.LastUpdated = DateTime.UtcNow;
 
                 user = discordUser;
+
+                await _authDBAccess.UpdateUser(discordUser);
             }
             else
             {
@@ -113,7 +106,7 @@ public class AuthService
                     Roles = new List<string> { UserRole.Student.ToString() }
                 };
 
-                await _context.Users.AddAsync(user);
+                await _authDBAccess.AddUser(user);
             }
         }
         else
@@ -133,10 +126,9 @@ public class AuthService
                 Roles = new List<string> { UserRole.Student.ToString() }
             };
 
-            await _context.Users.AddAsync(user);
+            await _authDBAccess.AddUser(user);
         }
 
-        await _context.SaveChangesAsync();
 
         // Generer tokens
         var accessToken = _jwtService.GenerateAccessToken(user);
@@ -153,13 +145,12 @@ public class AuthService
 
     public async Task<bool> LinkDiscordAsync(string userId, string discordId)
     {
-        var user = await _context.Users.FindAsync(userId);
+        var user = await _authDBAccess.GetUser(userId);
         if (user == null)
             return false;
 
         // Tjek om Discord ID allerede er i brug
-        var existingDiscordUser = await _context.Users
-            .FirstOrDefaultAsync(u => u.DiscordId == discordId);
+        var existingDiscordUser = await _authDBAccess.GetDiscordUser(discordId);
 
         if (existingDiscordUser != null && existingDiscordUser.Id != userId)
         {
@@ -181,7 +172,7 @@ public class AuthService
                 user.LastUpdated = DateTime.UtcNow;
 
                 // Slet den gamle Discord-only bruger
-                _context.Users.Remove(existingDiscordUser);
+                await _authDBAccess.DeleteUser(existingDiscordUser);
             }
             else
             {
@@ -194,7 +185,7 @@ public class AuthService
             user.LastUpdated = DateTime.UtcNow;
         }
 
-        await _context.SaveChangesAsync();
+        await _authDBAccess.UpdateUser(user);
         return true;
     }
 
@@ -228,7 +219,7 @@ public class AuthService
 
     public async Task<bool> UnlinkDiscordAsync(string userId)
     {
-        var user = await _context.Users.FindAsync(userId);
+        var user = await _authDBAccess.GetUser(userId);
         if (user == null)
             return false;
 
@@ -247,7 +238,7 @@ public class AuthService
         user.IsBoosting = null;
         user.LastUpdated = DateTime.UtcNow;
 
-        await _context.SaveChangesAsync();
+        await _authDBAccess.UpdateUser(user);
         return true;
     }
 
