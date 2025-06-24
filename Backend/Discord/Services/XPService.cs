@@ -46,7 +46,7 @@ public class XPService
         _logger.LogInformation("Søger efter dagens aktivitet for bruger {UserId}, aktivitet {Activity}", user.Id, activityName);
 
         // Find eller opret dagens aktivitetspost
-        var dailyActivity = await _discordBotDBAccess.CheckTodaysActivity(discordId, user.Id, activityName, today);
+        var dailyActivity = await _discordBotDBAccess.CheckTodaysActivity(user.Id, activityName, today);
 
         bool isFirstActivity = false;
 
