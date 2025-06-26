@@ -6,6 +6,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Backend.Config;
 using Backend.Data;
+using Backend.DBAccess;
 using Backend.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -14,12 +15,12 @@ using Microsoft.IdentityModel.Tokens;
 public class JwtService
 {
     private readonly JwtConfig _jwtConfig;
-    private readonly ApplicationDbContext _context;
+    private readonly JWTDBAccess _jwtDBAccess;
 
-    public JwtService(IOptions<JwtConfig> jwtConfig, ApplicationDbContext context)
+    public JwtService(IOptions<JwtConfig> jwtConfig, JWTDBAccess jwtDBAccess)
     {
         _jwtConfig = jwtConfig.Value;
-        _context = context;
+        _jwtDBAccess = jwtDBAccess;
     }
 
     public string GenerateAccessToken(User user)
@@ -75,17 +76,12 @@ public class JwtService
             CreatedAt = DateTime.UtcNow
         };
 
-        _context.RefreshTokens.Add(tokenEntity);
-        await _context.SaveChangesAsync();
-
-        return refreshToken;
+        return await _jwtDBAccess.AddRefreshToken(tokenEntity);
     }
 
     public async Task<User?> ValidateRefreshTokenAsync(string refreshToken)
     {
-        var tokenEntity = await _context
-            .RefreshTokens.Include(rt => rt.User)
-            .FirstOrDefaultAsync(rt => rt.Token == refreshToken);
+        var tokenEntity = await _jwtDBAccess.GetRefreshTokenAndUser(refreshToken);
 
         if (
             tokenEntity == null
@@ -101,32 +97,20 @@ public class JwtService
 
     public async Task RevokeRefreshTokenAsync(string refreshToken, string? replacedByToken = null)
     {
-        var tokenEntity = await _context.RefreshTokens.FirstOrDefaultAsync(rt =>
-            rt.Token == refreshToken
-        );
+        var tokenEntity = await _jwtDBAccess.GetRefreshToken(refreshToken);
 
         if (tokenEntity != null)
         {
             tokenEntity.IsRevoked = true;
             tokenEntity.RevokedAt = DateTime.UtcNow;
             tokenEntity.ReplacedByToken = replacedByToken;
-            await _context.SaveChangesAsync();
+            await _jwtDBAccess.UpdateRefreshToken(tokenEntity);
         }
     }
 
     public async Task RevokeAllUserTokensAsync(string userId)
     {
-        var userTokens = await _context
-            .RefreshTokens.Where(rt => rt.UserId == userId && !rt.IsRevoked)
-            .ToListAsync();
-
-        foreach (var token in userTokens)
-        {
-            token.IsRevoked = true;
-            token.RevokedAt = DateTime.UtcNow;
-        }
-
-        await _context.SaveChangesAsync();
+        await _jwtDBAccess.RevokeAllRefreshTokens(userId);
     }
 
     public ClaimsPrincipal? ValidateToken(string token)

@@ -4,11 +4,13 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Backend.Data;
+using Backend.DBAccess;
 using Backend.DiscordServices.Services;
 using Backend.Models;
 using Discord;
 using Discord.WebSocket;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
@@ -16,6 +18,7 @@ using Newtonsoft.Json.Linq;
 public partial class Commands
 {
     private static IServiceProvider _serviceProvider;
+    private static DiscordBotService _discordBotService;
 
     // Meme command - !meme
     private static readonly HttpClient _httpClient = new HttpClient();
@@ -26,6 +29,12 @@ public partial class Commands
         _serviceProvider = serviceProvider;
     }
 
+    // Sæt DiscordBotService instans
+    public static void SetDiscordBotService(DiscordBotService discordBotService)
+    {
+        _discordBotService = discordBotService;
+    }
+
     // Dictionary til at holde alle kommandoer
     private static readonly Dictionary<
         string,
@@ -33,16 +42,14 @@ public partial class Commands
     > _commands =
         new()
         {
-            { "ping", PingCommand },
             { "hello", HejCommand },
-            { "help", HjælpCommand },
-            { "info", InfoCommand },
+            { "register", RegisterCommand },
             { "rank", RankCommand },
-            { "givexp", GiveXPCommand },
-            { "testxp", TestXPCommand },
             { "daily", DailyCommand },
             { "leaderboard", LeaderboardCommand },
-            { "meme", MemeCommand }
+            { "meme", MemeCommand },
+            { "help", HjælpCommand }
+            { "info", InfoCommand },
         };
 
     // Metode til at hente alle kommandoer
@@ -91,16 +98,14 @@ public partial class Commands
             .WithTitle("Kommando Hjælp")
             .WithDescription("Her er en liste over alle tilgængelige kommandoer:")
             .WithColor(Color.Blue)
-            .AddField($"{prefix}ping", "Tjek om botten er online")
             .AddField($"{prefix}hello", "Få en hilsen fra botten")
-            .AddField($"{prefix}help", "Vis denne hjælpebesked")
-            .AddField($"{prefix}info", "Vis information om botten")
+            .AddField($"{prefix}register", "Registrer dig på botten")
             .AddField($"{prefix}rank", "Vis din rang og XP")
-            .AddField($"{prefix}givexp", "Giv XP til en bruger")
-            .AddField($"{prefix}testxp", "Test XP-systemet")
             .AddField($"{prefix}daily", "Få daglig XP-bonus")
             .AddField($"{prefix}leaderboard", "Vis top 5 brugere og din placering")
             .AddField($"{prefix}meme", "Få memes")
+            .AddField($"{prefix}help", "Vis denne hjælpebesked")
+            .AddField($"{prefix}info", "Vis information om botten")
             .WithFooter(footer => footer.Text = "Brug præfiks ! før hver kommando");
 
         await message.Channel.SendMessageAsync(embed: embedBuilder.Build());
@@ -221,7 +226,7 @@ public partial class Commands
 
         using (var scope = _serviceProvider.CreateScope())
         {
-            var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var dbContext = scope.ServiceProvider.GetRequiredService<DiscordBotDBAccess>();
             var logger = scope.ServiceProvider.GetRequiredService<ILogger<Commands>>();
             var userService = scope.ServiceProvider.GetRequiredService<UserService>();
 
@@ -239,7 +244,7 @@ public partial class Commands
 
                 // Tilføj XP direkte til brugeren
                 user.Experience += 10;
-                dbContext.Users.Update(user);
+                await dbContext.UpdateUser(user);
 
                 // Opret en aktivitetspost direkte
                 var dailyActivity = new UserDailyActivity
@@ -253,10 +258,7 @@ public partial class Commands
                     CreatedAt = DateTime.UtcNow
                 };
 
-                dbContext.Set<UserDailyActivity>().Add(dailyActivity);
-
-                // Gem ændringerne
-                await dbContext.SaveChangesAsync();
+                await dbContext.AddDailyActivity(dailyActivity);
 
                 // Bekræft at det virkede
                 await message.Channel.SendMessageAsync(
@@ -325,41 +327,17 @@ public partial class Commands
 
         using (var scope = _serviceProvider.CreateScope())
         {
-            var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var dbContext = scope.ServiceProvider.GetRequiredService<DiscordBotDBAccess>();
             var logger = scope.ServiceProvider.GetRequiredService<ILogger<Commands>>();
             var levelSystem = scope.ServiceProvider.GetRequiredService<LevelSystem>();
 
             try
             {
                 // Hent top 5 brugere sorteret efter XP - ændret for at undgå GetValueOrDefault
-                var topUsers = await dbContext
-                    .Users.Where(u => u.IsBot == null || u.IsBot == false) // Ændret fra GetValueOrDefault
-                    .OrderByDescending(u => u.Experience)
-                    .Take(5)
-                    .Select(u => new
-                    {
-                        u.Id,
-                        u.Username,
-                        u.GlobalName,
-                        u.DiscordId,
-                        u.Experience,
-                        u.Level,
-                        RequiredXP = levelSystem.CalculateRequiredXP(u.Level)
-                    })
-                    .ToListAsync();
+                var topUsers = await dbContext.GetTopUsers();
 
                 // Find brugerens data
-                var userData = await dbContext
-                    .Users.Where(u => u.DiscordId == message.Author.Id.ToString())
-                    .Select(u => new
-                    {
-                        u.Username,
-                        u.GlobalName,
-                        u.Experience,
-                        u.Level,
-                        RequiredXP = levelSystem.CalculateRequiredXP(u.Level)
-                    })
-                    .FirstOrDefaultAsync();
+                var userData = await dbContext.GetUser(message.Author.Id.ToString());
 
                 // Hvis brugeren ikke findes, vis en fejlmeddelelse
                 if (userData == null)
@@ -370,12 +348,8 @@ public partial class Commands
                     return;
                 }
 
-                // Find brugerens position - ændret for at undgå GetValueOrDefault
-                var userPosition = await dbContext
-                    .Users.Where(u =>
-                        (u.IsBot == null || u.IsBot == false) && u.Experience >= userData.Experience
-                    )
-                    .CountAsync();
+                // Find brugerens position
+                var userPosition = await dbContext.GetUserPosition(userData.Experience);
 
                 // Byg embed besked
                 var embed = new EmbedBuilder()
@@ -406,7 +380,7 @@ public partial class Commands
 
                     embed.AddField(
                         $"{medal} #{i + 1} {displayName}{userIndicator}",
-                        $"Level: {user.Level} | XP: {user.Experience}/{user.RequiredXP}"
+                        $"Level: {user.Level} | XP: {user.Experience}/{levelSystem.CalculateRequiredXP(user.Level)}"
                     );
                 }
 
@@ -421,7 +395,7 @@ public partial class Commands
                         : userData.Username;
                     embed.AddField(
                         $"#{userPosition} {displayName} (Dig)",
-                        $"Level: {userData.Level} | XP: {userData.Experience}/{userData.RequiredXP}"
+                        $"Level: {userData.Level} | XP: {userData.Experience}/{levelSystem.CalculateRequiredXP(userData.Level)}"
                     );
                 }
 
@@ -471,6 +445,28 @@ public partial class Commands
         else
         {
             await message.Channel.SendMessageAsync("Failed to retrieve meme. API might be down.");
+        }
+    }
+
+    // Register kommando - !register
+    private static async Task RegisterCommand(SocketMessage message, DiscordSocketClient client)
+    {
+        if (_discordBotService == null)
+        {
+            await message.Channel.SendMessageAsync(
+                "Fejl: Discord bot service er ikke konfigureret."
+            );
+            return;
+        }
+
+        // Konverter SocketMessage til SocketGuildUser hvis muligt
+        if (message.Author is SocketGuildUser guildUser)
+        {
+            await _discordBotService.HandleRegisterAsync(guildUser);
+        }
+        else
+        {
+            await message.Channel.SendMessageAsync("Denne kommando kan kun bruges på en server.");
         }
     }
 }

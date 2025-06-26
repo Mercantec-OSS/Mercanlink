@@ -11,10 +11,7 @@ public class DiscordBotService
     private readonly string _token;
     private readonly string _prefix = "!"; // Prefix for kommandoer
     private readonly ulong _roleSelectionChannelId = 1358696771596980326;
-    private readonly Dictionary<string, ulong> _roleMap = new()
-{
-    { "👍", 1353709131500093532 }
-};
+    private readonly Dictionary<string, ulong> _roleMap = new() { { "👍", 1353709131500093532 } };
     private readonly ulong _guildId = 1351185531836436541;
     private readonly IServiceProvider _serviceProvider;
     private readonly XPService _xpService;
@@ -26,7 +23,10 @@ public class DiscordBotService
         _client = new DiscordSocketClient(
             new DiscordSocketConfig
             {
-                GatewayIntents = GatewayIntents.AllUnprivileged | GatewayIntents.MessageContent | GatewayIntents.GuildMembers
+                GatewayIntents =
+                    GatewayIntents.AllUnprivileged
+                    | GatewayIntents.MessageContent
+                    | GatewayIntents.GuildMembers
             }
         );
 
@@ -34,6 +34,9 @@ public class DiscordBotService
 
         // Sæt service provider i Commands klassen
         Commands.SetServiceProvider(serviceProvider);
+
+        // Sæt denne instans i Commands klassen
+        Commands.SetDiscordBotService(this);
     }
 
     public async Task StartAsync()
@@ -64,14 +67,13 @@ public class DiscordBotService
         _client.MessageReceived += HandleMessageXpAsync;
         _client.ReactionAdded += HandleReactionXpAsync;
         _client.UserVoiceStateUpdated += HandleVoiceXpAsync;
-      
+
         // Tilføj reaction handlers
         _client.ReactionAdded += ReactionAddedAsync;
         _client.ReactionRemoved += ReactionRemovedAsync;
 
-        // Registrer bruger 
+        // Registrer bruger
         _client.UserJoined += HandleRegisterAsync;
-
 
         await _client.LoginAsync(TokenType.Bot, _token);
         await _client.StartAsync();
@@ -110,20 +112,25 @@ public class DiscordBotService
     {
         var messages = await channel.GetMessagesAsync(50).FlattenAsync();
         var existing = messages.FirstOrDefault(m =>
-            m.Author.Id == _client.CurrentUser.Id &&
-            m.Content.Contains("Get roles corresponding to reactions"));
+            m.Author.Id == _client.CurrentUser.Id
+            && m.Content.Contains("Get roles corresponding to reactions")
+        );
 
-        if (existing != null) return;
+        if (existing != null)
+            return;
 
         var newMessage = await channel.SendMessageAsync("Get roles corresponding to reactions");
         await newMessage.AddReactionAsync(new Emoji("👍"));
     }
 
-    private async Task ReactionAddedAsync(Cacheable<IUserMessage, ulong> cachedMessage,
-                                      Cacheable<IMessageChannel, ulong> cachedChannel,
-                                      SocketReaction reaction)
+    private async Task ReactionAddedAsync(
+        Cacheable<IUserMessage, ulong> cachedMessage,
+        Cacheable<IMessageChannel, ulong> cachedChannel,
+        SocketReaction reaction
+    )
     {
-        if (reaction.User.Value.IsBot) return;
+        if (reaction.User.Value.IsBot)
+            return;
 
         if (_roleMap.TryGetValue(reaction.Emote.Name, out ulong roleId))
         {
@@ -138,11 +145,14 @@ public class DiscordBotService
         }
     }
 
-    private async Task ReactionRemovedAsync(Cacheable<IUserMessage, ulong> cachedMessage,
-                                            Cacheable<IMessageChannel, ulong> cachedChannel,
-                                            SocketReaction reaction)
+    private async Task ReactionRemovedAsync(
+        Cacheable<IUserMessage, ulong> cachedMessage,
+        Cacheable<IMessageChannel, ulong> cachedChannel,
+        SocketReaction reaction
+    )
     {
-        if (reaction.User.Value.IsBot) return;
+        if (reaction.User.Value.IsBot)
+            return;
 
         if (_roleMap.TryGetValue(reaction.Emote.Name, out ulong roleId))
         {
@@ -255,7 +265,7 @@ public class DiscordBotService
         }
     }
 
-    private async Task HandleRegisterAsync(SocketGuildUser guildUser)
+    public async Task HandleRegisterAsync(SocketGuildUser guildUser)
     {
         if (_serviceProvider == null)
         {
@@ -273,7 +283,9 @@ public class DiscordBotService
             bool isNewUser = user.CreatedAt > DateTime.UtcNow.AddMinutes(-1);
 
             var embed = new EmbedBuilder()
-                .WithTitle(isNewUser ? "Velkommen til Mercantec Space!" : "Du er allerede registreret!")
+                .WithTitle(
+                    isNewUser ? "Velkommen til Mercantec Space!" : "Du er allerede registreret!"
+                )
                 .WithDescription(
                     isNewUser
                         ? "Din Discord-konto er nu registreret i vores system. Du kan nu optjene XP og stige i level!"
@@ -286,15 +298,23 @@ public class DiscordBotService
             if (isNewUser)
             {
                 await xpService.AddXPAsync(guildUser.Id.ToString(), XPActivityType.DailyLogin);
-                embed.AddField("Næste skridt", "Senere vil du kunne forbinde din konto med vores hjemmeside for at få adgang til flere funktioner.");
-                embed.AddField("XP System", "Du optjener XP ved at være aktiv på serveren. Brug !rank for at se dit level og XP.");
+                embed.AddField(
+                    "Næste skridt",
+                    "Senere vil du kunne forbinde din konto med vores hjemmeside for at få adgang til flere funktioner."
+                );
+                embed.AddField(
+                    "XP System",
+                    "Du optjener XP ved at være aktiv på serveren. Brug !rank for at se dit level og XP."
+                );
             }
 
             await guildUser.SendMessageAsync(embed: embed.Build());
         }
         catch (Exception ex)
         {
-            await guildUser.SendMessageAsync($"Der opstod en fejl under registrering: {ex.Message}");
+            await guildUser.SendMessageAsync(
+                $"Der opstod en fejl under registrering: {ex.Message}"
+            );
         }
     }
 
@@ -338,11 +358,12 @@ public class DiscordBotService
                 Console.WriteLine($"Kunne ikke finde Discord bruger: {discordId}");
                 return false;
             }
-            var message = $"🔐 **Mercantec-Space Verification**\n\n" +
-                         $"Din verification kode er: **{verificationCode}**\n\n" +
-                         $"Indtast denne kode på websiden for at linke din Discord konto.\n" +
-                         $"Koden udløber om 15 minutter.\n\n" +
-                         $"Hvis du ikke har anmodet om denne kode, kan du ignorere denne besked.";
+            var message =
+                $"🔐 **Mercantec-Space Verification**\n\n"
+                + $"Din verification kode er: **{verificationCode}**\n\n"
+                + $"Indtast denne kode på websiden for at linke din Discord konto.\n"
+                + $"Koden udløber om 15 minutter.\n\n"
+                + $"Hvis du ikke har anmodet om denne kode, kan du ignorere denne besked.";
             await user.SendMessageAsync(message);
             Console.WriteLine($"Verification kode sendt til Discord bruger: {discordId}");
             return true;
@@ -359,7 +380,6 @@ public class DiscordBotService
         await _client.LogoutAsync();
         await _client.StopAsync();
     }
-
 }
 
 public class DiscordHostedService : IHostedService
@@ -381,5 +401,3 @@ public class DiscordHostedService : IHostedService
         await _discordBotService.StopAsync();
     }
 }
-
-

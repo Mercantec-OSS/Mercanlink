@@ -7,22 +7,21 @@ using Backend.Models;
 using Discord.WebSocket;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
+using Backend.DBAccess;
 
 public class UserService
 {
-    private readonly ApplicationDbContext _context;
+    private readonly DiscordBotDBAccess _discordBotDBAccess;
 
-    public UserService(ApplicationDbContext context)
+    public UserService(DiscordBotDBAccess discordBotDBAccess)
     {
-        _context = context;
+        _discordBotDBAccess = discordBotDBAccess;
     }
 
     public async Task<User> CreateOrUpdateUserAsync(SocketGuildUser guildUser)
     {
         // Søg efter eksisterende bruger
-        var existingUser = await _context.Users.FirstOrDefaultAsync(u =>
-            u.DiscordId == guildUser.Id.ToString()
-        );
+        var existingUser = await _discordBotDBAccess.GetUser(guildUser.Id.ToString());
 
         if (existingUser != null)
         {
@@ -43,8 +42,7 @@ public class UserService
             existingUser.IsBoosting = guildUser.PremiumSince.HasValue;
             existingUser.LastUpdated = DateTime.UtcNow;
 
-            _context.Users.Update(existingUser);
-            await _context.SaveChangesAsync();
+            await _discordBotDBAccess.UpdateUser(existingUser);
 
             return existingUser;
         }
@@ -74,23 +72,22 @@ public class UserService
                 LastUpdated = nowUtc
             };
 
-            await _context.Users.AddAsync(newUser);
-            await _context.SaveChangesAsync();
+            await _discordBotDBAccess.AddUser(newUser);
 
             return newUser;
         }
     }
 
-    public async Task<User> GetUserByDiscordIdAsync(string discordId)
+    public async Task<User?> GetUserByDiscordIdAsync(string discordId)
     {
-        return await _context.Users.FirstOrDefaultAsync(u => u.DiscordId == discordId);
+        return await _discordBotDBAccess.GetUser(discordId);
     }
 
     public async Task<User> CreateDiscordUserAsync(SocketGuildUser guildUser)
     {
         // Tjek om brugeren allerede eksisterer
-        var existingUser = await _context.Users.FirstOrDefaultAsync(u =>
-            u.DiscordId == guildUser.Id.ToString());
+        var existingUser = await _discordBotDBAccess.GetUser(guildUser.Id.ToString());
+
 
         if (existingUser != null)
         {
@@ -133,8 +130,7 @@ public class UserService
             Roles = new List<string> { UserRole.Student.ToString() } // Standard rolle
         };
 
-        await _context.Users.AddAsync(newUser);
-        await _context.SaveChangesAsync();
+        await _discordBotDBAccess.AddUser(newUser);
 
         return newUser;
     }
