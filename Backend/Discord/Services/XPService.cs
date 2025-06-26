@@ -27,6 +27,7 @@ public class XPService
         _discordService = discordService;
         _levelSystem = levelSystem;
         _xpConfig = xpConfig.Value;
+        _discordBotDBAccess = discordBotDBAccess;
     }
 
     public async Task<bool> AddXPAsync(string discordId, XPActivityType activity)

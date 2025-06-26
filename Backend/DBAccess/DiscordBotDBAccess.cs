@@ -1,6 +1,7 @@
 ﻿using Backend.Data;
 using Backend.DiscordServices.Services;
 using Backend.Models;
+using Backend.Models.DTOs;
 using Discord;
 using Microsoft.EntityFrameworkCore;
 
@@ -75,6 +76,28 @@ namespace Backend.DBAccess
             _context.Users.Add(newUser);
 
             await _context.SaveChangesAsync();
+        }
+
+        public async Task<List<User>> GetTopUsers(int amount = 5)
+        {
+            var topUsers = await _context
+                    .Users.Where(u => u.IsBot == null || u.IsBot == false) // Ændret fra GetValueOrDefault
+                    .OrderByDescending(u => u.Experience)
+                    .Take(amount)
+                    .ToListAsync();
+
+            return topUsers;
+        }
+
+        public async Task<int> GetUserPosition(int userExperience)
+        {
+            var userPosition = await _context
+                    .Users.Where(u =>
+                        (u.IsBot == null || u.IsBot == false) && u.Experience >= userExperience
+                    )
+                    .CountAsync();
+
+            return userPosition;
         }
     }
 }

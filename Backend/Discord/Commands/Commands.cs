@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Backend.Data;
+using Backend.DBAccess;
 using Backend.DiscordServices.Services;
 using Backend.Models;
 using Discord;
@@ -221,7 +222,7 @@ public partial class Commands
 
         using (var scope = _serviceProvider.CreateScope())
         {
-            var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var dbContext = scope.ServiceProvider.GetRequiredService<DiscordBotDBAccess>();
             var logger = scope.ServiceProvider.GetRequiredService<ILogger<Commands>>();
             var userService = scope.ServiceProvider.GetRequiredService<UserService>();
 
@@ -239,7 +240,7 @@ public partial class Commands
 
                 // Tilføj XP direkte til brugeren
                 user.Experience += 10;
-                dbContext.Users.Update(user);
+                await dbContext.UpdateUser(user);
 
                 // Opret en aktivitetspost direkte
                 var dailyActivity = new UserDailyActivity
@@ -253,10 +254,7 @@ public partial class Commands
                     CreatedAt = DateTime.UtcNow
                 };
 
-                dbContext.Set<UserDailyActivity>().Add(dailyActivity);
-
-                // Gem ændringerne
-                await dbContext.SaveChangesAsync();
+                await dbContext.AddDailyActivity(dailyActivity);
 
                 // Bekræft at det virkede
                 await message.Channel.SendMessageAsync(
@@ -325,41 +323,17 @@ public partial class Commands
 
         using (var scope = _serviceProvider.CreateScope())
         {
-            var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var dbContext = scope.ServiceProvider.GetRequiredService<DiscordBotDBAccess>();
             var logger = scope.ServiceProvider.GetRequiredService<ILogger<Commands>>();
             var levelSystem = scope.ServiceProvider.GetRequiredService<LevelSystem>();
 
             try
             {
                 // Hent top 5 brugere sorteret efter XP - ændret for at undgå GetValueOrDefault
-                var topUsers = await dbContext
-                    .Users.Where(u => u.IsBot == null || u.IsBot == false) // Ændret fra GetValueOrDefault
-                    .OrderByDescending(u => u.Experience)
-                    .Take(5)
-                    .Select(u => new
-                    {
-                        u.Id,
-                        u.Username,
-                        u.GlobalName,
-                        u.DiscordId,
-                        u.Experience,
-                        u.Level,
-                        RequiredXP = levelSystem.CalculateRequiredXP(u.Level)
-                    })
-                    .ToListAsync();
+                var topUsers = await dbContext.GetTopUsers();
 
                 // Find brugerens data
-                var userData = await dbContext
-                    .Users.Where(u => u.DiscordId == message.Author.Id.ToString())
-                    .Select(u => new
-                    {
-                        u.Username,
-                        u.GlobalName,
-                        u.Experience,
-                        u.Level,
-                        RequiredXP = levelSystem.CalculateRequiredXP(u.Level)
-                    })
-                    .FirstOrDefaultAsync();
+                var userData = await dbContext.GetUser(message.Author.Id.ToString());
 
                 // Hvis brugeren ikke findes, vis en fejlmeddelelse
                 if (userData == null)
@@ -370,12 +344,8 @@ public partial class Commands
                     return;
                 }
 
-                // Find brugerens position - ændret for at undgå GetValueOrDefault
-                var userPosition = await dbContext
-                    .Users.Where(u =>
-                        (u.IsBot == null || u.IsBot == false) && u.Experience >= userData.Experience
-                    )
-                    .CountAsync();
+                // Find brugerens position
+                var userPosition = await dbContext.GetUserPosition(userData.Experience);
 
                 // Byg embed besked
                 var embed = new EmbedBuilder()
@@ -406,7 +376,7 @@ public partial class Commands
 
                     embed.AddField(
                         $"{medal} #{i + 1} {displayName}{userIndicator}",
-                        $"Level: {user.Level} | XP: {user.Experience}/{user.RequiredXP}"
+                        $"Level: {user.Level} | XP: {user.Experience}/{levelSystem.CalculateRequiredXP(user.Level)}"
                     );
                 }
 
@@ -421,7 +391,7 @@ public partial class Commands
                         : userData.Username;
                     embed.AddField(
                         $"#{userPosition} {displayName} (Dig)",
-                        $"Level: {userData.Level} | XP: {userData.Experience}/{userData.RequiredXP}"
+                        $"Level: {userData.Level} | XP: {userData.Experience}/{levelSystem.CalculateRequiredXP(userData.Level)}"
                     );
                 }
 

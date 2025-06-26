@@ -15,7 +15,7 @@ namespace Backend.DBAccess
             _context = context;
         }
 
-        public async Task<RefreshToken> GetRefreshToken(string refreshToken)
+        public async Task<RefreshToken?> GetRefreshToken(string refreshToken)
         {
             var tokenEntity = _context.RefreshTokens.FirstOrDefaultAsync(rt => rt.Token == refreshToken);
             return await tokenEntity;
@@ -37,7 +37,7 @@ namespace Backend.DBAccess
             return tokenEntity.Token;
         }
 
-        public async Task<RefreshToken> GetRefreshTokenAndUser(string refreshToken)
+        public async Task<RefreshToken?> GetRefreshTokenAndUser(string refreshToken)
         {
             var tokenEntity = _context.RefreshTokens.Include(rt => rt.User).FirstOrDefaultAsync(rt => rt.Token == refreshToken);
             return await tokenEntity;
