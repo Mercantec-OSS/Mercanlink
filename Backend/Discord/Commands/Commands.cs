@@ -11,12 +11,14 @@ using Discord;
 using Discord.WebSocket;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
 
 public partial class Commands
 {
     private static IServiceProvider _serviceProvider;
+    private static DiscordBotService _discordBotService;
 
     // Meme command - !meme
     private static readonly HttpClient _httpClient = new HttpClient();
@@ -27,6 +29,12 @@ public partial class Commands
         _serviceProvider = serviceProvider;
     }
 
+    // Sæt DiscordBotService instans
+    public static void SetDiscordBotService(DiscordBotService discordBotService)
+    {
+        _discordBotService = discordBotService;
+    }
+
     // Dictionary til at holde alle kommandoer
     private static readonly Dictionary<
         string,
@@ -35,13 +43,13 @@ public partial class Commands
         new()
         {
             { "hello", HejCommand },
-            { "help", HjælpCommand },
-            { "info", InfoCommand },
+            { "register", RegisterCommand },
             { "rank", RankCommand },
             { "daily", DailyCommand },
             { "leaderboard", LeaderboardCommand },
-            { "meme", MemeCommand }
-            
+            { "meme", MemeCommand },
+            { "help", HjælpCommand }
+            { "info", InfoCommand },
         };
 
     // Metode til at hente alle kommandoer
@@ -91,12 +99,13 @@ public partial class Commands
             .WithDescription("Her er en liste over alle tilgængelige kommandoer:")
             .WithColor(Color.Blue)
             .AddField($"{prefix}hello", "Få en hilsen fra botten")
-            .AddField($"{prefix}help", "Vis denne hjælpebesked")
-            .AddField($"{prefix}info", "Vis information om botten")
+            .AddField($"{prefix}register", "Registrer dig på botten")
             .AddField($"{prefix}rank", "Vis din rang og XP")
             .AddField($"{prefix}daily", "Få daglig XP-bonus")
             .AddField($"{prefix}leaderboard", "Vis top 5 brugere og din placering")
             .AddField($"{prefix}meme", "Få memes")
+            .AddField($"{prefix}help", "Vis denne hjælpebesked")
+            .AddField($"{prefix}info", "Vis information om botten")
             .WithFooter(footer => footer.Text = "Brug præfiks ! før hver kommando");
 
         await message.Channel.SendMessageAsync(embed: embedBuilder.Build());
@@ -436,6 +445,28 @@ public partial class Commands
         else
         {
             await message.Channel.SendMessageAsync("Failed to retrieve meme. API might be down.");
+        }
+    }
+
+    // Register kommando - !register
+    private static async Task RegisterCommand(SocketMessage message, DiscordSocketClient client)
+    {
+        if (_discordBotService == null)
+        {
+            await message.Channel.SendMessageAsync(
+                "Fejl: Discord bot service er ikke konfigureret."
+            );
+            return;
+        }
+
+        // Konverter SocketMessage til SocketGuildUser hvis muligt
+        if (message.Author is SocketGuildUser guildUser)
+        {
+            await _discordBotService.HandleRegisterAsync(guildUser);
+        }
+        else
+        {
+            await message.Channel.SendMessageAsync("Denne kommando kan kun bruges på en server.");
         }
     }
 }
