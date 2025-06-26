@@ -34,16 +34,14 @@ public partial class Commands
     > _commands =
         new()
         {
-            { "ping", PingCommand },
             { "hello", HejCommand },
             { "help", HjælpCommand },
             { "info", InfoCommand },
             { "rank", RankCommand },
-            { "givexp", GiveXPCommand },
-            { "testxp", TestXPCommand },
             { "daily", DailyCommand },
             { "leaderboard", LeaderboardCommand },
             { "meme", MemeCommand }
+            
         };
 
     // Metode til at hente alle kommandoer
@@ -92,13 +90,10 @@ public partial class Commands
             .WithTitle("Kommando Hjælp")
             .WithDescription("Her er en liste over alle tilgængelige kommandoer:")
             .WithColor(Color.Blue)
-            .AddField($"{prefix}ping", "Tjek om botten er online")
             .AddField($"{prefix}hello", "Få en hilsen fra botten")
             .AddField($"{prefix}help", "Vis denne hjælpebesked")
             .AddField($"{prefix}info", "Vis information om botten")
             .AddField($"{prefix}rank", "Vis din rang og XP")
-            .AddField($"{prefix}givexp", "Giv XP til en bruger")
-            .AddField($"{prefix}testxp", "Test XP-systemet")
             .AddField($"{prefix}daily", "Få daglig XP-bonus")
             .AddField($"{prefix}leaderboard", "Vis top 5 brugere og din placering")
             .AddField($"{prefix}meme", "Få memes")
