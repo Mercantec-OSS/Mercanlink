@@ -48,7 +48,7 @@ public partial class Commands
             { "daily", DailyCommand },
             { "leaderboard", LeaderboardCommand },
             { "meme", MemeCommand },
-            { "help", HjælpCommand }
+            { "help", HjælpCommand },
             { "info", InfoCommand },
         };
 
