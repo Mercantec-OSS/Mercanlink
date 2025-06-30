@@ -1,21 +1,11 @@
-import { Link } from "react-router-dom"
-import { Button } from "@/components/ui/button"
-import { useAuth } from "./contexts/AuthContext"
+import Layout_alt from "@/components/templates/Layout"
 
 function App() {
-  const { isAuthenticated } = useAuth()
-
   return (
-    <div className="flex min-h-svh flex-col items-center justify-center gap-4">
-      <h1 className="text-4xl font-bold">Home Page</h1>
-      <Button asChild>
-        {isAuthenticated ? (
-          <Link to="/users">View Users</Link>
-        ) : (
-          <Link to="/login">Login</Link>
-        )}
-      </Button>
-    </div>
+    <Layout_alt>
+      <h1 className="text-4xl font-bold mb-150">Home Page</h1>
+      <div className="flex flex-col items-start mt-0"></div>
+    </Layout_alt>
   )
 }
 
