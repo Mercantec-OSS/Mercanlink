@@ -6,6 +6,7 @@ using Backend.Models.DTOs;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
+using Backend.DBAccess;
 
 /// <summary>
 /// Controller til håndtering af bruger operationer
@@ -14,12 +15,12 @@ using Microsoft.AspNetCore.Authorization;
 [Route("api/[controller]")]
 public class UserController : ControllerBase
 {
-    private readonly ApplicationDbContext _context;
+    private readonly UserDBAccess _userDBAccess;
     private readonly ILogger<UserController> _logger;
 
-    public UserController(ApplicationDbContext context, ILogger<UserController> logger)
+    public UserController(ILogger<UserController> logger, UserDBAccess userDBAccess)
     {
-        _context = context;
+        _userDBAccess = userDBAccess;
         _logger = logger;
     }
 
@@ -29,13 +30,12 @@ public class UserController : ControllerBase
     /// <returns>Liste af alle brugere</returns>
     /// <response code="200">Brugere hentet succesfuldt</response>
     [HttpGet]
+    [Authorize]
     public async Task<ActionResult<List<UserDto>>> GetAllUsers()
     {
         try
         {
-            var users = await _context.Users
-                .OrderBy(u => u.CreatedAt)
-                .ToListAsync();
+            var users = await _userDBAccess.GetAllUsers();
 
             var userDtos = users.Select(MapToUserDto).ToList();
 
@@ -55,14 +55,12 @@ public class UserController : ControllerBase
     /// <returns>Liste af brugere med både Discord og email</returns>
     /// <response code="200">Brugere hentet succesfuldt</response>
     [HttpGet("with-discord-and-email")]
+    [Authorize]
     public async Task<ActionResult<List<UserDto>>> GetUsersWithDiscordAndEmail()
     {
         try
         {
-            var users = await _context.Users
-                .Where(u => !string.IsNullOrEmpty(u.DiscordId) && !string.IsNullOrEmpty(u.Email))
-                .OrderBy(u => u.CreatedAt)
-                .ToListAsync();
+            var users = await _userDBAccess.GetAllUsersWithBothDiscordAndEmail();
 
             var userDtos = users.Select(MapToUserDto).ToList();
 
@@ -82,14 +80,12 @@ public class UserController : ControllerBase
     /// <returns>Liste af Discord-only brugere</returns>
     /// <response code="200">Brugere hentet succesfuldt</response>
     [HttpGet("discord-only")]
+    [Authorize]
     public async Task<ActionResult<List<UserDto>>> GetDiscordOnlyUsers()
     {
         try
         {
-            var users = await _context.Users
-                .Where(u => !string.IsNullOrEmpty(u.DiscordId) && string.IsNullOrEmpty(u.Email))
-                .OrderBy(u => u.CreatedAt)
-                .ToListAsync();
+            var users = await _userDBAccess.GetAllUsersWithDiscordOnly();
 
             var userDtos = users.Select(MapToUserDto).ToList();
 
@@ -109,14 +105,12 @@ public class UserController : ControllerBase
     /// <returns>Liste af email-only brugere</returns>
     /// <response code="200">Brugere hentet succesfuldt</response>
     [HttpGet("email-only")]
+    [Authorize]
     public async Task<ActionResult<List<UserDto>>> GetEmailOnlyUsers()
     {
         try
         {
-            var users = await _context.Users
-                .Where(u => !string.IsNullOrEmpty(u.Email) && string.IsNullOrEmpty(u.DiscordId))
-                .OrderBy(u => u.CreatedAt)
-                .ToListAsync();
+            var users = await _userDBAccess.GetAllUsersWithEmailOnly();
 
             var userDtos = users.Select(MapToUserDto).ToList();
 
@@ -136,14 +130,12 @@ public class UserController : ControllerBase
     /// <returns>Liste af brugere med Discord</returns>
     /// <response code="200">Brugere hentet succesfuldt</response>
     [HttpGet("with-discord")]
+    [Authorize]
     public async Task<ActionResult<List<UserDto>>> GetUsersWithDiscord()
     {
         try
         {
-            var users = await _context.Users
-                .Where(u => !string.IsNullOrEmpty(u.DiscordId))
-                .OrderBy(u => u.CreatedAt)
-                .ToListAsync();
+            var users = await _userDBAccess.GetAllUsersWithDiscord();
 
             var userDtos = users.Select(MapToUserDto).ToList();
 
@@ -163,14 +155,12 @@ public class UserController : ControllerBase
     /// <returns>Liste af brugere med email</returns>
     /// <response code="200">Brugere hentet succesfuldt</response>
     [HttpGet("with-email")]
+    [Authorize]
     public async Task<ActionResult<List<UserDto>>> GetUsersWithEmail()
     {
         try
         {
-            var users = await _context.Users
-                .Where(u => !string.IsNullOrEmpty(u.Email))
-                .OrderBy(u => u.CreatedAt)
-                .ToListAsync();
+            var users = await _userDBAccess.GetAllUsersWithEmail();
 
             var userDtos = users.Select(MapToUserDto).ToList();
 
@@ -190,21 +180,17 @@ public class UserController : ControllerBase
     /// <returns>Statistikker over bruger typer</returns>
     /// <response code="200">Statistikker hentet succesfuldt</response>
     [HttpGet("stats")]
+    [Authorize]
     public async Task<ActionResult<object>> GetUserStats()
     {
         try
         {
-            var totalUsers = await _context.Users.CountAsync();
-            var discordOnlyUsers = await _context.Users
-                .CountAsync(u => !string.IsNullOrEmpty(u.DiscordId) && string.IsNullOrEmpty(u.Email));
-            var emailOnlyUsers = await _context.Users
-                .CountAsync(u => !string.IsNullOrEmpty(u.Email) && string.IsNullOrEmpty(u.DiscordId));
-            var discordAndEmailUsers = await _context.Users
-                .CountAsync(u => !string.IsNullOrEmpty(u.DiscordId) && !string.IsNullOrEmpty(u.Email));
-            var usersWithDiscord = await _context.Users
-                .CountAsync(u => !string.IsNullOrEmpty(u.DiscordId));
-            var usersWithEmail = await _context.Users
-                .CountAsync(u => !string.IsNullOrEmpty(u.Email));
+            var totalUsers = await _userDBAccess.CountOfUsers();
+            var discordOnlyUsers = await _userDBAccess.CountOfUsersWithDiscordOnly();
+            var emailOnlyUsers = await _userDBAccess.CountOfUsersWithEmailOnly();
+            var discordAndEmailUsers = await _userDBAccess.CountOfUsersWithBothDiscordAndEmail();
+            var usersWithDiscord = await _userDBAccess.CountOfUsersWithDiscord();
+            var usersWithEmail = await _userDBAccess.CountOfUsersWithEmail();
 
             var stats = new
             {
@@ -234,11 +220,12 @@ public class UserController : ControllerBase
     /// <response code="200">Bruger fundet</response>
     /// <response code="404">Bruger ikke fundet</response>
     [HttpGet("{id}")]
+    [Authorize]
     public async Task<ActionResult<UserDto>> GetUserById(string id)
     {
         try
         {
-            var user = await _context.Users.FindAsync(id);
+            var user = await _userDBAccess.GetUser(id);
             if (user == null)
             {
                 return NotFound(new { message = "Bruger ikke fundet" });
@@ -269,7 +256,7 @@ public class UserController : ControllerBase
     {
         try
         {
-            var user = await _context.Users.FindAsync(id);
+            var user = await _userDBAccess.GetUser(id);
             if (user == null)
             {
                 return NotFound(new { message = "Bruger ikke fundet" });
@@ -279,9 +266,7 @@ public class UserController : ControllerBase
             if (!string.IsNullOrEmpty(request.Username))
             {
                 // Tjek om brugernavn allerede er i brug
-                var existingUser = await _context.Users
-                    .FirstOrDefaultAsync(u => u.Username == request.Username && u.Id != id);
-                if (existingUser != null)
+                if (await _userDBAccess.CheckIfUsernameIsInUse(request.Username, id))
                 {
                     return BadRequest(new { message = "Brugernavn er allerede i brug" });
                 }
@@ -291,9 +276,7 @@ public class UserController : ControllerBase
             if (!string.IsNullOrEmpty(request.Email))
             {
                 // Tjek om email allerede er i brug
-                var existingUser = await _context.Users
-                    .FirstOrDefaultAsync(u => u.Email == request.Email && u.Id != id);
-                if (existingUser != null)
+                if (await _userDBAccess.CheckIfEmailIsInUse(request.Email, id))
                 {
                     return BadRequest(new { message = "Email er allerede i brug" });
                 }
@@ -322,7 +305,7 @@ public class UserController : ControllerBase
 
             user.LastUpdated = DateTime.UtcNow;
 
-            await _context.SaveChangesAsync();
+            await _userDBAccess.UpdateUser(user);
 
             _logger.LogInformation("Bruger {Id} opdateret", id);
             return Ok(MapToUserDto(user));
@@ -347,14 +330,13 @@ public class UserController : ControllerBase
     {
         try
         {
-            var user = await _context.Users.FindAsync(id);
+            var user = await _userDBAccess.GetUser(id);
             if (user == null)
             {
                 return NotFound(new { message = "Bruger ikke fundet" });
             }
 
-            _context.Users.Remove(user);
-            await _context.SaveChangesAsync();
+            await _userDBAccess.DeleteUser(user);
 
             _logger.LogInformation("Bruger {Id} slettet", id);
             return Ok(new { message = "Bruger slettet succesfuldt" });
@@ -531,10 +513,9 @@ public class UserController : ControllerBase
 
             // Tjek for eksisterende brugere i database
             var usernames = request.Users.Select(u => u.Username.ToLower()).ToList();
-            var existingUsers = await _context.Users
-                .Where(u => usernames.Contains(u.Username.ToLower()))
+            var existingUsers = (await _userDBAccess.CheckIfMultipleUsernamesAreInUse(usernames))
                 .Select(u => new { u.Username, u.Email, u.IsActive })
-                .ToListAsync();
+                .ToList();
 
             if (existingUsers.Any())
             {
@@ -586,8 +567,7 @@ public class UserController : ControllerBase
         try
         {
             // Tjek om bruger allerede eksisterer
-            var existingUser = await _context.Users
-                .FirstOrDefaultAsync(u => u.Username.ToLower() == userDto.Username.ToLower());
+            var existingUser = await _userDBAccess.GetUserFromUsername(userDto.Username);
 
             if (existingUser != null)
             {
@@ -602,7 +582,7 @@ public class UserController : ControllerBase
                 // Opdater eksisterende bruger
                 UpdateUserFromAdData(existingUser, userDto, request);
                 existingUser.LastAdSync = DateTime.UtcNow;
-                await _context.SaveChangesAsync();
+                await _userDBAccess.UpdateUser(existingUser);
 
                 result.Success = true;
                 result.Action = "Updated";
@@ -613,8 +593,7 @@ public class UserController : ControllerBase
 
             // Opret ny bruger
             var newUser = CreateUserFromAdData(userDto, request);
-            _context.Users.Add(newUser);
-            await _context.SaveChangesAsync();
+            await _userDBAccess.AddNewUser(newUser);
 
             result.Success = true;
             result.Action = "Created";

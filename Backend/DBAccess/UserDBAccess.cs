@@ -1,6 +1,172 @@
-﻿namespace Backend.DBAccess
+﻿using Backend.Data;
+using Backend.Models;
+using Microsoft.EntityFrameworkCore;
+
+namespace Backend.DBAccess
 {
     public class UserDBAccess
     {
+        private readonly ApplicationDbContext _context;
+
+        public UserDBAccess(ApplicationDbContext context)
+        {
+            _context = context;
+        }
+
+        public async Task<List<User>> GetAllUsers()
+        {
+            var users = await _context.Users.OrderBy(u => u.CreatedAt).ToListAsync();
+
+            return users;
+        }
+
+        public async Task<List<User>> GetAllUsersWithBothDiscordAndEmail()
+        {
+            var users = await _context.Users
+                .Where(u => !string.IsNullOrEmpty(u.DiscordId) && !string.IsNullOrEmpty(u.Email))
+                .OrderBy(u => u.CreatedAt).ToListAsync();
+
+            return users;
+        }
+
+        public async Task<List<User>> GetAllUsersWithDiscordOnly()
+        {
+            var users = await _context.Users
+                .Where(u => !string.IsNullOrEmpty(u.DiscordId) && string.IsNullOrEmpty(u.Email))
+                .OrderBy(u => u.CreatedAt).ToListAsync();
+
+            return users;
+        }
+
+        public async Task<List<User>> GetAllUsersWithEmailOnly()
+        {
+            var users = await _context.Users
+                .Where(u => string.IsNullOrEmpty(u.DiscordId) && !string.IsNullOrEmpty(u.Email))
+                .OrderBy(u => u.CreatedAt).ToListAsync();
+
+            return users;
+        }
+
+        public async Task<List<User>> GetAllUsersWithDiscord()
+        {
+            var users = await _context.Users
+                .Where(u => !string.IsNullOrEmpty(u.DiscordId))
+                .OrderBy(u => u.CreatedAt).ToListAsync();
+
+            return users;
+        }
+
+        public async Task<List<User>> GetAllUsersWithEmail()
+        {
+            var users = await _context.Users
+                .Where(u => !string.IsNullOrEmpty(u.Email))
+                .OrderBy(u => u.CreatedAt).ToListAsync();
+
+            return users;
+        }
+
+        public async Task<User?> GetUser(string Id)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == Id);
+
+            return user;
+        }
+
+        public async Task<User?> GetUserFromUsername(string username)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == username);
+
+            return user;
+        }
+
+        public async Task AddNewUser(User user)
+        {
+            _context.Users.Add(user);
+
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task UpdateUser(User user)
+        {
+            _context.Entry(user).State = EntityState.Modified;
+
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task DeleteUser(User user)
+        {
+            _context.Users.Remove(user);
+
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task<int> CountOfUsers()
+        {
+            var users = await GetAllUsers();
+
+            return users.Count;
+        }
+
+        public async Task<int> CountOfUsersWithDiscordOnly()
+        {
+            var users = await GetAllUsersWithDiscordOnly();
+
+            return users.Count;
+        }
+
+        public async Task<int> CountOfUsersWithEmailOnly()
+        {
+            var users = await GetAllUsersWithEmailOnly();
+
+            return users.Count;
+        }
+
+        public async Task<int> CountOfUsersWithBothDiscordAndEmail()
+        {
+            var users = await GetAllUsersWithBothDiscordAndEmail();
+
+            return users.Count;
+        }
+
+        public async Task<int> CountOfUsersWithDiscord()
+        {
+            var users = await GetAllUsersWithDiscord();
+
+            return users.Count;
+        }
+
+        public async Task<int> CountOfUsersWithEmail()
+        {
+            var users = await GetAllUsersWithEmail();
+
+            return users.Count;
+        }
+
+        public async Task<bool> CheckIfUsernameIsInUse(string username, string Id)
+        {
+            var existingUser = await _context.Users.FirstOrDefaultAsync(u => u.Username == username && u.Id != Id);
+
+            if (existingUser != null) { return true; }
+
+            return false;
+        }
+
+        public async Task<List<User>> CheckIfMultipleUsernamesAreInUse(List<string> usernames)
+        {
+            var existingUsers = await _context.Users.Where(u => usernames.Contains(u.Username)).ToListAsync();
+
+            return existingUsers;
+        }
+
+        public async Task<bool> CheckIfEmailIsInUse(string email, string Id)
+        {
+            var existingUser = await _context.Users.FirstOrDefaultAsync(u => u.Email == email && u.Id != Id);
+
+            if (existingUser != null) { return true; }
+
+            return false;
+        }
+
+
     }
 }

@@ -196,6 +196,7 @@ public class Program
         builder.Services.AddScoped<AuthDBAccess>();
         builder.Services.AddScoped<DiscordVerificationDBAccess>();
         builder.Services.AddScoped<DiscordBotDBAccess>();
+        builder.Services.AddScoped<UserDBAccess>();
 
         // Tilføj cleanup job
         builder.Services.AddHostedService<CleanupJob>();
