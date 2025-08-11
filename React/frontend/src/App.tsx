@@ -1,4 +1,4 @@
-import Layout_alt from "@/components/templates/Layout"
+import Layout_alt from "@/components/templates/layout"
 
 function App() {
   return (

@@ -1,6 +1,6 @@
 import { createContext, useContext, useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { type LoginCredentials, loginUser } from "@/services/authService"
+import { type LoginCredentials, loginUser, type SignupCredentials } from "@/services/authService"
 import { type User } from "@/types"
 import { storageService } from "@/services/storageService"
 import { decodeTokenAndMapToUser } from "@/services/jwtService"
@@ -8,6 +8,7 @@ import { decodeTokenAndMapToUser } from "@/services/jwtService"
 interface AuthContextType {
   user: User | null
   login: (credentials: LoginCredentials) => Promise<void>
+  signup: (credentials: SignupCredentials) => Promise<void>
   logout: () => void
   isAuthenticated: boolean
 }
@@ -33,6 +34,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     navigate("/users")
   }
 
+  const signup = async (credentials: SignupCredentials) => {
+    await login(credentials)
+  }
   const logout = () => {
     storageService.removeItem("accessToken")
     storageService.removeItem("refreshToken")
@@ -42,7 +46,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, login, logout, isAuthenticated: !!user }}
+      value={{ user, login, signup, logout, isAuthenticated: !!user }}
     >
       {children}
     </AuthContext.Provider>

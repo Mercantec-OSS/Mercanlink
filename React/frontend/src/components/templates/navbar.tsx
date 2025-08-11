@@ -2,7 +2,7 @@ import { Link } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/contexts/AuthContext"
 import { useState } from "react"
-import { FaBars } from "react-icons/fa"
+import { FaBars, FaDiscord } from "react-icons/fa"
 import { ModeToggle } from "@/components/ui/mode-toggle"
 
 export default function Navbar() {
@@ -38,17 +38,9 @@ export default function Navbar() {
                                         onClick={() => setSidebarOpen(false)}
                                         className="px-4 py-2 text-lg rounded bg-black text-white hover:bg-gray-600 transition w-30 text-center"
                                     >
-                                        Home
+                                        Valgfag
                                     </Link>
-                                    {isAuthenticated && (
-                                        <Link
-                                            to="/users"
-                                            onClick={() => setSidebarOpen(false)}
-                                            className="px-4 py-2 text-lg rounded bg-black text-white hover:bg-gray-600 transition w-30 text-center"
-                                        >
-                                            Users
-                                        </Link>
-                                    )}
+
                                     {!isAuthenticated && (
                                         <>
                                             <Link
@@ -67,6 +59,16 @@ export default function Navbar() {
                                             </Link>
                                         </>
                                     )}
+
+                                    {isAuthenticated && (
+                                        <Link
+                                            to="/"
+                                            onClick={() => setSidebarOpen(false)}
+                                            className="px-4 py-2 text-lg rounded bg-black text-white hover:bg-gray-600 transition w-30 text-center"
+                                        >
+                                            Logout
+                                        </Link>
+                                    )}
                                 </nav>
                             </aside>
                         </div>
@@ -76,13 +78,40 @@ export default function Navbar() {
 
             {/* Center: Logo */}
             <div className="flex flex-1 justify-center">
-                <div className="flex items-center pl-30">
+                <div className="flex items-center pl-86">
                     <img src="/src/components/images/mercantec-space-logo.png" alt="Mercantec Space Logo" className="h-8 w-8 object-contain" />
-                    <span className="ml-1 font-semibold text-lg">Mercantec Hub</span>
+                    <span className="ml-1 font-semibold text-lg">Mercantec Space</span>
                 </div>
             </div>
 
-            {/* Right: Auth buttons */}
+            {/* Right: Teams and Discord buttons */}
+            <div className="flex gap-1 justify-end min-w-[180px] mr-2">
+                <a  
+                    href="https://teams.microsoft.com/l/team/19%3AILE0F1oc9fGJMPT6mFVjcQ7N10W1SE8XA9r1X4N6Pko1%40thread.tacv2/conversations?groupId=a014d18d-572a-4621-bf7d-682f06ec1fea&tenantId=17aab4ce-4b26-487e-9bea-1e2a70348bf0"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title="Open Teams"
+                    className="flex items-center justify-center"
+                    style={{ height: "48px", width: "48px" }}
+                >
+                    <img
+                        src="/src/components/images/icons8-microsoft-teams-2019-48.png"
+                        alt="Microsoft Teams"
+                        className="h-10 w-10 object-contain"
+                    />
+                </a>
+                <a
+                    href="https://discord.gg/uHkYDgsKcm"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title="Open Discord"
+                    className="flex items-center justify-center"
+                    style={{ height: "48px", width: "48px" }}
+                >
+                    <FaDiscord size={40} color="#5865F2" />
+                </a>
+            </div>
+
             <div className="flex gap-2 justify-end min-w-[180px]">
                 <Button asChild className="bg-black text-white hover:bg-gray-600 w-24">
                     {isAuthenticated ? (

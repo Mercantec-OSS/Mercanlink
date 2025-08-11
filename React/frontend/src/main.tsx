@@ -4,6 +4,7 @@ import { BrowserRouter, Route, Routes } from "react-router-dom"
 import App from "./App.tsx"
 import { UsersPage } from "./pages/UsersPage.tsx"
 import { LoginPage } from "./pages/LoginPage.tsx"
+import { SignupPage } from "./pages/SignupPage.tsx"
 import { AuthProvider } from "./contexts/AuthContext.tsx"
 import { ProtectedRoute } from "./components/ProtectedRoute.tsx"
 import { ThemeProvider } from "@/components/ui/theme-provider"
@@ -17,6 +18,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           <Routes>
             <Route path="/" element={<App />} />
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/signup" element={<SignupPage />} />
             <Route element={<ProtectedRoute />}>
               <Route path="/users" element={<UsersPage />} />
             </Route>

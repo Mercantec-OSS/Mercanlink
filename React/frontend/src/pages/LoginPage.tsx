@@ -1,23 +1,23 @@
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { useState } from "react"
 import { useAuth } from "@/contexts/AuthContext"
+import Navbar from "@/components/templates/navbar"
+import Footer from "@/components/templates/footer"
+import { useNavigate } from "react-router-dom"
+import { LoginForm } from "@/components/templates/loginForm"
+import { Button } from "@/components/ui/button"
 
 export function LoginPage() {
-  const [username, setUsername] = useState("")
-  const [password, setPassword] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const { login } = useAuth()
+  const navigate = useNavigate()
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleLogin = async ({ emailOrUsername, password }: { emailOrUsername: string; password: string }) => {
     setError(null)
     setLoading(true)
     try {
-      await login({ emailOrUsername: username, password })
+      await login({ emailOrUsername, password })
+      // Optionally navigate after login
     } catch {
       setError("Failed to login. Please check your credentials.")
     } finally {
@@ -26,50 +26,21 @@ export function LoginPage() {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-svh bg-background">
-      <Card className="mx-auto max-w-sm">
-        <CardHeader>
-          <CardTitle className="text-2xl">Login</CardTitle>
-          <CardDescription>
-            Enter your email or username below to login to your account
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit}>
-            <div className="grid gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="emailOrUsername">Email or Username</Label>
-                <Input
-                  id="emailOrUsername"
-                  type="text"
-                  placeholder="m.alac or name@example.com"
-                  required
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  disabled={loading}
-                />
-              </div>
-              <div className="grid gap-2">
-                <div className="flex items-center">
-                  <Label htmlFor="password">Password</Label>
-                </div>
-                <Input
-                  id="password"
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  disabled={loading}
-                />
-              </div>
-              {error && <p className="text-destructive text-sm">{error}</p>}
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? "Logging in..." : "Login"}
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+    <div className="flex flex-col min-h-svh bg-background">
+      <Navbar />
+      <div className="flex flex-1 items-center justify-center bg-black">
+
+        <LoginForm onSubmit={handleLogin} loading={loading} error={error} />
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full mt-2 absolute bottom-4 left-1/2 -translate-x-1/2 max-w-sm"
+          onClick={() => navigate(-1)}
+        >
+          Back
+        </Button>
+      </div>
+      <Footer />
     </div>
   )
-} 
+}
