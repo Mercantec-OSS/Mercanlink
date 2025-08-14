@@ -45,58 +45,58 @@ export function LoginForm({ onSubmit, loading = false, error = null }: LoginForm
           )}
         </div>
       )}
-      <Card className=" text-white/50  border-0 h-[400px] w-[550px] backdrop-blur-md shadow-lg bg-[#101828]">
+      <Card className=" text-white/50  border-0 h-[600px] w-[550px] backdrop-blur-md shadow-lg bg-[#101828]">
         <CardHeader className="text-center">
 
-          <CardTitle className="text-2xl text-white/100 mt-8">Login</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-2xl text-white/100 mt-10 bg-amber-">Login</CardTitle>
+          <CardDescription className="mt-5 text-md">
             Enter your email or username below to login to your account
           </CardDescription>
 
         </CardHeader>
-        <CardContent >
+        <CardContent className=" mt-10" >
           <form onSubmit={handleSubmit}>
-            <div className="grid gap-4">
-              <div className="flex flex-col items-center justify-center gap-4">
-                <div className="grid gap-2 w-full  items-center">
-                  <Label className="text-white/100 pl-26 text-lg" htmlFor="emailOrUsername">Email or Username</Label>
-                  <Input
-                    className="bg-[#1c2433] border-white/50 text-white/70 placeholder:text-white/70 w-[300px] h-12 mx-auto placeholder:text-lg text-lg"
-                    id="emailOrUsername"
-                    type="text"
-                    placeholder="m.alac or name@example.com"
-                    required
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    disabled={loading}
-                    onFocus={() => setFocusedField("email")}
-                    onBlur={() => setFocusedField(null)}
-                  />
-                </div>
-                <div className="grid gap-2 w-full  items-center">
-                  <Label className="text-white/100 pl-26" htmlFor="password">Password</Label>
-                  <Input
-                    className="bg-[#1c2433] border-white/50 w-[300px] mx-auto h-12 placeholder:text-lg text-lg"
-                    id="password"
-                    type="password"
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    disabled={loading}
-                    onFocus={() => setFocusedField("password")}
-                    onBlur={() => setFocusedField(null)}
-                  />
-                </div>
-                {error && <p className="text-destructive text-sm">{error}</p>}
-                <Button type="submit" className="absolute bottom-8 left-1/2 -translate-x-1/2 mt-10 justify-center border bg-[#1c2433] border-white/50 text-white/100 hover:text-black hover:bg-gray-600 active:scale-95 transition-transform cursor-pointer w-[200px] mx-auto" disabled={loading}>
-                  {loading ? "Logging in..." : "Login"}
-                </Button>
+
+            <div className="flex flex-col items-center justify-center gap-4 ">
+              <div className="grid gap-2 w-full  items-center">
+                <Label className="text-white/100 pl-26 text-lg" htmlFor="emailOrUsername">Email or Username</Label>
+                <Input
+                  className="bg-[#1c2433] border-white/50 text-white/70 placeholder:text-white/70 w-[300px] h-12 mx-auto placeholder:text-lg text-lg"
+                  id="emailOrUsername"
+                  type="text"
+                  placeholder="m.alac or name@example.com"
+                  required
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  disabled={loading}
+                  onFocus={() => setFocusedField("email")}
+                  onBlur={() => setFocusedField(null)}
+                />
               </div>
+              <div className="grid gap-2 w-full  items-center">
+                <Label className="text-white/100 pl-26 text-lg" htmlFor="password">Password</Label>
+                <Input
+                  className="bg-[#1c2433] border-white/50 w-[300px] mx-auto h-12 placeholder:text-lg text-lg"
+                  id="password"
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={loading}
+                  onFocus={() => setFocusedField("password")}
+                  onBlur={() => setFocusedField(null)}
+                />
+              </div>
+              {error && <p className="text-destructive text-md mt-2 text-red-500 ">{error}</p>}
+              <Button type="submit" className=" absolute bottom-12 h-12 text-lg left-1/2 -translate-x-1/2 mt-10 justify-center border bg-[#1c2430] border-white/50 text-white/100 hover:text-black hover:bg-gray-600 active:scale-95 transition-transform cursor-pointer w-[200px] mx-auto" disabled={loading}>
+                {loading ? "Logging in..." : "Login"}
+              </Button>
             </div>
+
           </form>
         </CardContent>
 
-      </Card>
-    </div>
+      </Card >
+    </div >
   )
 }
