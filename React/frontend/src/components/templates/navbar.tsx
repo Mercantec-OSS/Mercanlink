@@ -10,7 +10,7 @@ export default function Navbar() {
     const [sidebarOpen, setSidebarOpen] = useState(false)
     const navigate = useNavigate()
     return (
-        <nav className="w-full py-4 bg-white text-black flex items-center px-6">
+        <nav className="w-full py-4 bg-white text-black flex items-center px-6 shadow-md border-b">
             {/* Left: Burger menu */}
             <div className="flex items-center justify-start min-w-[60px]">
                 <button

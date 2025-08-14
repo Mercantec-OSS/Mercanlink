@@ -28,7 +28,7 @@ export function SignupPage() {
   return (
     <div className="flex flex-col min-h-svh bg-background">
       <Navbar />
-      <div className="flex flex-1 items-center justify-center bg-black">
+      <div className="flex flex-1 items-center justify-center bg-[#101828]">
         <SignupForm onSubmit={handleSignup} loading={loading} error={error} />
         <Button
           type="button"

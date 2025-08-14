@@ -26,9 +26,11 @@ export function LoginPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-svh bg-background">
+    <div className="flex flex-col min-h-svh bg-gradient-to-br from-[#181c2c] via-[#23263a] to-[#10121a]">
       <Navbar />
-      <div className="flex flex-1 items-center justify-center bg-black">
+      <div className="flex flex-1  justify-center ">
+        {/* <img src="/src/components/images/bluey.jpg" className="absolute h-[600px] w-[2000px]" /> */}
+
 
         <LoginForm onSubmit={handleLogin} loading={loading} error={error} />
         <Button
