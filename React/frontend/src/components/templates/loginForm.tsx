@@ -48,7 +48,7 @@ export function LoginForm({ onSubmit, loading = false, error = null }: LoginForm
       <Card className=" text-white/50  border-0 h-[600px] w-[550px] backdrop-blur-md shadow-lg bg-[#101828]">
         <CardHeader className="text-center">
 
-          <CardTitle className="text-2xl text-white/100 mt-10 bg-amber-">Login</CardTitle>
+          <CardTitle className="text-5xl text-white/100 font-bold mt-10">Login</CardTitle>
           <CardDescription className="mt-5 text-md">
             Enter your email or username below to login to your account
           </CardDescription>
