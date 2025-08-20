@@ -16,7 +16,7 @@ namespace Backend.DBAccess
         public async Task<User?> CheckExistingUser(string discordId)
         {
             // Tjek om Discord ID allerede er verificeret
-            var existingUser = await _context.Users.FirstOrDefaultAsync(u => u.DiscordId == discordId && !string.IsNullOrEmpty(u.Email));
+            var existingUser = await _context.Users.Include(u => u.WebsiteUser).Include(u => u.DiscordUser).FirstOrDefaultAsync(u => u.DiscordUser.DiscordId == discordId && !string.IsNullOrEmpty(u.WebsiteUser.Email));
             return existingUser;
         }
 

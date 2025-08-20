@@ -30,7 +30,7 @@ public class UserController : ControllerBase
     /// <returns>Liste af alle brugere</returns>
     /// <response code="200">Brugere hentet succesfuldt</response>
     [HttpGet]
-    [Authorize]
+    [Authorize(Roles = "Admin,Teacher")]
     public async Task<ActionResult<List<UserDto>>> GetAllUsers()
     {
         try
@@ -55,7 +55,7 @@ public class UserController : ControllerBase
     /// <returns>Liste af brugere med både Discord og email</returns>
     /// <response code="200">Brugere hentet succesfuldt</response>
     [HttpGet("with-discord-and-email")]
-    [Authorize]
+    [Authorize(Roles = "Admin,Teacher")]
     public async Task<ActionResult<List<UserDto>>> GetUsersWithDiscordAndEmail()
     {
         try
@@ -80,7 +80,7 @@ public class UserController : ControllerBase
     /// <returns>Liste af Discord-only brugere</returns>
     /// <response code="200">Brugere hentet succesfuldt</response>
     [HttpGet("discord-only")]
-    [Authorize]
+    [Authorize(Roles = "Admin,Teacher")]
     public async Task<ActionResult<List<UserDto>>> GetDiscordOnlyUsers()
     {
         try
@@ -105,7 +105,7 @@ public class UserController : ControllerBase
     /// <returns>Liste af email-only brugere</returns>
     /// <response code="200">Brugere hentet succesfuldt</response>
     [HttpGet("email-only")]
-    [Authorize]
+    [Authorize(Roles = "Admin,Teacher")]
     public async Task<ActionResult<List<UserDto>>> GetEmailOnlyUsers()
     {
         try
@@ -130,7 +130,7 @@ public class UserController : ControllerBase
     /// <returns>Liste af brugere med Discord</returns>
     /// <response code="200">Brugere hentet succesfuldt</response>
     [HttpGet("with-discord")]
-    [Authorize]
+    [Authorize(Roles = "Admin,Teacher")]
     public async Task<ActionResult<List<UserDto>>> GetUsersWithDiscord()
     {
         try
@@ -155,7 +155,7 @@ public class UserController : ControllerBase
     /// <returns>Liste af brugere med email</returns>
     /// <response code="200">Brugere hentet succesfuldt</response>
     [HttpGet("with-email")]
-    [Authorize]
+    [Authorize(Roles = "Admin,Teacher")]
     public async Task<ActionResult<List<UserDto>>> GetUsersWithEmail()
     {
         try
@@ -180,7 +180,7 @@ public class UserController : ControllerBase
     /// <returns>Statistikker over bruger typer</returns>
     /// <response code="200">Statistikker hentet succesfuldt</response>
     [HttpGet("stats")]
-    [Authorize]
+    [Authorize(Roles = "Admin,Teacher")]
     public async Task<ActionResult<object>> GetUserStats()
     {
         try
@@ -220,7 +220,7 @@ public class UserController : ControllerBase
     /// <response code="200">Bruger fundet</response>
     /// <response code="404">Bruger ikke fundet</response>
     [HttpGet("{id}")]
-    [Authorize]
+    [Authorize(Roles = "Admin,Teacher")]
     public async Task<ActionResult<UserDto>> GetUserById(string id)
     {
         try
@@ -270,7 +270,7 @@ public class UserController : ControllerBase
                 {
                     return BadRequest(new { message = "Brugernavn er allerede i brug" });
                 }
-                user.Username = request.Username;
+                user.UserName = request.Username;
             }
 
             if (!string.IsNullOrEmpty(request.Email))
@@ -280,30 +280,30 @@ public class UserController : ControllerBase
                 {
                     return BadRequest(new { message = "Email er allerede i brug" });
                 }
-                user.Email = request.Email;
+                user.WebsiteUser.Email = request.Email;
             }
 
             if (request.Level.HasValue)
             {
-                user.Level = request.Level.Value;
+                user.DiscordUser.Level = request.Level.Value;
             }
 
             if (request.Experience.HasValue)
             {
-                user.Experience = request.Experience.Value;
+                user.DiscordUser.Experience = request.Experience.Value;
             }
 
             if (request.Roles != null)
             {
-                user.Roles = request.Roles;
+                user.DiscordUser.Roles = request.Roles;
             }
 
             if (request.IsActive.HasValue)
             {
-                user.IsActive = request.IsActive.Value;
+                user.DiscordUser.IsActive = request.IsActive.Value;
             }
 
-            user.LastUpdated = DateTime.UtcNow;
+            user.UpdatedAt = DateTime.UtcNow;
 
             await _userDBAccess.UpdateUser(user);
 
@@ -361,7 +361,7 @@ public class UserController : ControllerBase
     public async Task<ActionResult<BulkImportResult>> BulkImportUsers([FromBody] BulkImportRequest request)
     {
         var result = new BulkImportResult();
-        
+
         try
         {
             if (request.Users == null || !request.Users.Any())
@@ -393,7 +393,7 @@ public class UserController : ControllerBase
                 }
             }
 
-            _logger.LogInformation("Bulk import afsluttet: {Success} succesfule, {Failed} fejlede, {Updated} opdaterede, {Skipped} sprunget over", 
+            _logger.LogInformation("Bulk import afsluttet: {Success} succesfule, {Failed} fejlede, {Updated} opdaterede, {Skipped} sprunget over",
                 result.SuccessCount, result.FailedCount, result.UpdatedCount, result.SkippedCount);
 
             return Ok(result);
@@ -420,7 +420,7 @@ public class UserController : ControllerBase
         try
         {
             var users = ParseCsvToUsers(request.CsvData, request.ColumnMapping);
-            
+
             var bulkRequest = new BulkImportRequest
             {
                 Users = users,
@@ -452,7 +452,8 @@ public class UserController : ControllerBase
                       "alla437h,C3vk!zRttY8C,Allan Nicolaj i Soylu,Selfoss,allan@example.com,2024001,Datamatiker,Student\n" +
                       "user123,TempPass123!,John,Doe,john@example.com,2024002,Datamatiker,Student";
 
-        return Ok(new { 
+        return Ok(new
+        {
             template = template,
             columnMapping = new CsvColumnMapping(),
             instructions = new
@@ -514,7 +515,7 @@ public class UserController : ControllerBase
             // Tjek for eksisterende brugere i database
             var usernames = request.Users.Select(u => u.Username.ToLower()).ToList();
             var existingUsers = (await _userDBAccess.CheckIfMultipleUsernamesAreInUse(usernames))
-                .Select(u => new { u.Username, u.Email, u.IsActive })
+                .Select(u => new { u.UserName, u.Email, u.IsActive })
                 .ToList();
 
             if (existingUsers.Any())
@@ -581,7 +582,7 @@ public class UserController : ControllerBase
 
                 // Opdater eksisterende bruger
                 UpdateUserFromAdData(existingUser, userDto, request);
-                existingUser.LastAdSync = DateTime.UtcNow;
+                existingUser.WebsiteUser.UpdatedAt = DateTime.UtcNow;
                 await _userDBAccess.UpdateUser(existingUser);
 
                 result.Success = true;
@@ -616,29 +617,35 @@ public class UserController : ControllerBase
     {
         var user = new User
         {
-            Id = Guid.NewGuid().ToString(),
-            Username = userDto.Username,
-            Email = userDto.Email ?? "",
-            
+            UserName = userDto.Username,
+            SchoolADUser = new SchoolADUser
+            {
+                UserName = userDto.Username,
+                StudentId = userDto.StudentId
+            },
+            WebsiteUser = new WebsiteUser
+            {
+                UserName = userDto.Username,
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(userDto.InitialPassword),
+                Email = userDto.Email ?? ""
+            },
+
             // GDPR-sikker håndtering af navn
             FirstName = ExtractFirstName(userDto.GivenName),
             SurnameInitial = ExtractSurnameInitial(userDto.Surname),
-            
+
             // AD specifikke felter
-            InitialPassword = userDto.InitialPassword,
-            PasswordChanged = false,
-            StudentId = userDto.StudentId,
             Department = userDto.Department ?? request.DefaultDepartment,
             EmployeeType = userDto.EmployeeType ?? "Student",
             AdCreatedAt = DateTime.UtcNow,
             LastAdSync = DateTime.UtcNow,
-            
+
             // Basis felter
             Roles = userDto.Roles ?? request.DefaultRoles,
             IsActive = true,
             CreatedAt = DateTime.UtcNow,
             LastUpdated = DateTime.UtcNow,
-            
+
             // Hashet initial password
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(userDto.InitialPassword)
         };
@@ -665,7 +672,7 @@ public class UserController : ControllerBase
         user.StudentId = userDto.StudentId ?? user.StudentId;
         user.Department = userDto.Department ?? request.DefaultDepartment ?? user.Department;
         user.EmployeeType = userDto.EmployeeType ?? user.EmployeeType;
-        
+
         user.LastUpdated = DateTime.UtcNow;
     }
 
@@ -698,13 +705,13 @@ public class UserController : ControllerBase
     {
         var users = new List<AdUserImportDto>();
         var lines = csvData.Split('\n', StringSplitOptions.RemoveEmptyEntries);
-        
+
         var startIndex = mapping.HasHeader ? 1 : 0;
-        
+
         for (int i = startIndex; i < lines.Length; i++)
         {
             var columns = lines[i].Split(mapping.Delimiter);
-            
+
             if (columns.Length <= Math.Max(mapping.UsernameColumn, mapping.InitialPasswordColumn))
                 continue;
 
@@ -733,7 +740,7 @@ public class UserController : ControllerBase
     {
         if (!columnIndex.HasValue || columnIndex < 0 || columnIndex >= columns.Length)
             return "";
-        
+
         return columns[columnIndex.Value].Trim().Trim('"');
     }
 
@@ -767,27 +774,27 @@ public class UserController : ControllerBase
         return new UserDto
         {
             Id = user.Id,
-            Email = user.Email,
-            Username = user.Username,
-            DiscordId = user.DiscordId,
-            GlobalName = user.GlobalName,
-            AvatarUrl = user.AvatarUrl,
-            
+            Email = user.WebsiteUser.Email,
+            Username = user.UserName,
+            DiscordId = user.DiscordUser.DiscordId,
+            GlobalName = user.DiscordUser.GlobalName,
+            AvatarUrl = user.DiscordUser.AvatarUrl,
+
             // AD felter
             FirstName = user.FirstName,
             SurnameInitial = user.SurnameInitial,
             PasswordChanged = user.PasswordChanged,
-            StudentId = user.StudentId,
+            StudentId = user.SchoolADUser.StudentId,
             Department = user.Department,
             EmployeeType = user.EmployeeType,
-            AdCreatedAt = user.AdCreatedAt,
-            LastAdSync = user.LastAdSync,
-            
-            Experience = user.Experience,
-            Level = user.Level,
-            Roles = user.Roles,
-            IsActive = user.IsActive,
+            AdCreatedAt = user.SchoolADUser.CreatedAt,
+            LastAdSync = user.SchoolADUser.UpdatedAt,
+
+            Experience = user.DiscordUser.Experience,
+            Level = user.DiscordUser.Level,
+            Roles = user.DiscordUser.Roles,
+            IsActive = user.DiscordUser.IsActive,
             CreatedAt = user.CreatedAt
         };
     }
-} 
+}

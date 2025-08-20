@@ -18,7 +18,7 @@ public class UserService
         _discordBotDBAccess = discordBotDBAccess;
     }
 
-    public async Task<User> CreateOrUpdateUserAsync(SocketGuildUser guildUser)
+    public async Task<DiscordUser> CreateOrUpdateUserAsync(SocketGuildUser guildUser)
     {
         // Søg efter eksisterende bruger
         var existingUser = await _discordBotDBAccess.GetUser(guildUser.Id.ToString());
@@ -26,7 +26,7 @@ public class UserService
         if (existingUser != null)
         {
             // Opdater eksisterende bruger
-            existingUser.Username = guildUser.Username;
+            existingUser.UserName = guildUser.Username;
             existingUser.GlobalName = guildUser.GlobalName ?? string.Empty;
             existingUser.Discriminator = guildUser.Discriminator;
             existingUser.AvatarUrl = guildUser.GetAvatarUrl() ?? guildUser.GetDefaultAvatarUrl();
@@ -40,7 +40,7 @@ public class UserService
                 : DateTime.UtcNow;
 
             existingUser.IsBoosting = guildUser.PremiumSince.HasValue;
-            existingUser.LastUpdated = DateTime.UtcNow;
+            existingUser.UpdatedAt = DateTime.UtcNow;
 
             await _discordBotDBAccess.UpdateUser(existingUser);
 
@@ -58,32 +58,36 @@ public class UserService
             // Opret ny bruger
             var newUser = new User
             {
-                DiscordId = guildUser.Id.ToString(),
-                Username = guildUser.Username,
-                GlobalName = guildUser.GlobalName ?? string.Empty,
-                Discriminator = guildUser.Discriminator,
-                AvatarUrl = guildUser.GetAvatarUrl() ?? guildUser.GetDefaultAvatarUrl(),
-                IsBot = guildUser.IsBot,
-                PublicFlags = (int)guildUser.PublicFlags,
-                Nickname = guildUser.Nickname ?? string.Empty,
-                JoinedAt = joinedAtUtc,
-                IsBoosting = guildUser.PremiumSince.HasValue,
-                CreatedAt = nowUtc,
-                LastUpdated = nowUtc
+                UserName = guildUser.Username,
+                DiscordUser = new DiscordUser
+                {
+                    DiscordId = guildUser.Id.ToString(),
+                    UserName = guildUser.Username,
+                    GlobalName = guildUser.GlobalName ?? string.Empty,
+                    Discriminator = guildUser.Discriminator,
+                    AvatarUrl = guildUser.GetAvatarUrl() ?? guildUser.GetDefaultAvatarUrl(),
+                    IsBot = guildUser.IsBot,
+                    PublicFlags = (int)guildUser.PublicFlags,
+                    Nickname = guildUser.Nickname ?? string.Empty,
+                    JoinedAt = joinedAtUtc,
+                    IsBoosting = guildUser.PremiumSince.HasValue,
+                    CreatedAt = nowUtc,
+                    UpdatedAt = nowUtc
+                }
             };
 
             await _discordBotDBAccess.AddUser(newUser);
 
-            return newUser;
+            return newUser.DiscordUser;
         }
     }
 
-    public async Task<User?> GetUserByDiscordIdAsync(string discordId)
+    public async Task<DiscordUser?> GetUserByDiscordIdAsync(string discordId)
     {
         return await _discordBotDBAccess.GetUser(discordId);
     }
 
-    public async Task<User> CreateDiscordUserAsync(SocketGuildUser guildUser)
+    public async Task<DiscordUser> CreateDiscordUserAsync(SocketGuildUser guildUser)
     {
         // Tjek om brugeren allerede eksisterer
         var existingUser = await _discordBotDBAccess.GetUser(guildUser.Id.ToString());
@@ -104,34 +108,32 @@ public class UserService
         // Opret ny bruger med kun Discord-information
         var newUser = new User
         {
-            // Discord-information
-            DiscordId = guildUser.Id.ToString(),
-            Username = guildUser.Username,
-            GlobalName = guildUser.GlobalName ?? string.Empty,
-            Discriminator = guildUser.Discriminator,
-            AvatarUrl = guildUser.GetAvatarUrl() ?? guildUser.GetDefaultAvatarUrl(),
-            IsBot = guildUser.IsBot,
-            PublicFlags = (int)guildUser.PublicFlags,
-            Nickname = guildUser.Nickname ?? string.Empty,
-            JoinedAt = joinedAtUtc,
-            IsBoosting = guildUser.PremiumSince.HasValue,
-
-            // Tomme felter (vil blive udfyldt senere ved registrering)
-            Email = string.Empty,
-            PasswordHash = string.Empty,
-            EmailConfirmed = false,
-
-            // Standardværdier
-            CreatedAt = nowUtc,
-            LastUpdated = nowUtc,
-            IsActive = true,
-            Experience = 0,
-            Level = 1,
-            Roles = new List<string> { UserRole.Student.ToString() } // Standard rolle
+            UserName = guildUser.Username,
+            DiscordUser = new DiscordUser
+            {
+                DiscordId = guildUser.Id.ToString(),
+                UserName = guildUser.Username,
+                GlobalName = guildUser.GlobalName ?? string.Empty,
+                Discriminator = guildUser.Discriminator,
+                AvatarUrl = guildUser.GetAvatarUrl() ?? guildUser.GetDefaultAvatarUrl(),
+                IsBot = guildUser.IsBot,
+                PublicFlags = (int)guildUser.PublicFlags,
+                Nickname = guildUser.Nickname ?? string.Empty,
+                JoinedAt = joinedAtUtc,
+                IsBoosting = guildUser.PremiumSince.HasValue,
+                CreatedAt = nowUtc,
+                UpdatedAt = nowUtc,
+                // Standardværdier
+                IsActive = true,
+                Experience = 0,
+                Level = 1,
+                Roles = new List<string> { UserRole.Student.ToString() } // Standard rolle
+            }
         };
+        
 
         await _discordBotDBAccess.AddUser(newUser);
 
-        return newUser;
+        return newUser.DiscordUser;
     }
 }

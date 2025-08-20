@@ -30,15 +30,12 @@ public class JwtService
         var claims = new List<Claim>
         {
             new(ClaimTypes.NameIdentifier, user.Id),
-            new(ClaimTypes.Email, user.Email),
-            new(ClaimTypes.Name, user.Username),
-            new("discord_id", user.DiscordId ?? string.Empty),
-            new("level", user.Level.ToString()),
-            new("experience", user.Experience.ToString())
+            new(ClaimTypes.Email, user.WebsiteUser.Email),
+            new(ClaimTypes.Name, user.UserName)
         };
 
         // Tilføj roller som claims
-        foreach (var role in user.Roles)
+        foreach (var role in user.DiscordUser.Roles)
         {
             claims.Add(new Claim(ClaimTypes.Role, role));
         }
@@ -79,7 +76,7 @@ public class JwtService
         return await _jwtDBAccess.AddRefreshToken(tokenEntity);
     }
 
-    public async Task<User?> ValidateRefreshTokenAsync(string refreshToken)
+    public async Task<WebsiteUser?> ValidateRefreshTokenAsync(string refreshToken)
     {
         var tokenEntity = await _jwtDBAccess.GetRefreshTokenAndUser(refreshToken);
 
@@ -92,7 +89,7 @@ public class JwtService
             return null;
         }
 
-        return tokenEntity.User;
+        return tokenEntity.WebsiteUser;
     }
 
     public async Task RevokeRefreshTokenAsync(string refreshToken, string? replacedByToken = null)

@@ -4,7 +4,7 @@ public class RefreshToken : Common
 {
     public string Token { get; set; } = string.Empty;
     public string UserId { get; set; } = string.Empty;
-    public User User { get; set; } = null!;
+    public WebsiteUser WebsiteUser { get; set; } = null!;
     public DateTime ExpiresAt { get; set; }
     public bool IsRevoked { get; set; } = false;
     public DateTime? RevokedAt { get; set; }

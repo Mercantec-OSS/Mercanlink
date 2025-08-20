@@ -22,8 +22,8 @@ namespace Backend.DBAccess
 
         public async Task<List<User>> GetAllUsersWithBothDiscordAndEmail()
         {
-            var users = await _context.Users
-                .Where(u => !string.IsNullOrEmpty(u.DiscordId) && !string.IsNullOrEmpty(u.Email))
+            var users = await _context.Users.Include(u => u.WebsiteUser).Include(u => u.DiscordUser)
+                .Where(u => !string.IsNullOrEmpty(u.DiscordUser.DiscordId) && !string.IsNullOrEmpty(u.WebsiteUser.Email))
                 .OrderBy(u => u.CreatedAt).ToListAsync();
 
             return users;
@@ -31,8 +31,8 @@ namespace Backend.DBAccess
 
         public async Task<List<User>> GetAllUsersWithDiscordOnly()
         {
-            var users = await _context.Users
-                .Where(u => !string.IsNullOrEmpty(u.DiscordId) && string.IsNullOrEmpty(u.Email))
+            var users = await _context.Users.Include(u => u.WebsiteUser).Include(u => u.DiscordUser)
+                .Where(u => !string.IsNullOrEmpty(u.DiscordUser.DiscordId) && string.IsNullOrEmpty(u.WebsiteUser.Email))
                 .OrderBy(u => u.CreatedAt).ToListAsync();
 
             return users;
@@ -40,8 +40,8 @@ namespace Backend.DBAccess
 
         public async Task<List<User>> GetAllUsersWithEmailOnly()
         {
-            var users = await _context.Users
-                .Where(u => string.IsNullOrEmpty(u.DiscordId) && !string.IsNullOrEmpty(u.Email))
+            var users = await _context.Users.Include(u => u.WebsiteUser).Include(u => u.DiscordUser)
+                .Where(u => string.IsNullOrEmpty(u.DiscordUser.DiscordId) && !string.IsNullOrEmpty(u.WebsiteUser.Email))
                 .OrderBy(u => u.CreatedAt).ToListAsync();
 
             return users;
@@ -49,8 +49,8 @@ namespace Backend.DBAccess
 
         public async Task<List<User>> GetAllUsersWithDiscord()
         {
-            var users = await _context.Users
-                .Where(u => !string.IsNullOrEmpty(u.DiscordId))
+            var users = await _context.Users.Include(u => u.DiscordUser)
+                .Where(u => !string.IsNullOrEmpty(u.DiscordUser.DiscordId))
                 .OrderBy(u => u.CreatedAt).ToListAsync();
 
             return users;
@@ -58,8 +58,8 @@ namespace Backend.DBAccess
 
         public async Task<List<User>> GetAllUsersWithEmail()
         {
-            var users = await _context.Users
-                .Where(u => !string.IsNullOrEmpty(u.Email))
+            var users = await _context.Users.Include(u => u.WebsiteUser)
+                .Where(u => !string.IsNullOrEmpty(u.WebsiteUser.Email))
                 .OrderBy(u => u.CreatedAt).ToListAsync();
 
             return users;
@@ -74,7 +74,7 @@ namespace Backend.DBAccess
 
         public async Task<User?> GetUserFromUsername(string username)
         {
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == username);
+            var user = await _context.Users.Include(u => u.WebsiteUser).FirstOrDefaultAsync(u => u.SchoolADUser.UserName == username);
 
             return user;
         }
@@ -144,23 +144,23 @@ namespace Backend.DBAccess
 
         public async Task<bool> CheckIfUsernameIsInUse(string username, string Id)
         {
-            var existingUser = await _context.Users.FirstOrDefaultAsync(u => u.Username == username && u.Id != Id);
+            var existingUser = await _context.WebsiteUsers.FirstOrDefaultAsync(u => u.UserName == username && u.Id != Id);
 
             if (existingUser != null) { return true; }
 
             return false;
         }
 
-        public async Task<List<User>> CheckIfMultipleUsernamesAreInUse(List<string> usernames)
+        public async Task<List<SchoolADUser>> CheckIfMultipleUsernamesAreInUse(List<string> usernames)
         {
-            var existingUsers = await _context.Users.Where(u => usernames.Contains(u.Username)).ToListAsync();
+            var existingUsers = await _context.SchoolADUsers.Where(u => usernames.Contains(u.UserName)).ToListAsync();
 
             return existingUsers;
         }
 
         public async Task<bool> CheckIfEmailIsInUse(string email, string Id)
         {
-            var existingUser = await _context.Users.FirstOrDefaultAsync(u => u.Email == email && u.Id != Id);
+            var existingUser = await _context.WebsiteUsers.FirstOrDefaultAsync(u => u.Email == email && u.Id != Id);
 
             if (existingUser != null) { return true; }
 

@@ -15,22 +15,22 @@ namespace Backend.DBAccess
             _context = context;
         }
 
-        public async Task<User?> Login(LoginRequest request)
+        public async Task<WebsiteUser?> Login(LoginRequest request)
         {
-            var user = await _context.Users
+            var user = await _context.WebsiteUsers
             .FirstOrDefaultAsync(u =>
                 u.Email == request.EmailOrUsername ||
-                u.Username == request.EmailOrUsername);
+                u.UserName == request.EmailOrUsername);
 
             return user;
         }
 
         public async Task<bool> CheckForExistingUser(RegisterRequest request)
         {
-            var existingUser = await _context.Users
+            var existingUser = await _context.WebsiteUsers
             .FirstOrDefaultAsync(u =>
                 u.Email == request.Email ||
-                u.Username == request.Username);
+                u.UserName == request.Username);
 
             if (existingUser != null) { return true; }
             return false;
@@ -38,8 +38,9 @@ namespace Backend.DBAccess
 
         public async Task<bool> CheckForExistingDiscordIdLink(RegisterRequest request)
         {
-            var existingUser = await _context.Users
-                .FirstOrDefaultAsync(u => u.DiscordId == request.DiscordId && !string.IsNullOrEmpty(u.Email));
+            var existingUser = await _context.Users.Include(u => u.WebsiteUser)
+                .Include(u => u.DiscordUser)
+                .FirstOrDefaultAsync(u => u.DiscordUser.DiscordId == request.DiscordId && !string.IsNullOrEmpty(u.WebsiteUser.Email));
 
             if (existingUser != null) { return true; }
             return false;
@@ -47,8 +48,16 @@ namespace Backend.DBAccess
 
         public async Task<User?> GetDiscordUser(string discordId)
         {
-            var discordUser = await _context.Users
-                .FirstOrDefaultAsync(u => u.DiscordId == discordId);
+            var discordUser = await _context.Users.Include(u => u.DiscordUser).Include(u => u.WebsiteUser)
+                .FirstOrDefaultAsync(u => u.DiscordUser.DiscordId == discordId);
+
+            return discordUser;
+        }
+
+        public async Task<User?> GetWebsiteUser(string WebsiteUserID)
+        {
+            var discordUser = await _context.Users.Include(u => u.DiscordUser).Include(u => u.WebsiteUser)
+                .FirstOrDefaultAsync(u => u.WebsiteUserId == WebsiteUserID);
 
             return discordUser;
         }
@@ -69,7 +78,7 @@ namespace Backend.DBAccess
 
         public async Task<User?> GetUser(string userId)
         {
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+            var user = await _context.Users.Include(u => u.WebsiteUser).Include(u => u.DiscordUser).FirstOrDefaultAsync(u => u.Id == userId);
 
             return user;
         }

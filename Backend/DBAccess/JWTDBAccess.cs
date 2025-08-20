@@ -39,7 +39,7 @@ namespace Backend.DBAccess
 
         public async Task<RefreshToken?> GetRefreshTokenAndUser(string refreshToken)
         {
-            var tokenEntity = _context.RefreshTokens.Include(rt => rt.User).FirstOrDefaultAsync(rt => rt.Token == refreshToken);
+            var tokenEntity = _context.RefreshTokens.Include(rt => rt.WebsiteUser).FirstOrDefaultAsync(rt => rt.Token == refreshToken);
             return await tokenEntity;
         }
 

@@ -145,7 +145,12 @@ public class UserDto
     /// Om brugeren er aktiv
     /// </summary>
     public bool IsActive { get; set; }
-    
+
+    /// <summary>
+    /// Hvornår brugeren sidst er blevet redigeret
+    /// </summary>
+    public DateTime UpdatedAt { get; set; }
+
     /// <summary>
     /// Hvornår brugeren blev oprettet
     /// </summary>

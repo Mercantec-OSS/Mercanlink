@@ -16,10 +16,10 @@ namespace Backend.DBAccess
             _context = context;
         }
 
-        public async Task<User?> GetUser(string discordId)
+        public async Task<DiscordUser?> GetUser(string discordId)
         {
             // Tjek om Discord ID allerede er verificeret
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.DiscordId == discordId);
+            var user = await _context.DiscordUsers.FirstOrDefaultAsync(u => u.DiscordId == discordId);
             return user;
         }
 
@@ -64,7 +64,7 @@ namespace Backend.DBAccess
             return dailyActivities;
         }
 
-        public async Task UpdateUser(User user)
+        public async Task UpdateUser(DiscordUser user)
         {
             _context.Entry(user).State = EntityState.Modified;
 
@@ -78,10 +78,10 @@ namespace Backend.DBAccess
             await _context.SaveChangesAsync();
         }
 
-        public async Task<List<User>> GetTopUsers(int amount = 5)
+        public async Task<List<DiscordUser>> GetTopUsers(int amount = 5)
         {
             var topUsers = await _context
-                    .Users.Where(u => u.IsBot == null || u.IsBot == false) // Ændret fra GetValueOrDefault
+                    .DiscordUsers.Where(u => u.IsBot == null || u.IsBot == false) // Ændret fra GetValueOrDefault
                     .OrderByDescending(u => u.Experience)
                     .Take(amount)
                     .ToListAsync();
@@ -92,7 +92,7 @@ namespace Backend.DBAccess
         public async Task<int> GetUserPosition(int userExperience)
         {
             var userPosition = await _context
-                    .Users.Where(u =>
+                    .DiscordUsers.Where(u =>
                         (u.IsBot == null || u.IsBot == false) && u.Experience >= userExperience
                     )
                     .CountAsync();
