@@ -15,7 +15,8 @@ namespace Backend.DBAccess
 
         public async Task<List<User>> GetAllUsers()
         {
-            var users = await _context.Users.OrderBy(u => u.CreatedAt).ToListAsync();
+            var users = await _context.Users.Include(u => u.SchoolADUser).Include(u => u.DiscordUser).Include(u => u.WebsiteUser)
+                .OrderBy(u => u.CreatedAt).ToListAsync();
 
             return users;
         }
@@ -65,9 +66,10 @@ namespace Backend.DBAccess
             return users;
         }
 
-        public async Task<User?> GetUser(string Id)
+        public async Task<User?> GetUser(string userId)
         {
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == Id);
+            var user = await _context.Users.Include(u => u.SchoolADUser).Include(u => u.DiscordUser).Include(u => u.WebsiteUser)
+                .FirstOrDefaultAsync(u => u.Id == userId);
 
             return user;
         }
@@ -142,9 +144,9 @@ namespace Backend.DBAccess
             return users.Count;
         }
 
-        public async Task<bool> CheckIfUsernameIsInUse(string username, string Id)
+        public async Task<bool> CheckIfUsernameIsInUse(string username, string userId)
         {
-            var existingUser = await _context.WebsiteUsers.FirstOrDefaultAsync(u => u.UserName == username && u.Id != Id);
+            var existingUser = await _context.WebsiteUsers.FirstOrDefaultAsync(u => u.UserName == username && u.Id != userId);
 
             if (existingUser != null) { return true; }
 
@@ -158,9 +160,9 @@ namespace Backend.DBAccess
             return existingUsers;
         }
 
-        public async Task<bool> CheckIfEmailIsInUse(string email, string Id)
+        public async Task<bool> CheckIfEmailIsInUse(string email, string userId)
         {
-            var existingUser = await _context.WebsiteUsers.FirstOrDefaultAsync(u => u.Email == email && u.Id != Id);
+            var existingUser = await _context.WebsiteUsers.FirstOrDefaultAsync(u => u.Email == email && u.Id != userId);
 
             if (existingUser != null) { return true; }
 

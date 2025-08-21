@@ -22,8 +22,6 @@
 
         public bool? IsBoosting { get; set; }
 
-        public List<string> Roles { get; set; } = new();
-
         public bool IsActive { get; set; } = true;
 
         public int Experience { get; set; } = 0;
@@ -32,14 +30,5 @@
 
 
         public User User { get; set; }
-    }
-
-    public enum UserRole
-    {
-        Student,
-        Teacher,
-        Admin,
-        Developer,
-        AdvisoryBoard
     }
 }

@@ -10,6 +10,8 @@ public class User : Common
 
     public string SchoolADUserId { get; set; } = string.Empty;
 
+    public List<string> Roles { get; set; } = new();
+
 
 
     public SchoolADUser SchoolADUser { get; set; }
@@ -17,4 +19,12 @@ public class User : Common
     public DiscordUser DiscordUser { get; set; }
 
     public WebsiteUser WebsiteUser { get; set; }
+}
+public enum UserRole
+{
+    Student,
+    Teacher,
+    Admin,
+    Developer,
+    AdvisoryBoard
 }

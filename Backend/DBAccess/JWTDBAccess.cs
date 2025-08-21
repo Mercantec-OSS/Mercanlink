@@ -43,10 +43,10 @@ namespace Backend.DBAccess
             return await tokenEntity;
         }
 
-        public async Task RevokeAllRefreshTokens(string userId)
+        public async Task RevokeAllRefreshTokens(string websiteUserId)
         {
             var userTokens = await _context
-            .RefreshTokens.Where(rt => rt.UserId == userId && !rt.IsRevoked)
+            .RefreshTokens.Where(rt => rt.WebsiteUserId == websiteUserId && !rt.IsRevoked)
             .ToListAsync();
 
             foreach (var token in userTokens)

@@ -61,7 +61,7 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<RefreshToken>()
             .HasOne(rt => rt.WebsiteUser)
             .WithMany()
-            .HasForeignKey(rt => rt.UserId)
+            .HasForeignKey(rt => rt.WebsiteUserId)
             .OnDelete(DeleteBehavior.Cascade);
 
         modelBuilder.Entity<RefreshToken>()
@@ -74,6 +74,6 @@ public class ApplicationDbContext : DbContext
             .IsUnique();
 
         modelBuilder.Entity<DiscordVerification>()
-            .HasIndex(dv => new { dv.UserId, dv.DiscordId });
+            .HasIndex(dv => new { dv.DiscordUserId, dv.DiscordId });
     }
 }

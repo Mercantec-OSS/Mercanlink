@@ -37,7 +37,8 @@ public class RegisterRequest
     public string Password { get; set; } = string.Empty;
     
     /// <summary>
-    /// Valgfri Discord ID til at linke med eksisterende Discord bruger
+    /// Valgfri Discord
+    /// til at linke med eksisterende Discord bruger
     /// </summary>
     public string? DiscordId { get; set; }
 }
@@ -87,12 +88,12 @@ public class UserDto
     /// <summary>
     /// Unik bruger ID (GUID)
     /// </summary>
-    public string Id { get; set; } = string.Empty;
+    public string UserId { get; set; } = string.Empty;
     
     /// <summary>
     /// Email adresse
     /// </summary>
-    public string Email { get; set; } = string.Empty;
+    public string? Email { get; set; } = string.Empty;
     
     /// <summary>
     /// Brugernavn
@@ -120,7 +121,7 @@ public class UserDto
     public string? FirstName { get; set; }
     public string? SurnameInitial { get; set; }
     public bool PasswordChanged { get; set; }
-    public string? StudentId { get; set; }
+    public int? StudentId { get; set; }
     public string? Department { get; set; }
     public string? EmployeeType { get; set; }
     public DateTime? AdCreatedAt { get; set; }

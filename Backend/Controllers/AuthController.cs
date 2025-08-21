@@ -132,8 +132,8 @@ public class AuthController : ControllerBase
         {
             await _authService.LogoutAsync(request.RefreshToken);
             
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            _logger.LogInformation("Bruger {UserId} loggede ud", userId);
+            var websiteUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            _logger.LogInformation("Bruger {WebsiteUserId} loggede ud", websiteUserId);
             
             return Ok(new { message = "Logout succesfuld" });
         }
@@ -165,9 +165,6 @@ public class AuthController : ControllerBase
                 id = claims.GetValueOrDefault(ClaimTypes.NameIdentifier),
                 email = claims.GetValueOrDefault(ClaimTypes.Email),
                 username = claims.GetValueOrDefault(ClaimTypes.Name),
-                discordId = claims.GetValueOrDefault("discord_id"),
-                level = claims.GetValueOrDefault("level"),
-                experience = claims.GetValueOrDefault("experience"),
                 roles = User.FindAll(ClaimTypes.Role).Select(c => c.Value).ToList()
             });
         }
@@ -203,7 +200,7 @@ public class AuthController : ControllerBase
             if (result.Success)
             {
                 // Hent verification koden fra databasen
-                var verification = await _verificationService.GetActiveVerificationAsync(userId, request.DiscordId);
+                var verification = await _verificationService.GetActiveVerificationAsync(result.DiscordUserId, request.DiscordId);
                 if (verification != null)
                 {
                     // Send koden via Discord bot
@@ -248,7 +245,7 @@ public class AuthController : ControllerBase
             {
                 return Unauthorized(new { message = "Ugyldig bruger ID" });
             }
-
+            
             var isValid = await _verificationService.VerifyCodeAsync(userId, request.DiscordId, request.VerificationCode);
             
             if (isValid)

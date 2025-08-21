@@ -30,11 +30,6 @@ public class AuthService
             return null;
         }
 
-        if (!websiteUser.IsActive)
-        {
-            throw new UnauthorizedAccessException("Brugerkonto er deaktiveret");
-        }
-
         var user = await _authDBAccess.GetWebsiteUser(websiteUser.Id);
         if (user == null)
             return null;
@@ -48,7 +43,7 @@ public class AuthService
             AccessToken = accessToken,
             RefreshToken = refreshToken,
             ExpiresAt = DateTime.UtcNow.AddMinutes(60), // Dette skal matche JWT config
-            User = MapToUserDto(user)
+            User = MapToUserDto(user.WebsiteUser)
         };
     }
 
@@ -75,64 +70,23 @@ public class AuthService
 
         User user;
 
-        // Hvis Discord ID er angivet, prøv at finde og opdatere eksisterende Discord bruger
-        if (!string.IsNullOrEmpty(request.DiscordId))
+        // Opret ny bruger uden Discord
+        user = new User
         {
-            var discordUser = await _authDBAccess.GetDiscordUser(request.DiscordId);
-
-            if (discordUser != null)
-            {
-                // Opdater eksisterende Discord bruger med login info
-                discordUser.Email = request.Email;
-                discordUser.Username = request.Username;
-                discordUser.PasswordHash = passwordHash;
-                discordUser.EmailConfirmed = false;
-                discordUser.LastUpdated = DateTime.UtcNow;
-
-                user = discordUser;
-
-                await _authDBAccess.UpdateUser(discordUser);
-            }
-            else
-            {
-                // Opret ny bruger med Discord ID
-                user = new User
-                {
-                    Email = request.Email,
-                    Username = request.Username,
-                    PasswordHash = passwordHash,
-                    DiscordId = request.DiscordId,
-                    EmailConfirmed = false,
-                    CreatedAt = DateTime.UtcNow,
-                    LastUpdated = DateTime.UtcNow,
-                    IsActive = true,
-                    Experience = 0,
-                    Level = 1,
-                    Roles = new List<string> { UserRole.Student.ToString() }
-                };
-
-                await _authDBAccess.AddUser(user);
-            }
-        }
-        else
-        {
-            // Opret ny bruger uden Discord
-            user = new User
+            UserName = request.Username,
+            WebsiteUser = new WebsiteUser
             {
                 UserName = request.Username,
-                WebsiteUser = new WebsiteUser
-                {
-                    UserName = request.Username,
-                    Email = request.Email,
-                    Password = passwordHash,
-                    EmailConfirmed = false,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
-                }
-            };
+                Email = request.Email,
+                Password = passwordHash,
+                EmailConfirmed = false,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            }
+        };
 
-            await _authDBAccess.AddUser(user);
-        }
+        await _authDBAccess.AddUser(user);
+
 
 
         // Generer tokens
@@ -237,6 +191,7 @@ public class AuthService
         var newUser = new User
         {
             UserName = user.DiscordUser.UserName,
+            Roles = user.Roles, // Standard rolle
             DiscordUser = new DiscordUser
             {
                 DiscordId = user.DiscordUser.DiscordId,
@@ -254,8 +209,7 @@ public class AuthService
                 // Standardværdier
                 IsActive = true,
                 Experience = user.DiscordUser.Experience,
-                Level = user.DiscordUser.Level,
-                Roles = user.DiscordUser.Roles // Standard rolle
+                Level = user.DiscordUser.Level
             }
         };
 
@@ -273,7 +227,6 @@ public class AuthService
         user.DiscordUser.IsBoosting = null;
         user.DiscordUser.Experience = 0;
         user.DiscordUser.Level = 1;
-        user.DiscordUser.Roles = new List<string>();
         user.DiscordUser.UpdatedAt = DateTime.UtcNow;
 
         await _authDBAccess.AddUser(newUser);
@@ -281,5 +234,5 @@ public class AuthService
         return true;
     }
 
-    private static UserDto MapToUserDto(WebsiteUser user) { return new UserDto { Id = user.Id, Email = user.Email, Username = user.UserName, UpdatedAt = user.UpdatedAt, CreatedAt = user.CreatedAt }; }
+    private static UserDto MapToUserDto(WebsiteUser user) { return new UserDto { UserId = user.Id, Email = user.Email, Username = user.UserName, UpdatedAt = user.UpdatedAt, CreatedAt = user.CreatedAt }; }
 }

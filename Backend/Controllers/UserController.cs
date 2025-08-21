@@ -215,28 +215,28 @@ public class UserController : ControllerBase
     /// <summary>
     /// Hent specifik bruger ved ID
     /// </summary>
-    /// <param name="id">Bruger ID</param>
+    /// <param name="userId">Bruger ID</param>
     /// <returns>Bruger information</returns>
     /// <response code="200">Bruger fundet</response>
     /// <response code="404">Bruger ikke fundet</response>
-    [HttpGet("{id}")]
+    [HttpGet("{userId}")]
     [Authorize(Roles = "Admin,Teacher")]
-    public async Task<ActionResult<UserDto>> GetUserById(string id)
+    public async Task<ActionResult<UserDto>> GetUserById(string userId)
     {
         try
         {
-            var user = await _userDBAccess.GetUser(id);
+            var user = await _userDBAccess.GetUser(userId);
             if (user == null)
             {
                 return NotFound(new { message = "Bruger ikke fundet" });
             }
 
-            _logger.LogInformation("Hentet bruger {Id}", id);
+            _logger.LogInformation("Hentet bruger {UserId}", userId);
             return Ok(MapToUserDto(user));
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Fejl ved hentning af bruger {Id}", id);
+            _logger.LogError(ex, "Fejl ved hentning af bruger {UserId}", userId);
             return StatusCode(500, new { message = "Der opstod en fejl ved hentning af bruger" });
         }
     }
@@ -244,19 +244,19 @@ public class UserController : ControllerBase
     /// <summary>
     /// Opdater bruger
     /// </summary>
-    /// <param name="id">Bruger ID</param>
+    /// <param name="userId">Bruger ID</param>
     /// <param name="request">Opdatering data</param>
     /// <returns>Opdateret bruger</returns>
     /// <response code="200">Bruger opdateret succesfuldt</response>
     /// <response code="404">Bruger ikke fundet</response>
     /// <response code="400">Ugyldig data</response>
-    [HttpPut("{id}")]
+    [HttpPut("{userId}")]
     [Authorize(Roles = "Admin,Teacher")]
-    public async Task<ActionResult<UserDto>> UpdateUser(string id, [FromBody] UpdateUserRequest request)
+    public async Task<ActionResult<UserDto>> UpdateUser(string userId, [FromBody] UpdateUserRequest request)
     {
         try
         {
-            var user = await _userDBAccess.GetUser(id);
+            var user = await _userDBAccess.GetUser(userId);
             if (user == null)
             {
                 return NotFound(new { message = "Bruger ikke fundet" });
@@ -266,7 +266,7 @@ public class UserController : ControllerBase
             if (!string.IsNullOrEmpty(request.Username))
             {
                 // Tjek om brugernavn allerede er i brug
-                if (await _userDBAccess.CheckIfUsernameIsInUse(request.Username, id))
+                if (await _userDBAccess.CheckIfUsernameIsInUse(request.Username, userId))
                 {
                     return BadRequest(new { message = "Brugernavn er allerede i brug" });
                 }
@@ -276,7 +276,7 @@ public class UserController : ControllerBase
             if (!string.IsNullOrEmpty(request.Email))
             {
                 // Tjek om email allerede er i brug
-                if (await _userDBAccess.CheckIfEmailIsInUse(request.Email, id))
+                if (await _userDBAccess.CheckIfEmailIsInUse(request.Email, userId))
                 {
                     return BadRequest(new { message = "Email er allerede i brug" });
                 }
@@ -295,7 +295,7 @@ public class UserController : ControllerBase
 
             if (request.Roles != null)
             {
-                user.DiscordUser.Roles = request.Roles;
+                user.Roles = request.Roles;
             }
 
             if (request.IsActive.HasValue)
@@ -307,12 +307,12 @@ public class UserController : ControllerBase
 
             await _userDBAccess.UpdateUser(user);
 
-            _logger.LogInformation("Bruger {Id} opdateret", id);
+            _logger.LogInformation("Bruger {UserId} opdateret", userId);
             return Ok(MapToUserDto(user));
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Fejl ved opdatering af bruger {Id}", id);
+            _logger.LogError(ex, "Fejl ved opdatering af bruger {UserId}", userId);
             return StatusCode(500, new { message = "Der opstod en fejl ved opdatering af bruger" });
         }
     }
@@ -320,17 +320,17 @@ public class UserController : ControllerBase
     /// <summary>
     /// Slet bruger
     /// </summary>
-    /// <param name="id">Bruger ID</param>
+    /// <param name="userId">Bruger ID</param>
     /// <returns>Sletning bekræftelse</returns>
     /// <response code="200">Bruger slettet succesfuldt</response>
     /// <response code="404">Bruger ikke fundet</response>
-    [HttpDelete("{id}")]
+    [HttpDelete("{userId}")]
     [Authorize(Roles = "Admin")]
-    public async Task<ActionResult> DeleteUser(string id)
+    public async Task<ActionResult> DeleteUser(string userId)
     {
         try
         {
-            var user = await _userDBAccess.GetUser(id);
+            var user = await _userDBAccess.GetUser(userId);
             if (user == null)
             {
                 return NotFound(new { message = "Bruger ikke fundet" });
@@ -338,12 +338,12 @@ public class UserController : ControllerBase
 
             await _userDBAccess.DeleteUser(user);
 
-            _logger.LogInformation("Bruger {Id} slettet", id);
+            _logger.LogInformation("Bruger {UserId} slettet", userId);
             return Ok(new { message = "Bruger slettet succesfuldt" });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Fejl ved sletning af bruger {Id}", id);
+            _logger.LogError(ex, "Fejl ved sletning af bruger {UserId}", userId);
             return StatusCode(500, new { message = "Der opstod en fejl ved sletning af bruger" });
         }
     }
@@ -356,55 +356,55 @@ public class UserController : ControllerBase
     /// <response code="200">Import gennemført (kan indeholde fejl)</response>
     /// <response code="400">Ugyldig data</response>
     /// <response code="500">Server fejl</response>
-    [HttpPost("bulk-import")]
-    [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<BulkImportResult>> BulkImportUsers([FromBody] BulkImportRequest request)
-    {
-        var result = new BulkImportResult();
+    //[HttpPost("bulk-import")]
+    //[Authorize(Roles = "Admin")]
+    //public async Task<ActionResult<BulkImportResult>> BulkImportUsers([FromBody] BulkImportRequest request)
+    //{
+    //    var result = new BulkImportResult();
 
-        try
-        {
-            if (request.Users == null || !request.Users.Any())
-            {
-                return BadRequest(new { message = "Ingen brugere angivet til import" });
-            }
+    //    try
+    //    {
+    //        if (request.Users == null || !request.Users.Any())
+    //        {
+    //            return BadRequest(new { message = "Ingen brugere angivet til import" });
+    //        }
 
-            _logger.LogInformation("Starter bulk import af {Count} brugere", request.Users.Count);
+    //        _logger.LogInformation("Starter bulk import af {Count} brugere", request.Users.Count);
 
-            foreach (var userDto in request.Users)
-            {
-                var importResult = await ImportSingleUser(userDto, request);
-                result.Results.Add(importResult);
+    //        foreach (var userDto in request.Users)
+    //        {
+    //            var importResult = await ImportSingleUser(userDto, request);
+    //            result.Results.Add(importResult);
 
-                if (importResult.Success)
-                {
-                    if (importResult.Action == "Created")
-                        result.SuccessCount++;
-                    else if (importResult.Action == "Updated")
-                        result.UpdatedCount++;
-                }
-                else if (importResult.Action == "Skipped")
-                {
-                    result.SkippedCount++;
-                }
-                else
-                {
-                    result.FailedCount++;
-                }
-            }
+    //            if (importResult.Success)
+    //            {
+    //                if (importResult.Action == "Created")
+    //                    result.SuccessCount++;
+    //                else if (importResult.Action == "Updated")
+    //                    result.UpdatedCount++;
+    //            }
+    //            else if (importResult.Action == "Skipped")
+    //            {
+    //                result.SkippedCount++;
+    //            }
+    //            else
+    //            {
+    //                result.FailedCount++;
+    //            }
+    //        }
 
-            _logger.LogInformation("Bulk import afsluttet: {Success} succesfule, {Failed} fejlede, {Updated} opdaterede, {Skipped} sprunget over",
-                result.SuccessCount, result.FailedCount, result.UpdatedCount, result.SkippedCount);
+    //        _logger.LogInformation("Bulk import afsluttet: {Success} succesfule, {Failed} fejlede, {Updated} opdaterede, {Skipped} sprunget over",
+    //            result.SuccessCount, result.FailedCount, result.UpdatedCount, result.SkippedCount);
 
-            return Ok(result);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Fejl under bulk import af brugere");
-            result.Errors.Add($"Generel fejl: {ex.Message}");
-            return Ok(result); // Returner stadig resultatet, bare med fejl
-        }
-    }
+    //        return Ok(result);
+    //    }
+    //    catch (Exception ex)
+    //    {
+    //        _logger.LogError(ex, "Fejl under bulk import af brugere");
+    //        result.Errors.Add($"Generel fejl: {ex.Message}");
+    //        return Ok(result); // Returner stadig resultatet, bare med fejl
+    //    }
+    //}
 
     /// <summary>
     /// Bulk import fra CSV data
@@ -413,31 +413,31 @@ public class UserController : ControllerBase
     /// <returns>Import resultat</returns>
     /// <response code="200">Import gennemført</response>
     /// <response code="400">Ugyldig CSV data</response>
-    [HttpPost("bulk-import-csv")]
-    [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<BulkImportResult>> BulkImportFromCsv([FromBody] CsvBulkImportRequest request)
-    {
-        try
-        {
-            var users = ParseCsvToUsers(request.CsvData, request.ColumnMapping);
+    //[HttpPost("bulk-import-csv")]
+    //[Authorize(Roles = "Admin")]
+    //public async Task<ActionResult<BulkImportResult>> BulkImportFromCsv([FromBody] CsvBulkImportRequest request)
+    //{
+    //    try
+    //    {
+    //        var users = ParseCsvToUsers(request.CsvData, request.ColumnMapping);
 
-            var bulkRequest = new BulkImportRequest
-            {
-                Users = users,
-                DefaultRoles = request.Settings.DefaultRoles,
-                DefaultDepartment = request.Settings.DefaultDepartment,
-                UpdateExisting = request.Settings.UpdateExisting,
-                SendWelcomeEmails = request.Settings.SendWelcomeEmails
-            };
+    //        var bulkRequest = new BulkImportRequest
+    //        {
+    //            Users = users,
+    //            DefaultRoles = request.Settings.DefaultRoles,
+    //            DefaultDepartment = request.Settings.DefaultDepartment,
+    //            UpdateExisting = request.Settings.UpdateExisting,
+    //            SendWelcomeEmails = request.Settings.SendWelcomeEmails
+    //        };
 
-            return await BulkImportUsers(bulkRequest);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Fejl ved parsing af CSV data");
-            return BadRequest(new { message = "Fejl ved parsing af CSV data", error = ex.Message });
-        }
-    }
+    //        return await BulkImportUsers(bulkRequest);
+    //    }
+    //    catch (Exception ex)
+    //    {
+    //        _logger.LogError(ex, "Fejl ved parsing af CSV data");
+    //        return BadRequest(new { message = "Fejl ved parsing af CSV data", error = ex.Message });
+    //    }
+    //}
 
     /// <summary>
     /// Hent skabelon til CSV import
@@ -515,7 +515,7 @@ public class UserController : ControllerBase
             // Tjek for eksisterende brugere i database
             var usernames = request.Users.Select(u => u.Username.ToLower()).ToList();
             var existingUsers = (await _userDBAccess.CheckIfMultipleUsernamesAreInUse(usernames))
-                .Select(u => new { u.UserName, u.Email, u.IsActive })
+                .Select(u => new { u.UserName, u.StudentId })
                 .ToList();
 
             if (existingUsers.Any())
@@ -558,60 +558,60 @@ public class UserController : ControllerBase
     }
 
     // Helper methods
-    private async Task<UserImportResult> ImportSingleUser(AdUserImportDto userDto, BulkImportRequest request)
-    {
-        var result = new UserImportResult
-        {
-            Username = userDto.Username
-        };
+    //private async Task<UserImportResult> ImportSingleUser(AdUserImportDto userDto, BulkImportRequest request)
+    //{
+    //    var result = new UserImportResult
+    //    {
+    //        Username = userDto.Username
+    //    };
 
-        try
-        {
-            // Tjek om bruger allerede eksisterer
-            var existingUser = await _userDBAccess.GetUserFromUsername(userDto.Username);
+    //    try
+    //    {
+    //        // Tjek om bruger allerede eksisterer
+    //        var existingUser = await _userDBAccess.GetUserFromUsername(userDto.Username);
 
-            if (existingUser != null)
-            {
-                if (!request.UpdateExisting)
-                {
-                    result.Action = "Skipped";
-                    result.Message = "Bruger eksisterer allerede";
-                    result.Success = false;
-                    return result;
-                }
+    //        if (existingUser != null)
+    //        {
+    //            if (!request.UpdateExisting)
+    //            {
+    //                result.Action = "Skipped";
+    //                result.Message = "Bruger eksisterer allerede";
+    //                result.Success = false;
+    //                return result;
+    //            }
 
-                // Opdater eksisterende bruger
-                UpdateUserFromAdData(existingUser, userDto, request);
-                existingUser.WebsiteUser.UpdatedAt = DateTime.UtcNow;
-                await _userDBAccess.UpdateUser(existingUser);
+    //            // Opdater eksisterende bruger
+    //            UpdateUserFromAdData(existingUser, userDto, request);
+    //            existingUser.WebsiteUser.UpdatedAt = DateTime.UtcNow;
+    //            await _userDBAccess.UpdateUser(existingUser);
 
-                result.Success = true;
-                result.Action = "Updated";
-                result.Message = "Bruger opdateret";
-                result.UserId = existingUser.Id;
-                return result;
-            }
+    //            result.Success = true;
+    //            result.Action = "Updated";
+    //            result.Message = "Bruger opdateret";
+    //            result.UserId = existingUser.Id;
+    //            return result;
+    //        }
 
-            // Opret ny bruger
-            var newUser = CreateUserFromAdData(userDto, request);
-            await _userDBAccess.AddNewUser(newUser);
+    //        // Opret ny bruger
+    //        var newUser = CreateUserFromAdData(userDto, request);
+    //        await _userDBAccess.AddNewUser(newUser);
 
-            result.Success = true;
-            result.Action = "Created";
-            result.Message = "Bruger oprettet";
-            result.UserId = newUser.Id;
+    //        result.Success = true;
+    //        result.Action = "Created";
+    //        result.Message = "Bruger oprettet";
+    //        result.UserId = newUser.Id;
 
-            return result;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Fejl ved import af bruger {Username}", userDto.Username);
-            result.Success = false;
-            result.Action = "Failed";
-            result.Error = ex.Message;
-            return result;
-        }
-    }
+    //        return result;
+    //    }
+    //    catch (Exception ex)
+    //    {
+    //        _logger.LogError(ex, "Fejl ved import af bruger {Username}", userDto.Username);
+    //        result.Success = false;
+    //        result.Action = "Failed";
+    //        result.Error = ex.Message;
+    //        return result;
+    //    }
+    //}
 
     private User CreateUserFromAdData(AdUserImportDto userDto, BulkImportRequest request)
     {
@@ -626,55 +626,25 @@ public class UserController : ControllerBase
             WebsiteUser = new WebsiteUser
             {
                 UserName = userDto.Username,
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword(userDto.InitialPassword),
+                Password = BCrypt.Net.BCrypt.HashPassword(userDto.InitialPassword),
                 Email = userDto.Email ?? ""
             },
 
-            // GDPR-sikker håndtering af navn
-            FirstName = ExtractFirstName(userDto.GivenName),
-            SurnameInitial = ExtractSurnameInitial(userDto.Surname),
+            Roles = userDto.Roles ?? request.DefaultRoles
 
-            // AD specifikke felter
-            Department = userDto.Department ?? request.DefaultDepartment,
-            EmployeeType = userDto.EmployeeType ?? "Student",
-            AdCreatedAt = DateTime.UtcNow,
-            LastAdSync = DateTime.UtcNow,
-
-            // Basis felter
-            Roles = userDto.Roles ?? request.DefaultRoles,
-            IsActive = true,
-            CreatedAt = DateTime.UtcNow,
-            LastUpdated = DateTime.UtcNow,
-
-            // Hashet initial password
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword(userDto.InitialPassword)
         };
 
         return user;
     }
 
-    private void UpdateUserFromAdData(User user, AdUserImportDto userDto, BulkImportRequest request)
-    {
-        // Opdater kun felter der er angivet og som skal opdateres
-        if (!string.IsNullOrEmpty(userDto.Email) && user.Email != userDto.Email)
-            user.Email = userDto.Email;
+    //private void UpdateUserFromAdData(User user, AdUserImportDto userDto, BulkImportRequest request)
+    //{
 
-        // GDPR-sikker opdatering af navn
-        var newFirstName = ExtractFirstName(userDto.GivenName);
-        if (!string.IsNullOrEmpty(newFirstName))
-            user.FirstName = newFirstName;
+    //    // Opdater AD felter
+    //    user.StudentId = userDto.StudentId ?? user.StudentId;
 
-        var newSurnameInitial = ExtractSurnameInitial(userDto.Surname);
-        if (!string.IsNullOrEmpty(newSurnameInitial))
-            user.SurnameInitial = newSurnameInitial;
-
-        // Opdater AD felter
-        user.StudentId = userDto.StudentId ?? user.StudentId;
-        user.Department = userDto.Department ?? request.DefaultDepartment ?? user.Department;
-        user.EmployeeType = userDto.EmployeeType ?? user.EmployeeType;
-
-        user.LastUpdated = DateTime.UtcNow;
-    }
+    //    user.UpdatedAt = DateTime.UtcNow;
+    //}
 
     /// <summary>
     /// Ekstraherer første navn fra fuldt navn (GDPR-sikker)
@@ -701,40 +671,40 @@ public class UserController : ControllerBase
         return surname.Trim().Substring(0, 1).ToUpper();
     }
 
-    private List<AdUserImportDto> ParseCsvToUsers(string csvData, CsvColumnMapping mapping)
-    {
-        var users = new List<AdUserImportDto>();
-        var lines = csvData.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+    //private List<AdUserImportDto> ParseCsvToUsers(string csvData, CsvColumnMapping mapping)
+    //{
+    //    var users = new List<AdUserImportDto>();
+    //    var lines = csvData.Split('\n', StringSplitOptions.RemoveEmptyEntries);
 
-        var startIndex = mapping.HasHeader ? 1 : 0;
+    //    var startIndex = mapping.HasHeader ? 1 : 0;
 
-        for (int i = startIndex; i < lines.Length; i++)
-        {
-            var columns = lines[i].Split(mapping.Delimiter);
+    //    for (int i = startIndex; i < lines.Length; i++)
+    //    {
+    //        var columns = lines[i].Split(mapping.Delimiter);
 
-            if (columns.Length <= Math.Max(mapping.UsernameColumn, mapping.InitialPasswordColumn))
-                continue;
+    //        if (columns.Length <= Math.Max(mapping.UsernameColumn, mapping.InitialPasswordColumn))
+    //            continue;
 
-            var user = new AdUserImportDto
-            {
-                Username = GetColumnValue(columns, mapping.UsernameColumn),
-                InitialPassword = GetColumnValue(columns, mapping.InitialPasswordColumn),
-                GivenName = GetColumnValue(columns, mapping.GivenNameColumn),
-                Surname = GetColumnValue(columns, mapping.SurnameColumn),
-                Email = GetColumnValue(columns, mapping.EmailColumn),
-                StudentId = GetColumnValue(columns, mapping.StudentIdColumn),
-                Department = GetColumnValue(columns, mapping.DepartmentColumn),
-                EmployeeType = GetColumnValue(columns, mapping.EmployeeTypeColumn)
-            };
+    //        var user = new AdUserImportDto
+    //        {
+    //            Username = GetColumnValue(columns, mapping.UsernameColumn),
+    //            InitialPassword = GetColumnValue(columns, mapping.InitialPasswordColumn),
+    //            GivenName = GetColumnValue(columns, mapping.GivenNameColumn),
+    //            Surname = GetColumnValue(columns, mapping.SurnameColumn),
+    //            Email = GetColumnValue(columns, mapping.EmailColumn),
+    //            StudentId = GetColumnValue(columns, mapping.StudentIdColumn),
+    //            Department = GetColumnValue(columns, mapping.DepartmentColumn),
+    //            EmployeeType = GetColumnValue(columns, mapping.EmployeeTypeColumn)
+    //        };
 
-            if (!string.IsNullOrWhiteSpace(user.Username))
-            {
-                users.Add(user);
-            }
-        }
+    //        if (!string.IsNullOrWhiteSpace(user.Username))
+    //        {
+    //            users.Add(user);
+    //        }
+    //    }
 
-        return users;
-    }
+    //    return users;
+    //}
 
     private static string GetColumnValue(string[] columns, int? columnIndex)
     {
@@ -773,7 +743,7 @@ public class UserController : ControllerBase
     {
         return new UserDto
         {
-            Id = user.Id,
+            UserId = user.Id,
             Email = user.WebsiteUser.Email,
             Username = user.UserName,
             DiscordId = user.DiscordUser.DiscordId,
@@ -781,18 +751,13 @@ public class UserController : ControllerBase
             AvatarUrl = user.DiscordUser.AvatarUrl,
 
             // AD felter
-            FirstName = user.FirstName,
-            SurnameInitial = user.SurnameInitial,
-            PasswordChanged = user.PasswordChanged,
             StudentId = user.SchoolADUser.StudentId,
-            Department = user.Department,
-            EmployeeType = user.EmployeeType,
             AdCreatedAt = user.SchoolADUser.CreatedAt,
             LastAdSync = user.SchoolADUser.UpdatedAt,
 
             Experience = user.DiscordUser.Experience,
             Level = user.DiscordUser.Level,
-            Roles = user.DiscordUser.Roles,
+            Roles = user.Roles,
             IsActive = user.DiscordUser.IsActive,
             CreatedAt = user.CreatedAt
         };

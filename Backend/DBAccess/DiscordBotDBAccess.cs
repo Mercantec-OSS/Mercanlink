@@ -16,26 +16,26 @@ namespace Backend.DBAccess
             _context = context;
         }
 
-        public async Task<DiscordUser?> GetUser(string discordId)
+        public async Task<DiscordUser?> GetDiscordUser(string discordId)
         {
             // Tjek om Discord ID allerede er verificeret
             var user = await _context.DiscordUsers.FirstOrDefaultAsync(u => u.DiscordId == discordId);
             return user;
         }
 
-        public async Task<UserDailyActivity?> CheckTodaysActivity(string userId, string activityName, DateTime today)
+        public async Task<UserDailyActivity?> CheckTodaysActivity(string discordUserId, string activityName, DateTime today)
         {
             var dailyActivity = await _context.Set<UserDailyActivity>()
-            .FirstOrDefaultAsync(a => a.UserId == userId &&
+            .FirstOrDefaultAsync(a => a.DiscordUserId == discordUserId &&
                                      a.ActivityType == activityName &&
                                      a.Date == today);
             return dailyActivity;
         }
 
-        public async Task<UserDailyActivity?> CheckIfDailyLoginXPIsRewarded(string userId, DateTime today)
+        public async Task<UserDailyActivity?> CheckIfDailyLoginXPIsRewarded(string discordUserId, DateTime today)
         {
             var dailyLoginActivity = await _context.Set<UserDailyActivity>()
-            .FirstOrDefaultAsync(a => a.UserId == userId &&
+            .FirstOrDefaultAsync(a => a.DiscordUserId == discordUserId &&
                                     a.ActivityType == XPActivityType.DailyLogin.ToString() &&
                                     a.Date == today);
             return dailyLoginActivity;
@@ -55,10 +55,10 @@ namespace Backend.DBAccess
             await _context.SaveChangesAsync();
         }
 
-        public async Task<List<UserDailyActivity>> GetAllTodaysActivity(string userId, DateTime today)
+        public async Task<List<UserDailyActivity>> GetAllTodaysActivity(string discordUserId, DateTime today)
         {
             var dailyActivities = await _context.Set<UserDailyActivity>()
-                .Where(a => a.UserId == userId && a.Date == today)
+                .Where(a => a.DiscordUserId == discordUserId && a.Date == today)
                 .ToListAsync();
 
             return dailyActivities;

@@ -35,7 +35,7 @@ public class JwtService
         };
 
         // Tilføj roller som claims
-        foreach (var role in user.DiscordUser.Roles)
+        foreach (var role in user.Roles)
         {
             claims.Add(new Claim(ClaimTypes.Role, role));
         }
@@ -56,7 +56,7 @@ public class JwtService
         return tokenHandler.WriteToken(token);
     }
 
-    public async Task<string> GenerateRefreshTokenAsync(string userId)
+    public async Task<string> GenerateRefreshTokenAsync(string websiteUserId)
     {
         // Generer et sikkert random token
         var randomNumber = new byte[64];
@@ -68,7 +68,7 @@ public class JwtService
         var tokenEntity = new RefreshToken
         {
             Token = refreshToken,
-            UserId = userId,
+            WebsiteUserId = websiteUserId,
             ExpiresAt = DateTime.UtcNow.AddDays(_jwtConfig.RefreshTokenExpiryDays),
             CreatedAt = DateTime.UtcNow
         };
@@ -105,9 +105,9 @@ public class JwtService
         }
     }
 
-    public async Task RevokeAllUserTokensAsync(string userId)
+    public async Task RevokeAllUserTokensAsync(string websiteUserId)
     {
-        await _jwtDBAccess.RevokeAllRefreshTokens(userId);
+        await _jwtDBAccess.RevokeAllRefreshTokens(websiteUserId);
     }
 
     public ClaimsPrincipal? ValidateToken(string token)
