@@ -28,7 +28,7 @@ export function SignupPage() {
   return (
     <div className="flex flex-col min-h-svh bg-background">
       <Navbar />
-      <div className="flex flex-1 items-center justify-center bg-[#101828]">
+      <div className="flex flex-1 items-center justify-center bg-gradient-to-br from-[#181c2c] via-[#23263a] to-[#10121a]">
         <SignupForm onSubmit={handleSignup} loading={loading} error={error} />
         <Button
           type="button"
