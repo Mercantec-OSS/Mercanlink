@@ -74,6 +74,8 @@ public class AuthService
         user = new User
         {
             UserName = request.Username,
+            SchoolADUser = new SchoolADUser(),
+            DiscordUser = new DiscordUser(),
             WebsiteUser = new WebsiteUser
             {
                 UserName = request.Username,
@@ -192,6 +194,8 @@ public class AuthService
         {
             UserName = user.DiscordUser.UserName,
             Roles = user.Roles, // Standard rolle
+            WebsiteUser = new WebsiteUser(),
+            SchoolADUser = new SchoolADUser(),
             DiscordUser = new DiscordUser
             {
                 DiscordId = user.DiscordUser.DiscordId,

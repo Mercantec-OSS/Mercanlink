@@ -46,6 +46,8 @@ public class UserService
         {
             UserName = guildUser.Username,
             Roles = new List<string> { UserRole.Student.ToString() }, // Standard rolle
+            WebsiteUser = new WebsiteUser(),
+            SchoolADUser = new SchoolADUser(),
             DiscordUser = new DiscordUser
             {
                 DiscordId = guildUser.Id.ToString(),
