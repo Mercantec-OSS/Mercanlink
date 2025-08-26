@@ -744,8 +744,9 @@ public class UserController : ControllerBase
         return new UserDto
         {
             UserId = user.Id,
-            Email = user.WebsiteUser.Email,
             Username = user.UserName,
+            Roles = user.Roles,
+            Email = user.WebsiteUser.Email,
             DiscordId = user.DiscordUser.DiscordId,
             GlobalName = user.DiscordUser.GlobalName,
             AvatarUrl = user.DiscordUser.AvatarUrl,
@@ -755,10 +756,6 @@ public class UserController : ControllerBase
             AdCreatedAt = user.SchoolADUser.CreatedAt,
             LastAdSync = user.SchoolADUser.UpdatedAt,
 
-            Experience = user.DiscordUser.Experience,
-            Level = user.DiscordUser.Level,
-            Roles = user.Roles,
-            IsActive = user.DiscordUser.IsActive,
             CreatedAt = user.CreatedAt
         };
     }

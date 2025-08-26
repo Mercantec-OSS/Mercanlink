@@ -159,10 +159,10 @@ public class AuthController : ControllerBase
         try
         {
             var claims = User.Claims.ToDictionary(c => c.Type, c => c.Value);
-            
+
             return Ok(new
             {
-                id = claims.GetValueOrDefault(ClaimTypes.NameIdentifier),
+                userid = claims.GetValueOrDefault(ClaimTypes.NameIdentifier),
                 email = claims.GetValueOrDefault(ClaimTypes.Email),
                 username = claims.GetValueOrDefault(ClaimTypes.Name),
                 roles = User.FindAll(ClaimTypes.Role).Select(c => c.Value).ToList()

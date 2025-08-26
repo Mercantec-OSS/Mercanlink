@@ -43,8 +43,16 @@ public class AuthService
             AccessToken = accessToken,
             RefreshToken = refreshToken,
             ExpiresAt = DateTime.UtcNow.AddMinutes(60), // Dette skal matche JWT config
-            User = MapToUserDto(user.WebsiteUser)
+            User = MapToUserDto(user)
         };
+    }
+
+    public async Task<User?> GetUserFromWebsiteId(string websiteId)
+    {
+        var user = await _authDBAccess.GetWebsiteUser(websiteId);
+        if (user == null)
+            return null;
+        return user;
     }
 
     public async Task<AuthResponse?> RegisterAsync(RegisterRequest request)
@@ -100,7 +108,7 @@ public class AuthService
             AccessToken = accessToken,
             RefreshToken = refreshToken,
             ExpiresAt = DateTime.UtcNow.AddMinutes(60),
-            User = MapToUserDto(user.WebsiteUser)
+            User = MapToUserDto(user)
         };
     }
 
@@ -171,7 +179,7 @@ public class AuthService
             AccessToken = newAccessToken,
             RefreshToken = newRefreshToken,
             ExpiresAt = DateTime.UtcNow.AddMinutes(60),
-            User = MapToUserDto(websiteUser)
+            User = MapToUserDto(user)
         };
     }
 
@@ -238,5 +246,5 @@ public class AuthService
         return true;
     }
 
-    private static UserDto MapToUserDto(WebsiteUser user) { return new UserDto { UserId = user.Id, Email = user.Email, Username = user.UserName, UpdatedAt = user.UpdatedAt, CreatedAt = user.CreatedAt }; }
+    private static UserDto MapToUserDto(User user) { return new UserDto { UserId = user.Id, Email = user.WebsiteUser.Email, Username = user.UserName, UpdatedAt = user.UpdatedAt, CreatedAt = user.CreatedAt }; }
 }

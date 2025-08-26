@@ -23,7 +23,7 @@ namespace Backend.DBAccess
 
         public async Task<List<User>> GetAllUsersWithBothDiscordAndEmail()
         {
-            var users = await _context.Users.Include(u => u.WebsiteUser).Include(u => u.DiscordUser)
+            var users = await _context.Users.Include(u => u.WebsiteUser).Include(u => u.DiscordUser).Include(u => u.SchoolADUser)
                 .Where(u => !string.IsNullOrEmpty(u.DiscordUser.DiscordId) && !string.IsNullOrEmpty(u.WebsiteUser.Email))
                 .OrderBy(u => u.CreatedAt).ToListAsync();
 
@@ -32,7 +32,7 @@ namespace Backend.DBAccess
 
         public async Task<List<User>> GetAllUsersWithDiscordOnly()
         {
-            var users = await _context.Users.Include(u => u.WebsiteUser).Include(u => u.DiscordUser)
+            var users = await _context.Users.Include(u => u.WebsiteUser).Include(u => u.DiscordUser).Include(u => u.SchoolADUser)
                 .Where(u => !string.IsNullOrEmpty(u.DiscordUser.DiscordId) && string.IsNullOrEmpty(u.WebsiteUser.Email))
                 .OrderBy(u => u.CreatedAt).ToListAsync();
 
@@ -41,7 +41,7 @@ namespace Backend.DBAccess
 
         public async Task<List<User>> GetAllUsersWithEmailOnly()
         {
-            var users = await _context.Users.Include(u => u.WebsiteUser).Include(u => u.DiscordUser)
+            var users = await _context.Users.Include(u => u.WebsiteUser).Include(u => u.DiscordUser).Include(u => u.SchoolADUser)
                 .Where(u => string.IsNullOrEmpty(u.DiscordUser.DiscordId) && !string.IsNullOrEmpty(u.WebsiteUser.Email))
                 .OrderBy(u => u.CreatedAt).ToListAsync();
 
@@ -50,7 +50,7 @@ namespace Backend.DBAccess
 
         public async Task<List<User>> GetAllUsersWithDiscord()
         {
-            var users = await _context.Users.Include(u => u.DiscordUser)
+            var users = await _context.Users.Include(u => u.WebsiteUser).Include(u => u.DiscordUser).Include(u => u.SchoolADUser)
                 .Where(u => !string.IsNullOrEmpty(u.DiscordUser.DiscordId))
                 .OrderBy(u => u.CreatedAt).ToListAsync();
 
@@ -59,7 +59,7 @@ namespace Backend.DBAccess
 
         public async Task<List<User>> GetAllUsersWithEmail()
         {
-            var users = await _context.Users.Include(u => u.WebsiteUser)
+            var users = await _context.Users.Include(u => u.WebsiteUser).Include(u => u.DiscordUser).Include(u => u.SchoolADUser)
                 .Where(u => !string.IsNullOrEmpty(u.WebsiteUser.Email))
                 .OrderBy(u => u.CreatedAt).ToListAsync();
 
@@ -76,7 +76,8 @@ namespace Backend.DBAccess
 
         public async Task<User?> GetUserFromUsername(string username)
         {
-            var user = await _context.Users.Include(u => u.WebsiteUser).FirstOrDefaultAsync(u => u.SchoolADUser.UserName == username);
+            var user = await _context.Users.Include(u => u.WebsiteUser).Include(u => u.DiscordUser).Include(u => u.SchoolADUser)
+                .FirstOrDefaultAsync(u => u.SchoolADUser.UserName == username);
 
             return user;
         }
