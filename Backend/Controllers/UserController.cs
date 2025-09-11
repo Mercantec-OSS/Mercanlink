@@ -298,11 +298,6 @@ public class UserController : ControllerBase
                 user.Roles = request.Roles;
             }
 
-            if (request.IsActive.HasValue)
-            {
-                user.DiscordUser.IsActive = request.IsActive.Value;
-            }
-
             user.UpdatedAt = DateTime.UtcNow;
 
             await _userDBAccess.UpdateUser(user);

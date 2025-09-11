@@ -63,7 +63,6 @@ public class UserService
                 CreatedAt = nowUtc,
                 UpdatedAt = nowUtc,
                 // Standardværdier
-                IsActive = true,
                 Experience = 0,
                 Level = 1
             }

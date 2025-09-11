@@ -219,7 +219,6 @@ public class AuthService
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
                 // Standardværdier
-                IsActive = true,
                 Experience = user.DiscordUser.Experience,
                 Level = user.DiscordUser.Level
             }

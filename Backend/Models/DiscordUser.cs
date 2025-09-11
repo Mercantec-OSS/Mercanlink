@@ -22,8 +22,6 @@
 
         public bool? IsBoosting { get; set; }
 
-        public bool IsActive { get; set; } = true;
-
         public int Experience { get; set; } = 0;
 
         public int Level { get; set; } = 1;
