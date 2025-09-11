@@ -1,0 +1,40 @@
+{
+	"nodes":[
+		{"id":"3f49b7522abfb865","type":"group","x":-680,"y":300,"width":290,"height":1060,"label":"Discord User"},
+		{"id":"55b57870ff3fa08b","type":"group","x":-220,"y":-300,"width":290,"height":520,"label":"Main User"},
+		{"id":"0cf0e6b90b4ffb92","type":"group","x":-260,"y":300,"width":290,"height":420,"label":"Website User"},
+		{"id":"48e1f68b157c4181","type":"group","x":140,"y":300,"width":303,"height":260,"label":"School AD User"},
+		{"id":"5b4d614a69b8aa7e","type":"text","text":"UserName(string)","x":-200,"y":-200,"width":250,"height":60},
+		{"id":"1849ec47983092b6","type":"text","text":"DiscordId(string)","x":-200,"y":-120,"width":250,"height":60},
+		{"id":"07e50e272a31c54f","type":"text","text":"Id(string)","x":-200,"y":-280,"width":250,"height":60},
+		{"id":"4dac9671c6ae535c","type":"text","text":"Id(string)","x":-660,"y":320,"width":250,"height":60},
+		{"id":"bd5a9a1fe8b4a6a4","type":"text","text":"DiscordId(string?)","x":-660,"y":400,"width":250,"height":60},
+		{"id":"4f44d959cfe1c494","type":"text","text":"GlobalName(string)","x":-660,"y":480,"width":250,"height":60},
+		{"id":"30da15f9b055199b","type":"text","text":"IsBot(bool?)","x":-660,"y":800,"width":250,"height":60},
+		{"id":"068262d3a9d502e3","type":"text","text":"Discriminator(string?)","x":-660,"y":560,"width":250,"height":60},
+		{"id":"1a52787bfcfe079f","type":"text","text":"AvatarUrl(string?)","x":-660,"y":640,"width":250,"height":60},
+		{"id":"2d321e73d29266b4","type":"text","text":"Nickname(string?)","x":-660,"y":720,"width":250,"height":60},
+		{"id":"15147ae1267bfe02","type":"text","text":"Id(string)","x":-240,"y":320,"width":250,"height":60},
+		{"id":"574efd0c14dd844a","type":"text","text":"UserName(string)","x":-240,"y":400,"width":250,"height":60},
+		{"id":"47df8eb3484effde","type":"text","text":"Email(string)","x":-240,"y":480,"width":250,"height":60},
+		{"id":"95e73abb34737917","type":"text","text":"Password(string)","x":-240,"y":560,"width":250,"height":60},
+		{"id":"a4e4296f96a90903","type":"text","text":"EmailConfirmed(bool)","x":-240,"y":640,"width":250,"height":60},
+		{"id":"df800c439f8b6342","type":"text","text":"Id(string)","x":160,"y":320,"width":263,"height":60},
+		{"id":"b6f0567e66fc3bde","type":"text","text":"PublicFlags(int?)","x":-660,"y":880,"width":250,"height":60},
+		{"id":"8ad15e72165b0795","type":"text","text":"JoinedAt(DateTime?)","x":-660,"y":962,"width":250,"height":60},
+		{"id":"e488f312bda50566","type":"text","text":"IsBoosting(bool?)","x":-660,"y":1040,"width":250,"height":60},
+		{"id":"a454a93c0781600d","type":"text","text":"UserName(string)","x":160,"y":400,"width":263,"height":60},
+		{"id":"06e4935d77444143","type":"text","text":"StudentId(int)","x":160,"y":480,"width":263,"height":60},
+		{"id":"b3c88779b0a320ed","type":"text","text":"LastUpdated(DateTime)","x":-660,"y":1120,"width":250,"height":60},
+		{"id":"b299b22dbd574c54","type":"text","text":"Experience(int)","x":-660,"y":1200,"width":250,"height":60},
+		{"id":"e081451368fd70f5","type":"text","text":"Level(int)","x":-660,"y":1280,"width":250,"height":60},
+		{"id":"01267f1ba6200750","type":"text","text":"SchoolADId(string)","x":-200,"y":130,"width":250,"height":60},
+		{"id":"29fe084d063e1808","type":"text","text":"WebsiteId","x":-200,"y":40,"width":250,"height":60},
+		{"id":"e0fbd9e22aa64b21","type":"text","text":"Roles(List String)","x":-200,"y":-40,"width":250,"height":60}
+	],
+	"edges":[
+		{"id":"3b3d4662283bbbb4","fromNode":"01267f1ba6200750","fromSide":"right","toNode":"df800c439f8b6342","toSide":"top"},
+		{"id":"1d21fb2664711f01","fromNode":"29fe084d063e1808","fromSide":"left","toNode":"15147ae1267bfe02","toSide":"left"},
+		{"id":"41db3b9fb96d967c","fromNode":"1849ec47983092b6","fromSide":"left","toNode":"4dac9671c6ae535c","toSide":"top"}
+	]
+}
