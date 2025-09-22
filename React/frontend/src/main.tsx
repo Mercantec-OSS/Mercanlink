@@ -9,6 +9,7 @@ import { AuthProvider } from "./contexts/AuthContext.tsx"
 import { ProtectedRoute } from "./components/ProtectedRoute.tsx"
 import { ThemeProvider } from "@/components/ui/theme-provider"
 import "./index.css"
+import Valgfag from "./pages/Valgfag.tsx"
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
@@ -19,6 +20,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             <Route path="/" element={<App />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />
+            <Route path="/valgfag" element={<Valgfag />} />
             <Route element={<ProtectedRoute />}>
               <Route path="/users" element={<UsersPage />} />
             </Route>
