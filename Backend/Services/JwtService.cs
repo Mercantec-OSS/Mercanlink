@@ -30,11 +30,8 @@ public class JwtService
         var claims = new List<Claim>
         {
             new(ClaimTypes.NameIdentifier, user.Id),
-            new(ClaimTypes.Email, user.Email),
-            new(ClaimTypes.Name, user.Username),
-            new("discord_id", user.DiscordId ?? string.Empty),
-            new("level", user.Level.ToString()),
-            new("experience", user.Experience.ToString())
+            new(ClaimTypes.Email, user.WebsiteUser.Email),
+            new(ClaimTypes.Name, user.UserName)
         };
 
         // Tilføj roller som claims
@@ -59,7 +56,7 @@ public class JwtService
         return tokenHandler.WriteToken(token);
     }
 
-    public async Task<string> GenerateRefreshTokenAsync(string userId)
+    public async Task<string> GenerateRefreshTokenAsync(string websiteUserId)
     {
         // Generer et sikkert random token
         var randomNumber = new byte[64];
@@ -71,7 +68,7 @@ public class JwtService
         var tokenEntity = new RefreshToken
         {
             Token = refreshToken,
-            UserId = userId,
+            WebsiteUserId = websiteUserId,
             ExpiresAt = DateTime.UtcNow.AddDays(_jwtConfig.RefreshTokenExpiryDays),
             CreatedAt = DateTime.UtcNow
         };
@@ -79,7 +76,7 @@ public class JwtService
         return await _jwtDBAccess.AddRefreshToken(tokenEntity);
     }
 
-    public async Task<User?> ValidateRefreshTokenAsync(string refreshToken)
+    public async Task<WebsiteUser?> ValidateRefreshTokenAsync(string refreshToken)
     {
         var tokenEntity = await _jwtDBAccess.GetRefreshTokenAndUser(refreshToken);
 
@@ -92,7 +89,7 @@ public class JwtService
             return null;
         }
 
-        return tokenEntity.User;
+        return tokenEntity.WebsiteUser;
     }
 
     public async Task RevokeRefreshTokenAsync(string refreshToken, string? replacedByToken = null)
@@ -108,9 +105,9 @@ public class JwtService
         }
     }
 
-    public async Task RevokeAllUserTokensAsync(string userId)
+    public async Task RevokeAllUserTokensAsync(string websiteUserId)
     {
-        await _jwtDBAccess.RevokeAllRefreshTokens(userId);
+        await _jwtDBAccess.RevokeAllRefreshTokens(websiteUserId);
     }
 
     public ClaimsPrincipal? ValidateToken(string token)

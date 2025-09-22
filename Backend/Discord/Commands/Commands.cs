@@ -48,7 +48,7 @@ public partial class Commands
             { "daily", DailyCommand },
             { "leaderboard", LeaderboardCommand },
             { "meme", MemeCommand },
-            { "help", HjælpCommand }
+            { "help", HjælpCommand },
             { "info", InfoCommand },
         };
 
@@ -249,7 +249,7 @@ public partial class Commands
                 // Opret en aktivitetspost direkte
                 var dailyActivity = new UserDailyActivity
                 {
-                    UserId = user.Id,
+                    DiscordUserId = user.Id,
                     ActivityType = "TestXP",
                     Date = DateTime.UtcNow.Date,
                     Count = 1,
@@ -337,7 +337,7 @@ public partial class Commands
                 var topUsers = await dbContext.GetTopUsers();
 
                 // Find brugerens data
-                var userData = await dbContext.GetUser(message.Author.Id.ToString());
+                var userData = await dbContext.GetDiscordUser(message.Author.Id.ToString());
 
                 // Hvis brugeren ikke findes, vis en fejlmeddelelse
                 if (userData == null)
@@ -364,7 +364,7 @@ public partial class Commands
                     var user = topUsers[i];
                     string displayName = !string.IsNullOrEmpty(user.GlobalName)
                         ? user.GlobalName
-                        : user.Username;
+                        : user.UserName;
                     string medal =
                         i == 0
                             ? "🥇"
@@ -392,7 +392,7 @@ public partial class Commands
                     // Tilføj brugerens position
                     string displayName = !string.IsNullOrEmpty(userData.GlobalName)
                         ? userData.GlobalName
-                        : userData.Username;
+                        : userData.UserName;
                     embed.AddField(
                         $"#{userPosition} {displayName} (Dig)",
                         $"Level: {userData.Level} | XP: {userData.Experience}/{levelSystem.CalculateRequiredXP(userData.Level)}"

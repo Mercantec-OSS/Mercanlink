@@ -13,18 +13,28 @@ namespace Backend.DBAccess
             _context = context;
         }
 
-        public async Task<User?> CheckExistingUser(string discordId)
+        // Gets the user that matches the discord id
+        public async Task<User?> GetUserDiscordId(string discordId)
         {
             // Tjek om Discord ID allerede er verificeret
-            var existingUser = await _context.Users.FirstOrDefaultAsync(u => u.DiscordId == discordId && !string.IsNullOrEmpty(u.Email));
+            var existingUser = await _context.Users.Include(u => u.WebsiteUser).Include(u => u.DiscordUser).FirstOrDefaultAsync(u => u.DiscordUser.DiscordId == discordId && !string.IsNullOrEmpty(u.WebsiteUser.Email));
             return existingUser;
         }
 
-        public async Task<bool> RemoveExistingVerifications(string userId, string discordId)
+        // Gets the user that matches the user id
+        public async Task<User?> GetUser(string userId)
+        {
+            // Tjek om Discord ID allerede er verificeret
+            var existingUser = await _context.Users.Include(u => u.DiscordUser).FirstOrDefaultAsync(u => u.Id == userId);
+            return existingUser;
+        }
+
+        // Removes all existing verifications that matches either discord user id or discord id
+        public async Task<bool> RemoveExistingVerifications(string discordUserId, string discordId)
         {
             // Slet eventuelt eksisterende verification for denne bruger og Discord ID
             var existingVerifications = await _context.DiscordVerifications
-                .Where(dv => (dv.UserId == userId || dv.DiscordId == discordId) && !dv.IsUsed)
+                .Where(dv => (dv.DiscordUserId == discordUserId || dv.DiscordId == discordId) && !dv.IsUsed)
                 .ToListAsync();
 
             if (existingVerifications.Any())
@@ -35,6 +45,7 @@ namespace Backend.DBAccess
             return await _context.SaveChangesAsync() >= 1;
         }
 
+        // Adds a verification
         public async Task AddVerification(DiscordVerification verification)
         {
             _context.DiscordVerifications.Add(verification);
@@ -42,11 +53,12 @@ namespace Backend.DBAccess
             await _context.SaveChangesAsync();
         }
 
-        public async Task<DiscordVerification?> CheckVerificationCode(string userId, string discordId, string code)
+        // Checks if the discord user, discord id adn code matches
+        public async Task<DiscordVerification?> CheckVerificationCode(string discordUserId, string discordId, string code)
         {
             var verification = await _context.DiscordVerifications
                 .FirstOrDefaultAsync(dv =>
-                    dv.UserId == userId &&
+                    dv.DiscordUserId == discordUserId &&
                     dv.DiscordId == discordId &&
                     dv.VerificationCode == code &&
                     !dv.IsUsed &&
@@ -54,6 +66,7 @@ namespace Backend.DBAccess
             return verification;
         }
 
+        // Updates the verification
         public async Task UpdateVerificationCode(DiscordVerification verification)
         {
             _context.Entry(verification).State = EntityState.Modified;
@@ -61,16 +74,18 @@ namespace Backend.DBAccess
             await _context.SaveChangesAsync();
         }
 
-        public async Task<DiscordVerification?> GetActiveVerification(string userId, string discordId)
+        // Gets a active verification that matches the discord user id and discord id
+        public async Task<DiscordVerification?> GetActiveVerification(string discordUserId, string discordId)
         {
             return await _context.DiscordVerifications
             .FirstOrDefaultAsync(dv =>
-                dv.UserId == userId &&
+                dv.DiscordUserId == discordUserId &&
                 dv.DiscordId == discordId &&
                 !dv.IsUsed &&
                 dv.ExpiresAt > DateTime.UtcNow);
         }
 
+        // Removes any expired verifications
         public async Task<int> CleanupExpiredVerifications()
         {
             var expired = await _context.DiscordVerifications

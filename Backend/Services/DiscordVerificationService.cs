@@ -27,7 +27,8 @@ public class DiscordVerificationService
     {
         try
         {
-            if (_discordVerificationDBAccess.CheckExistingUser(discordId) != null)
+            var user = await _discordVerificationDBAccess.GetUserDiscordId(discordId);
+            if (user != null)
             {
                 return new StartVerificationResponse
                 {
@@ -36,7 +37,7 @@ public class DiscordVerificationService
                 };
             }
 
-            await _discordVerificationDBAccess.RemoveExistingVerifications(userId, discordId);
+            await _discordVerificationDBAccess.RemoveExistingVerifications(user.DiscordUserId, discordId);
 
             // Generer 6-cifret kode
             var verificationCode = GenerateVerificationCode();
@@ -45,7 +46,7 @@ public class DiscordVerificationService
             // Opret ny verification
             var verification = new DiscordVerification
             {
-                UserId = userId,
+                DiscordUserId = user.DiscordUserId,
                 DiscordId = discordId,
                 VerificationCode = verificationCode,
                 ExpiresAt = expiresAt,
@@ -55,12 +56,13 @@ public class DiscordVerificationService
 
             await _discordVerificationDBAccess.AddVerification(verification);
 
-            _logger.LogInformation("Discord verification startet for bruger {UserId} og Discord {DiscordId}", userId, discordId);
+            _logger.LogInformation("Discord verification startet for bruger {DiscordUserId} og Discord {DiscordId}", user.DiscordUserId, discordId);
 
             return new StartVerificationResponse
             {
                 Success = true,
                 Message = "Verification kode sendt til din Discord konto",
+                DiscordUserId = user.DiscordUserId,
                 ExpiresAt = expiresAt
             };
         }
@@ -82,11 +84,13 @@ public class DiscordVerificationService
     {
         try
         {
-            var verification = await _discordVerificationDBAccess.CheckVerificationCode(userId, discordId, code);
+            var user = await _discordVerificationDBAccess.GetUser(userId);
+
+            var verification = await _discordVerificationDBAccess.CheckVerificationCode(user.DiscordUserId, discordId, code);
 
             if (verification == null)
             {
-                _logger.LogWarning("Ugyldig verification kode for bruger {UserId} og Discord {DiscordId}", userId, discordId);
+                _logger.LogWarning("Ugyldig verification kode for bruger {DiscordUserId} og Discord {DiscordId}", user.DiscordUserId, discordId);
                 return false;
             }
 
@@ -97,7 +101,7 @@ public class DiscordVerificationService
 
             await _discordVerificationDBAccess.UpdateVerificationCode(verification);
 
-            _logger.LogInformation("Discord verification gennemført for bruger {UserId} og Discord {DiscordId}", userId, discordId);
+            _logger.LogInformation("Discord verification gennemført for bruger {DiscordUserId} og Discord {DiscordId}", user.DiscordUserId, discordId);
             return true;
         }
         catch (Exception ex)
@@ -110,9 +114,9 @@ public class DiscordVerificationService
     /// <summary>
     /// Henter aktiv verification for en bruger
     /// </summary>
-    public async Task<DiscordVerification?> GetActiveVerificationAsync(string userId, string discordId)
+    public async Task<DiscordVerification?> GetActiveVerificationAsync(string discordUserId, string discordId)
     {
-        return await _discordVerificationDBAccess.GetActiveVerification(userId, discordId);
+        return await _discordVerificationDBAccess.GetActiveVerification(discordUserId, discordId);
     }
 
     /// <summary>

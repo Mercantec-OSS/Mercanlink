@@ -1,0 +1,195 @@
+{
+  "main": {
+    "id": "5d6732ed1238ada9",
+    "type": "split",
+    "children": [
+      {
+        "id": "babb9c8fb4a2acda",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "08a845cb0580517b",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Begrundelse for hvordan den nye model ser ud.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Begrundelse for hvordan den nye model ser ud"
+            }
+          },
+          {
+            "id": "9d13c241e865d346",
+            "type": "leaf",
+            "state": {
+              "type": "canvas",
+              "state": {
+                "file": "ModelDiagram.canvas",
+                "viewState": {
+                  "x": -118.5,
+                  "y": 530,
+                  "zoom": -1.3069940439238261
+                }
+              },
+              "icon": "lucide-layout-dashboard",
+              "title": "ModelDiagram"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "f910444f6e9f218c",
+    "type": "split",
+    "children": [
+      {
+        "id": "37ad0d5923b63a33",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "ff89adf4d1ecc8da",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Files"
+            }
+          },
+          {
+            "id": "1bd72073f2df1481",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Search"
+            }
+          },
+          {
+            "id": "87ea34ccc26a26a4",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Bookmarks"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "f6c6e69041af2440",
+    "type": "split",
+    "children": [
+      {
+        "id": "39923bf2b1770e6d",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "7cefbd8f5dd3c549",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "Begrundelse for hvordan den nye model ser ud.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Backlinks for Begrundelse for hvordan den nye model ser ud"
+            }
+          },
+          {
+            "id": "0d80ea32cb8cda27",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "Begrundelse for hvordan den nye model ser ud.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Outgoing links from Begrundelse for hvordan den nye model ser ud"
+            }
+          },
+          {
+            "id": "9370962c04b5a55f",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Tags"
+            }
+          },
+          {
+            "id": "399dfe32ea8b1294",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "Begrundelse for hvordan den nye model ser ud.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Outline of Begrundelse for hvordan den nye model ser ud"
+            }
+          }
+        ],
+        "currentTab": 1
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false
+    }
+  },
+  "active": "08a845cb0580517b",
+  "lastOpenFiles": [
+    "ModelDiagram.canvas",
+    "Begrundelse for hvordan den nye model ser ud.md",
+    "Welcome.md"
+  ]
+}
