@@ -4,20 +4,34 @@
     "type": "split",
     "children": [
       {
-        "id": "5555a660a7a5d099",
+        "id": "babb9c8fb4a2acda",
         "type": "tabs",
         "children": [
           {
-            "id": "460847fa8f0eb7e8",
+            "id": "08a845cb0580517b",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Begrundelse for hvordan den nye model ser ud.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Begrundelse for hvordan den nye model ser ud"
+            }
+          },
+          {
+            "id": "9d13c241e865d346",
             "type": "leaf",
             "state": {
               "type": "canvas",
               "state": {
                 "file": "ModelDiagram.canvas",
                 "viewState": {
-                  "x": -135.21899463502194,
-                  "y": 503.9538803080609,
-                  "zoom": -0.10641591944226458
+                  "x": -118.5,
+                  "y": 530,
+                  "zoom": -1.3069940439238261
                 }
               },
               "icon": "lucide-layout-dashboard",
@@ -97,7 +111,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "ModelDiagram.canvas",
+                "file": "Begrundelse for hvordan den nye model ser ud.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -107,7 +121,7 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "Backlinks for ModelDiagram"
+              "title": "Backlinks for Begrundelse for hvordan den nye model ser ud"
             }
           },
           {
@@ -116,12 +130,12 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "ModelDiagram.canvas",
+                "file": "Begrundelse for hvordan den nye model ser ud.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
               "icon": "links-going-out",
-              "title": "Outgoing links from ModelDiagram"
+              "title": "Outgoing links from Begrundelse for hvordan den nye model ser ud"
             }
           },
           {
@@ -145,16 +159,17 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "ModelDiagram.canvas",
+                "file": "Begrundelse for hvordan den nye model ser ud.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Outline of ModelDiagram"
+              "title": "Outline of Begrundelse for hvordan den nye model ser ud"
             }
           }
-        ]
+        ],
+        "currentTab": 1
       }
     ],
     "direction": "horizontal",
@@ -171,9 +186,10 @@
       "command-palette:Open command palette": false
     }
   },
-  "active": "460847fa8f0eb7e8",
+  "active": "08a845cb0580517b",
   "lastOpenFiles": [
-    "Welcome.md",
-    "ModelDiagram.canvas"
+    "ModelDiagram.canvas",
+    "Begrundelse for hvordan den nye model ser ud.md",
+    "Welcome.md"
   ]
 }

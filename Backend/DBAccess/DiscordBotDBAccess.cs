@@ -16,6 +16,7 @@ namespace Backend.DBAccess
             _context = context;
         }
 
+        // Gets the discord user that matches the discord id
         public async Task<DiscordUser?> GetDiscordUser(string discordId)
         {
             // Tjek om Discord ID allerede er verificeret
@@ -23,6 +24,7 @@ namespace Backend.DBAccess
             return user;
         }
 
+        // Get activity that matches the discord user id and activity name and the date
         public async Task<UserDailyActivity?> CheckTodaysActivity(string discordUserId, string activityName, DateTime today)
         {
             var dailyActivity = await _context.Set<UserDailyActivity>()
@@ -32,6 +34,7 @@ namespace Backend.DBAccess
             return dailyActivity;
         }
 
+        // Checks if the user that matches the discord user id have gotten their daily login reward today
         public async Task<UserDailyActivity?> CheckIfDailyLoginXPIsRewarded(string discordUserId, DateTime today)
         {
             var dailyLoginActivity = await _context.Set<UserDailyActivity>()
@@ -41,6 +44,7 @@ namespace Backend.DBAccess
             return dailyLoginActivity;
         }
 
+        // Adds a new activity
         public async Task AddDailyActivity(UserDailyActivity dailyActivity)
         {
             _context.Set<UserDailyActivity>().Add(dailyActivity);
@@ -48,6 +52,7 @@ namespace Backend.DBAccess
             await _context.SaveChangesAsync();
         }
 
+        // Updates the activity that has already been saved
         public async Task UpdateDailyAcitivity(UserDailyActivity dailyActivity)
         {
             _context.Entry(dailyActivity).State = EntityState.Modified;
@@ -55,6 +60,7 @@ namespace Backend.DBAccess
             await _context.SaveChangesAsync();
         }
 
+        // Gets all activity that matches the discord user id and todays date
         public async Task<List<UserDailyActivity>> GetAllTodaysActivity(string discordUserId, DateTime today)
         {
             var dailyActivities = await _context.Set<UserDailyActivity>()
@@ -64,6 +70,7 @@ namespace Backend.DBAccess
             return dailyActivities;
         }
 
+        // Updates the discord user that has already been saved
         public async Task UpdateUser(DiscordUser user)
         {
             _context.Entry(user).State = EntityState.Modified;
@@ -71,6 +78,7 @@ namespace Backend.DBAccess
             await _context.SaveChangesAsync();
         }
 
+        // Adds a new user
         public async Task AddUser(User newUser)
         {
             _context.Users.Add(newUser);
@@ -78,6 +86,7 @@ namespace Backend.DBAccess
             await _context.SaveChangesAsync();
         }
 
+        // Gets the top x user according to their exp
         public async Task<List<DiscordUser>> GetTopUsers(int amount = 5)
         {
             var topUsers = await _context
@@ -89,6 +98,7 @@ namespace Backend.DBAccess
             return topUsers;
         }
 
+        // Gets the position you would have if you have x user exp
         public async Task<int> GetUserPosition(int userExperience)
         {
             var userPosition = await _context
