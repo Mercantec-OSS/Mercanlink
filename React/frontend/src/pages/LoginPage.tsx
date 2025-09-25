@@ -3,7 +3,7 @@ import { useAuth } from "@/contexts/AuthContext"
 import Navbar from "@/components/templates/navbar"
 import Footer from "@/components/templates/footer"
 import { useNavigate } from "react-router-dom"
-import LoginForm from "@/components/templates/loginForm"
+import { LoginForm } from "@/components/templates/loginForm"
 import { Button } from "@/components/ui/button"
 
 export function LoginPage() {
@@ -26,11 +26,9 @@ export function LoginPage() {
   }
 
   return (
-      <div className="flex flex-col min-h-svh bg-gradient-to-br from-[#181c2c] via-[#23263a] to-[#10121a]">
+    <div className="flex flex-col min-h-svh bg-background">
       <Navbar />
-      <div className="flex flex-1  justify-center ">
-        {/* <img src="/src/components/images/bluey.jpg" className="absolute h-[600px] w-[2000px]" /> */}
-
+      <div className="flex flex-1 items-center justify-center bg-black">
 
         <LoginForm onSubmit={handleLogin} loading={loading} error={error} />
         <Button
