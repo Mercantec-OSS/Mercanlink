@@ -8,7 +8,7 @@ public class DiscordVerification : Common
     /// <summary>
     /// ID på brugeren der prøver at verificere
     /// </summary>
-    public string UserId { get; set; } = string.Empty;
+    public string DiscordUserId { get; set; } = string.Empty;
 
     /// <summary>
     /// Discord ID der skal verificeres

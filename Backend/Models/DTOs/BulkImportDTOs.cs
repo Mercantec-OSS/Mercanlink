@@ -64,7 +64,7 @@ public class AdUserImportDto
     /// <summary>
     /// Student ID fra AD
     /// </summary>
-    public string? StudentId { get; set; }
+    public int? StudentId { get; set; }
     
     /// <summary>
     /// Afdeling/klasse

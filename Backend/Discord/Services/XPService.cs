@@ -5,35 +5,37 @@ using Backend.Data;
 using Microsoft.Extensions.Options;
 using System;
 using System.Threading.Tasks;
+using Backend.DBAccess;
 
 public class XPService
 {
-    private readonly ApplicationDbContext _context;
     private readonly ILogger<XPService> _logger;
     private readonly DiscordBotService _discordService;
     private readonly LevelSystem _levelSystem;
     private readonly XPConfig _xpConfig;
+    private readonly DiscordBotDBAccess _discordBotDBAccess;
 
     public XPService(
-        ApplicationDbContext context,
+        DiscordBotDBAccess discordBotDBAccess,
         ILogger<XPService> logger,
         DiscordBotService discordService,
         LevelSystem levelSystem,
         IOptions<XPConfig> xpConfig)
     {
-        _context = context;
+        _discordService = discordService;
         _logger = logger;
         _discordService = discordService;
         _levelSystem = levelSystem;
         _xpConfig = xpConfig.Value;
+        _discordBotDBAccess = discordBotDBAccess;
     }
 
     public async Task<bool> AddXPAsync(string discordId, XPActivityType activity)
     {
         _logger.LogInformation("Forsøger at tilføje XP for aktivitet {Activity} til bruger {DiscordId}", activity, discordId);
 
-        var user = await _context.Users.FirstOrDefaultAsync(u => u.DiscordId == discordId);
-        if (user == null)
+        var discordUser = await _discordBotDBAccess.GetDiscordUser(discordId);
+        if (discordUser == null)
         {
             _logger.LogWarning("Bruger med Discord ID {DiscordId} blev ikke fundet", discordId);
             return false;
@@ -42,42 +44,38 @@ public class XPService
         string activityName = activity.ToString();
         var today = DateTime.UtcNow.Date;
 
-        _logger.LogInformation("Søger efter dagens aktivitet for bruger {UserId}, aktivitet {Activity}", user.Id, activityName);
+        _logger.LogInformation("Søger efter dagens aktivitet for bruger {DiscordUserId}, aktivitet {Activity}", discordUser.Id, activityName);
 
         // Find eller opret dagens aktivitetspost
-        var dailyActivity = await _context.Set<UserDailyActivity>()
-            .FirstOrDefaultAsync(a => a.UserId == user.Id &&
-                                     a.ActivityType == activityName &&
-                                     a.Date == today);
+        var dailyActivity = await _discordBotDBAccess.CheckTodaysActivity(discordUser.Id, activityName, today);
 
         bool isFirstActivity = false;
 
         if (dailyActivity == null)
         {
-            _logger.LogInformation("Opretter ny daglig aktivitetspost for bruger {UserId}, aktivitet {Activity}", user.Id, activityName);
+            _logger.LogInformation("Opretter ny daglig aktivitetspost for bruger {DiscordUserId}, aktivitet {Activity}", discordUser.Id, activityName);
 
             isFirstActivity = true; // Dette er brugerens første aktivitet af denne type i dag
 
             dailyActivity = new UserDailyActivity
             {
-                UserId = user.Id,
+                DiscordUserId = discordUser.Id,
                 ActivityType = activityName,
                 Date = today,
                 Count = 0,
                 TotalXPAwarded = 0,
                 LastActivity = DateTime.UtcNow
             };
-            _context.Set<UserDailyActivity>().Add(dailyActivity);
 
             // Gem aktivitetsposten med det samme
             try
             {
-                await _context.SaveChangesAsync();
-                _logger.LogInformation("Gemt ny aktivitetspost for bruger {UserId}, aktivitet {Activity}", user.Id, activityName);
+                await _discordBotDBAccess.AddDailyActivity(dailyActivity);
+                _logger.LogInformation("Gemt ny aktivitetspost for bruger {DiscordUserId}, aktivitet {Activity}", discordUser.Id, activityName);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Fejl ved gemning af ny aktivitetspost for bruger {UserId}, aktivitet {Activity}", user.Id, activityName);
+                _logger.LogError(ex, "Fejl ved gemning af ny aktivitetspost for bruger {DiscordUserId}, aktivitet {Activity}", discordUser.Id, activityName);
                 return false;
             }
         }
@@ -91,8 +89,8 @@ public class XPService
                 var timeSinceLastActivity = DateTime.UtcNow - dailyActivity.LastActivity;
                 if (timeSinceLastActivity.TotalSeconds < cooldownSeconds)
                 {
-                    _logger.LogInformation("Cooldown aktiv for bruger {UserId}, aktivitet {Activity}. Mangler {Seconds} sekunder",
-                        user.Id, activityName, cooldownSeconds - (int)timeSinceLastActivity.TotalSeconds);
+                    _logger.LogInformation("Cooldown aktiv for bruger {DiscordUserId}, aktivitet {Activity}. Mangler {Seconds} sekunder",
+                        discordUser.Id, activityName, cooldownSeconds - (int)timeSinceLastActivity.TotalSeconds);
                     return false;
                 }
             }
@@ -102,7 +100,7 @@ public class XPService
             {
                 if (dailyActivity.Count >= dailyLimit)
                 {
-                    _logger.LogInformation("Daglig grænse nået for bruger {UserId}, aktivitet {Activity}", user.Id, activityName);
+                    _logger.LogInformation("Daglig grænse nået for bruger {DiscordUserId}, aktivitet {Activity}", discordUser.Id, activityName);
                     return false;
                 }
             }
@@ -118,42 +116,40 @@ public class XPService
         dailyActivity.LastActivity = DateTime.UtcNow;
 
         // Tilføj XP til brugeren
-        user.Experience += xpToAdd;
+        discordUser.Experience += xpToAdd;
 
         // Tjek for level up
-        var (newLevel, didLevelUp) = _levelSystem.CalculateLevel(user.Level, user.Experience);
+        var (newLevel, didLevelUp) = _levelSystem.CalculateLevel(discordUser.Level, discordUser.Experience);
 
         if (didLevelUp)
         {
-            user.Level = newLevel;
+            discordUser.Level = newLevel;
             await _discordService.SendLevelUpMessage(discordId, newLevel);
             _logger.LogInformation("User {DiscordId} leveled up to {Level}", discordId, newLevel);
         }
 
-        await _context.SaveChangesAsync();
+        await _discordBotDBAccess.UpdateDailyAcitivity(dailyActivity);
         return true;
     }
 
     public async Task<(int Level, int XP, int RequiredXP)> GetUserProgressAsync(string discordId)
     {
-        var user = await _context.Users.FirstOrDefaultAsync(u => u.DiscordId == discordId);
-        if (user == null) return (0, 0, 0);
+        var discordUser = await _discordBotDBAccess.GetDiscordUser(discordId);
+        if (discordUser == null) return (0, 0, 0);
 
-        int requiredXP = _levelSystem.CalculateRequiredXP(user.Level);
-        return (user.Level, user.Experience, requiredXP);
+        int requiredXP = _levelSystem.CalculateRequiredXP(discordUser.Level);
+        return (discordUser.Level, discordUser.Experience, requiredXP);
     }
 
     public async Task<Dictionary<string, int>> GetUserActivityStatsAsync(string discordId)
     {
-        var user = await _context.Users.FirstOrDefaultAsync(u => u.DiscordId == discordId);
-        if (user == null) return new Dictionary<string, int>();
+        var discordUser = await _discordBotDBAccess.GetDiscordUser(discordId);
+        if (discordUser == null) return new Dictionary<string, int>();
 
         var today = DateTime.UtcNow.Date;
         var stats = new Dictionary<string, int>();
 
-        var dailyActivities = await _context.Set<UserDailyActivity>()
-            .Where(a => a.UserId == user.Id && a.Date == today)
-            .ToListAsync();
+        var dailyActivities = await _discordBotDBAccess.GetAllTodaysActivity(discordUser.Id, today);
 
         foreach (var activityType in Enum.GetNames(typeof(XPActivityType)))
         {
@@ -167,21 +163,18 @@ public class XPService
     public async Task<bool> CheckAndAwardDailyLoginAsync(string discordId)
     {
         // Tjek om brugeren allerede har fået daglig bonus i dag
-        var user = await _context.Users.FirstOrDefaultAsync(u => u.DiscordId == discordId);
-        if (user == null) return false;
+        var discordUser = await _discordBotDBAccess.GetDiscordUser(discordId);
+        if (discordUser == null) return false;
 
         var today = DateTime.UtcNow.Date;
 
         // Tjek om brugeren allerede har fået DailyLogin XP i dag
-        var dailyLoginActivity = await _context.Set<UserDailyActivity>()
-            .FirstOrDefaultAsync(a => a.UserId == user.Id &&
-                                    a.ActivityType == XPActivityType.DailyLogin.ToString() &&
-                                    a.Date == today);
+        var dailyLoginActivity = await _discordBotDBAccess.CheckIfDailyLoginXPIsRewarded(discordUser.Id, today);
 
         // Hvis brugeren ikke har fået daglig bonus endnu, giv den nu
         if (dailyLoginActivity == null || dailyLoginActivity.Count == 0)
         {
-            _logger.LogInformation("Tildeler daglig login bonus til bruger {UserId}", user.Id);
+            _logger.LogInformation("Tildeler daglig login bonus til bruger {DiscordUserId}", discordUser.Id);
             return await AddXPAsync(discordId, XPActivityType.DailyLogin);
         }
 

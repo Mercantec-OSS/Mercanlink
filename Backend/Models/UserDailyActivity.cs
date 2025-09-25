@@ -2,7 +2,7 @@ namespace Backend.Models;
 
 public class UserDailyActivity : Common
 {
-    public string UserId { get; set; } = string.Empty;
+    public string DiscordUserId { get; set; } = string.Empty;
     public string ActivityType { get; set; } = string.Empty;
     public DateTime Date { get; set; } = DateTime.UtcNow.Date;
     public int Count { get; set; } = 0;

@@ -43,6 +43,11 @@ public class StartVerificationResponse
     public string Message { get; set; } = string.Empty;
 
     /// <summary>
+    /// Discord brugeren Id der skal verificeres
+    /// </summary>
+    public string? DiscordUserId { get; set; }
+
+    /// <summary>
     /// Hvornår koden udløber
     /// </summary>
     public DateTime? ExpiresAt { get; set; }

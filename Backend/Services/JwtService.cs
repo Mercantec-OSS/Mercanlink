@@ -6,6 +6,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Backend.Config;
 using Backend.Data;
+using Backend.DBAccess;
 using Backend.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -14,12 +15,12 @@ using Microsoft.IdentityModel.Tokens;
 public class JwtService
 {
     private readonly JwtConfig _jwtConfig;
-    private readonly ApplicationDbContext _context;
+    private readonly JWTDBAccess _jwtDBAccess;
 
-    public JwtService(IOptions<JwtConfig> jwtConfig, ApplicationDbContext context)
+    public JwtService(IOptions<JwtConfig> jwtConfig, JWTDBAccess jwtDBAccess)
     {
         _jwtConfig = jwtConfig.Value;
-        _context = context;
+        _jwtDBAccess = jwtDBAccess;
     }
 
     public string GenerateAccessToken(User user)
@@ -29,11 +30,8 @@ public class JwtService
         var claims = new List<Claim>
         {
             new(ClaimTypes.NameIdentifier, user.Id),
-            new(ClaimTypes.Email, user.Email),
-            new(ClaimTypes.Name, user.Username),
-            new("discord_id", user.DiscordId ?? string.Empty),
-            new("level", user.Level.ToString()),
-            new("experience", user.Experience.ToString())
+            new(ClaimTypes.Email, user.WebsiteUser.Email),
+            new(ClaimTypes.Name, user.UserName)
         };
 
         // Tilføj roller som claims
@@ -58,7 +56,7 @@ public class JwtService
         return tokenHandler.WriteToken(token);
     }
 
-    public async Task<string> GenerateRefreshTokenAsync(string userId)
+    public async Task<string> GenerateRefreshTokenAsync(string websiteUserId)
     {
         // Generer et sikkert random token
         var randomNumber = new byte[64];
@@ -70,22 +68,17 @@ public class JwtService
         var tokenEntity = new RefreshToken
         {
             Token = refreshToken,
-            UserId = userId,
+            WebsiteUserId = websiteUserId,
             ExpiresAt = DateTime.UtcNow.AddDays(_jwtConfig.RefreshTokenExpiryDays),
             CreatedAt = DateTime.UtcNow
         };
 
-        _context.RefreshTokens.Add(tokenEntity);
-        await _context.SaveChangesAsync();
-
-        return refreshToken;
+        return await _jwtDBAccess.AddRefreshToken(tokenEntity);
     }
 
-    public async Task<User?> ValidateRefreshTokenAsync(string refreshToken)
+    public async Task<WebsiteUser?> ValidateRefreshTokenAsync(string refreshToken)
     {
-        var tokenEntity = await _context
-            .RefreshTokens.Include(rt => rt.User)
-            .FirstOrDefaultAsync(rt => rt.Token == refreshToken);
+        var tokenEntity = await _jwtDBAccess.GetRefreshTokenAndUser(refreshToken);
 
         if (
             tokenEntity == null
@@ -96,37 +89,25 @@ public class JwtService
             return null;
         }
 
-        return tokenEntity.User;
+        return tokenEntity.WebsiteUser;
     }
 
     public async Task RevokeRefreshTokenAsync(string refreshToken, string? replacedByToken = null)
     {
-        var tokenEntity = await _context.RefreshTokens.FirstOrDefaultAsync(rt =>
-            rt.Token == refreshToken
-        );
+        var tokenEntity = await _jwtDBAccess.GetRefreshToken(refreshToken);
 
         if (tokenEntity != null)
         {
             tokenEntity.IsRevoked = true;
             tokenEntity.RevokedAt = DateTime.UtcNow;
             tokenEntity.ReplacedByToken = replacedByToken;
-            await _context.SaveChangesAsync();
+            await _jwtDBAccess.UpdateRefreshToken(tokenEntity);
         }
     }
 
-    public async Task RevokeAllUserTokensAsync(string userId)
+    public async Task RevokeAllUserTokensAsync(string websiteUserId)
     {
-        var userTokens = await _context
-            .RefreshTokens.Where(rt => rt.UserId == userId && !rt.IsRevoked)
-            .ToListAsync();
-
-        foreach (var token in userTokens)
-        {
-            token.IsRevoked = true;
-            token.RevokedAt = DateTime.UtcNow;
-        }
-
-        await _context.SaveChangesAsync();
+        await _jwtDBAccess.RevokeAllRefreshTokens(websiteUserId);
     }
 
     public ClaimsPrincipal? ValidateToken(string token)

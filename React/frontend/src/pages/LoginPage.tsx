@@ -30,15 +30,18 @@ export function LoginPage() {
       <Navbar />
       <div className="flex flex-1 items-center justify-center bg-black">
 
-        <LoginForm onSubmit={handleLogin} loading={loading} error={error} />
         <Button
           type="button"
           variant="outline"
-          className="w-full mt-2 absolute bottom-4 left-1/2 -translate-x-1/2 max-w-sm"
-          onClick={() => navigate(-1)}
+          className="bg-white text-black mt-28 mr-8 absolute top-0 right-0 max-w"
+          style={{ transform: "none" }}
+          onClick={() => navigate("/")}
         >
           Back
         </Button>
+
+        <LoginForm onSubmit={handleLogin} loading={loading} error={error} />
+
       </div>
       <Footer />
     </div>
