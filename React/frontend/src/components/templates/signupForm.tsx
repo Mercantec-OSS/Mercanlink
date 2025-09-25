@@ -85,7 +85,7 @@ export function SignupForm({ onSubmit, loading = false, error = null }: SignupFo
                 />
               </div>
               {error && <p className="text-destructive text-sm">{error}</p>}
-              <Button type="submit" className="w-full" disabled={loading}>
+              <Button type="submit" className="w-full border" disabled={loading}>
                 {loading ? "Logging in..." : "Signup"}
               </Button>
             </div>
