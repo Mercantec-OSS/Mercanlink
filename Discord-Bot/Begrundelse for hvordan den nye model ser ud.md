@@ -1,0 +1,1 @@
+Grunden til at jeg har splittet vores [[ModelDiagram.canvas|Model]] ud som den er er fordi at hvis man skal have fat i en bruger skal man ikke altid bruge discord info'en når man går på hjemmesiden f.eks og det er også nemt at splitte en bruger ud i sin egen discord bruger data og hjemmeside bruger data

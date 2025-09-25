@@ -1,6 +1,7 @@
 namespace Backend.Data;
 
 using Backend.Models;
+using Discord;
 using Microsoft.EntityFrameworkCore;
 
 public class ApplicationDbContext : DbContext
@@ -9,6 +10,9 @@ public class ApplicationDbContext : DbContext
         : base(options) { }
 
     public DbSet<User> Users { get; set; }
+    public DbSet<DiscordUser> DiscordUsers { get; set; }
+    public DbSet<WebsiteUser> WebsiteUsers { get; set; }
+    public DbSet<SchoolADUser> SchoolADUsers { get; set; }
     public DbSet<UserActivity> UserActivities { get; set; }
     public DbSet<UserDailyActivity> UserDailyActivities { get; set; }
     public DbSet<RefreshToken> RefreshTokens { get; set; }
@@ -19,25 +23,45 @@ public class ApplicationDbContext : DbContext
         base.OnModelCreating(modelBuilder);
 
         // Konfigurer dine entity mappings her
-        modelBuilder.Entity<User>().HasIndex(u => u.DiscordId).IsUnique();
-        
+        modelBuilder.Entity<DiscordUser>().HasIndex(u => u.DiscordId).IsUnique();
+
         // Email indeks kun for ikke-tomme emails (Discord brugere kan have tomme emails)
-        modelBuilder.Entity<User>()
+        modelBuilder.Entity<WebsiteUser>()
             .HasIndex(u => u.Email)
             .IsUnique()
             .HasFilter("\"Email\" != ''");
-            
+
         // Username indeks kun for ikke-tomme usernames
         modelBuilder.Entity<User>()
-            .HasIndex(u => u.Username)
+            .HasIndex(u => u.UserName)
             .IsUnique()
-            .HasFilter("\"Username\" != ''");
+            .HasFilter("\"UserName\" != ''");
+
+        modelBuilder.Entity<WebsiteUser>()
+            .HasIndex(u => u.UserName)
+            .IsUnique()
+            .HasFilter("\"UserName\" != ''");
+
+        modelBuilder.Entity<User>()
+            .HasOne(u => u.DiscordUser)
+            .WithOne(du => du.User)
+            .HasForeignKey<User>(u => u.DiscordUserId);
+
+        modelBuilder.Entity<User>()
+            .HasOne(u => u.WebsiteUser)
+            .WithOne(du => du.User)
+            .HasForeignKey<User>(u => u.WebsiteUserId);
+
+        modelBuilder.Entity<User>()
+            .HasOne(u => u.SchoolADUser)
+            .WithOne(du => du.User)
+            .HasForeignKey<User>(u => u.SchoolADUserId);
 
         // RefreshToken konfiguration
         modelBuilder.Entity<RefreshToken>()
-            .HasOne(rt => rt.User)
+            .HasOne(rt => rt.WebsiteUser)
             .WithMany()
-            .HasForeignKey(rt => rt.UserId)
+            .HasForeignKey(rt => rt.WebsiteUserId)
             .OnDelete(DeleteBehavior.Cascade);
 
         modelBuilder.Entity<RefreshToken>()
@@ -50,6 +74,6 @@ public class ApplicationDbContext : DbContext
             .IsUnique();
 
         modelBuilder.Entity<DiscordVerification>()
-            .HasIndex(dv => new { dv.UserId, dv.DiscordId });
+            .HasIndex(dv => new { dv.DiscordUserId, dv.DiscordId });
     }
 }
