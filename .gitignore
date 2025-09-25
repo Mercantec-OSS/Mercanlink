@@ -11,3 +11,5 @@ docker-compose.yaml
 /AdminHub/node_modules
 /React/admin-dashboard/node_modules
 /AdminHub/.svelte-kit
+node_modules/
+.vscode/
