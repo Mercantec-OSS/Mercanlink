@@ -3,36 +3,33 @@ import { useAuth } from "@/contexts/AuthContext"
 import Navbar from "@/components/templates/navbar"
 import Footer from "@/components/templates/footer"
 import { useNavigate } from "react-router-dom"
-import LoginForm from "@/components/templates/loginForm"
+import { SignupForm } from "@/components/templates/signupForm"
 import { Button } from "@/components/ui/button"
 
-export function LoginPage() {
+export function SignupPage() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-  const { login } = useAuth()
+  const { signup } = useAuth()
   const navigate = useNavigate()
 
-  const handleLogin = async ({ emailOrUsername, password }: { emailOrUsername: string; password: string }) => {
+  const handleSignup = async ({ emailOrUsername, password }: { emailOrUsername: string; password: string }) => {
     setError(null)
     setLoading(true)
     try {
-      await login({ emailOrUsername, password })
-      // Optionally navigate after login
+      await signup({ emailOrUsername, password })
+      // Optionally navigate after signup
     } catch {
-      setError("Failed to login. Please check your credentials.")
+      setError("Failed to signup. Please check your credentials.")
     } finally {
       setLoading(false)
     }
   }
 
   return (
-      <div className="flex flex-col min-h-svh bg-gradient-to-br from-[#181c2c] via-[#23263a] to-[#10121a]">
+    <div className="flex flex-col min-h-svh bg-background">
       <Navbar />
-      <div className="flex flex-1  justify-center ">
-        {/* <img src="/src/components/images/bluey.jpg" className="absolute h-[600px] w-[2000px]" /> */}
-
-
-        <LoginForm onSubmit={handleLogin} loading={loading} error={error} />
+      <div className="flex flex-1 items-center justify-center bg-gradient-to-br from-[#181c2c] via-[#23263a] to-[#10121a]">
+        <SignupForm onSubmit={handleSignup} loading={loading} error={error} />
         <Button
           type="button"
           variant="outline"
