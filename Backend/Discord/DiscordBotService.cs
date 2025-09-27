@@ -287,25 +287,25 @@ public class DiscordBotService
                     isNewUser ? "Velkommen til MercanLink!" : "Velkommen (igen) til MercanLink! 👋"
                 )
                 .WithDescription(
-                    isNewUser
-                        ? "Vær venlig og sæt dig ind i regelsettet og brugen af Discord Serveren.\n\nNeden for er nogle trin som kan hjælpe dig med at komme igang."
-                        : "Hej igen! Godt at se dig tilbage på serveren! 😊"
+                    "Vær venlig og sæt dig ind i regelsettet og brugen af Discord Serveren.\n\nNeden for er nogle trin som kan hjælpe dig med at komme igang."
                 )
                 .WithColor(isNewUser ? Color.Green : Color.Blue)
                 .WithThumbnailUrl(guildUser.GetAvatarUrl() ?? guildUser.GetDefaultAvatarUrl())
                 .WithCurrentTimestamp();
 
+            // Tilføj altid regler og roller, uanset om brugeren er ny eller ej
+            embed.AddField(
+                "Læs Regelsættet",
+                "I kanalen #Regler under Informations-kategorien finder du det nyeste og mest opdaterede regelsæt. Venligst læs dette og følg med i tilfælde af opdateringer hertil."
+            );
+            embed.AddField(
+                "Vælg Roller",
+                "I kanalen #Roller finder du en række reaktionsbeskeder, som du kan bruge til at vælge de roller, du ønsker. Det kan være ting som hvilken uddannelse du har, hvilke produkter/områder du interesserer dig for."
+            );
+
             if (isNewUser)
             {
                 await xpService.AddXPAsync(guildUser.Id.ToString(), XPActivityType.DailyLogin);
-                embed.AddField(
-                    "Læs Regelsættet",
-                    "I kanalen #Regler under Informations kategorien finder du det nyeste og mest opdaterede reglsæt, venligst læs dette og følg med i tilfælde af opdateringer hertil"
-                );
-                embed.AddField(
-                    "Vælg Roller",
-                    "I kanalen #Roller finder du en række reaktions beskeder som du kan bruge til at selectere de roller du ønsker. Det kan være ting som, hvilken uddannelse har du, Hvilke Produkter / områder interesere du dig for."
-                );
                 embed.AddField(
                     "Mange tak!",
                     "Mange tak fordi du joinede MercanLink! Din Discord-konto er nu registreret i vores system. Du kan nu optjene XP og stige i level!"
