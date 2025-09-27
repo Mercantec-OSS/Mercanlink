@@ -4,20 +4,23 @@ using Backend.Data;
 using Backend.DBAccess;
 using Backend.Models;
 using Backend.Models.DTOs;
+using Backend.Config;
 using BCrypt.Net;
 using Discord;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 public class AuthService
 {
-
     private readonly AuthDBAccess _authDBAccess;
     private readonly JwtService _jwtService;
+    private readonly IOptions<JwtConfig> _jwtConfig;
 
-    public AuthService(JwtService jwtService, AuthDBAccess authDBAccess)
+    public AuthService(JwtService jwtService, AuthDBAccess authDBAccess, IOptions<JwtConfig> jwtConfig)
     {
         _authDBAccess = authDBAccess;
         _jwtService = jwtService;
+        _jwtConfig = jwtConfig;
     }
 
     public async Task<AuthResponse?> LoginAsync(LoginRequest request)
@@ -42,7 +45,7 @@ public class AuthService
         {
             AccessToken = accessToken,
             RefreshToken = refreshToken,
-            ExpiresAt = DateTime.UtcNow.AddMinutes(60), // Dette skal matche JWT config
+            ExpiresAt = DateTime.UtcNow.AddMinutes(_jwtConfig.Value.ExpiryMinutes),
             User = MapToUserDto(user)
         };
     }
@@ -107,7 +110,7 @@ public class AuthService
         {
             AccessToken = accessToken,
             RefreshToken = refreshToken,
-            ExpiresAt = DateTime.UtcNow.AddMinutes(60),
+            ExpiresAt = DateTime.UtcNow.AddMinutes(_jwtConfig.Value.ExpiryMinutes),
             User = MapToUserDto(user)
         };
     }
@@ -178,7 +181,7 @@ public class AuthService
         {
             AccessToken = newAccessToken,
             RefreshToken = newRefreshToken,
-            ExpiresAt = DateTime.UtcNow.AddMinutes(60),
+            ExpiresAt = DateTime.UtcNow.AddMinutes(_jwtConfig.Value.ExpiryMinutes),
             User = MapToUserDto(user)
         };
     }
