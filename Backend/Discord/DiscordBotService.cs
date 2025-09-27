@@ -284,12 +284,12 @@ public class DiscordBotService
 
             var embed = new EmbedBuilder()
                 .WithTitle(
-                    isNewUser ? "Velkommen til MercanLink!" : "Velkommen (igen) til MercanLink! 👋"
+                    "Velkommen til MercanLink!" 
                 )
                 .WithDescription(
                     "Vær venlig og sæt dig ind i regelsettet og brugen af Discord Serveren.\n\nNeden for er nogle trin som kan hjælpe dig med at komme igang."
                 )
-                .WithColor(isNewUser ? Color.Green : Color.Blue)
+                .WithColor(new Color(0x447ef2))
                 .WithThumbnailUrl(guildUser.GetAvatarUrl() ?? guildUser.GetDefaultAvatarUrl())
                 .WithCurrentTimestamp();
 
