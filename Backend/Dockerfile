@@ -15,6 +15,8 @@ WORKDIR /src
 COPY ["Backend.csproj", ""]
 RUN dotnet restore "Backend.csproj"
 COPY . .
+# Copy .env file if it exists
+COPY .env* ./
 WORKDIR "/src"
 RUN dotnet build "Backend.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
@@ -27,9 +29,18 @@ RUN dotnet publish "Backend.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:U
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
+# Copy .env file if it exists
+COPY .env* ./
 
 # Create startup script
 RUN echo '#!/bin/bash\n\
+echo "Loading environment variables from .env file..."\n\
+if [ -f .env ]; then\n\
+  export $(cat .env | grep -v "^#" | xargs)\n\
+  echo "Environment variables loaded from .env file"\n\
+else\n\
+  echo "No .env file found, using system environment variables"\n\
+fi\n\
 echo "Waiting for database..."\n\
 sleep 10\n\
 echo "Running database migrations..."\n\
