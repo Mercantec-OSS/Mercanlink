@@ -1,0 +1,57 @@
+{
+	"nodes":[
+		{"id":"client-group","type":"group","x":-400,"y":-500,"width":800,"height":100,"label":"Client Layer"},
+		{"id":"api-group","type":"group","x":-400,"y":-350,"width":800,"height":200,"label":"API Layer (Controllers)"},
+		{"id":"service-group","type":"group","x":-400,"y":-100,"width":800,"height":200,"label":"Service Layer (Business Logic)"},
+		{"id":"dbaccess-group","type":"group","x":-400,"y":150,"width":800,"height":200,"label":"Data Access Layer (DBAccess)"},
+		{"id":"data-group","type":"group","x":-400,"y":400,"width":800,"height":150,"label":"Data Layer (Entity Framework)"},
+		{"id":"database-group","type":"group","x":-400,"y":600,"width":800,"height":100,"label":"PostgreSQL Database"},
+		
+		{"id":"frontend-client","type":"text","text":"Frontend\n(React/Svelte)","x":-350,"y":-450,"width":120,"height":60},
+		{"id":"discord-client","type":"text","text":"Discord Bot","x":-200,"y":-450,"width":120,"height":60},
+		{"id":"mobile-client","type":"text","text":"Mobile App","x":-50,"y":-450,"width":120,"height":60},
+		{"id":"external-client","type":"text","text":"External APIs","x":100,"y":-450,"width":120,"height":60},
+		
+		{"id":"user-controller-node","type":"text","text":"UserController\n• GET /api/user\n• POST /api/user\n• PUT /api/user/{id}","x":-350,"y":-300,"width":150,"height":80},
+		{"id":"auth-controller-node","type":"text","text":"AuthController\n• POST /api/auth/login\n• POST /api/auth/register\n• POST /api/auth/refresh","x":-150,"y":-300,"width":150,"height":80},
+		{"id":"webhook-controller-node","type":"text","text":"WebhookController\n• POST /api/webhook/discord\n• Discord events","x":50,"y":-300,"width":150,"height":80},
+		{"id":"weather-controller-node","type":"text","text":"WeatherForecastController\n• GET /api/weatherforecast\n• Test endpoints","x":250,"y":-300,"width":150,"height":80},
+		
+		{"id":"auth-service-node","type":"text","text":"AuthService\n• Login/Register logic\n• Password validation\n• Token management","x":-350,"y":-50,"width":150,"height":80},
+		{"id":"jwt-service-node","type":"text","text":"JwtService\n• Token generation\n• Token validation\n• Refresh logic","x":-150,"y":-50,"width":150,"height":80},
+		{"id":"discord-verification-node","type":"text","text":"DiscordVerificationService\n• Verification codes\n• Discord linking","x":50,"y":-50,"width":150,"height":80},
+		{"id":"discord-services-node","type":"text","text":"Discord Services\n• UserService\n• XPService\n• LevelSystem","x":250,"y":-50,"width":150,"height":80},
+		
+		{"id":"user-dbaccess-node","type":"text","text":"UserDBAccess\n• GetAllUsers()\n• GetUser(id)\n• AddUser()","x":-350,"y":200,"width":150,"height":80},
+		{"id":"auth-dbaccess-node","type":"text","text":"AuthDBAccess\n• Login()\n• Register()\n• GetWebsiteUser()","x":-150,"y":200,"width":150,"height":80},
+		{"id":"discord-dbaccess-node","type":"text","text":"DiscordBotDBAccess\n• Discord operations\n• XP management","x":50,"y":200,"width":150,"height":80},
+		{"id":"jwt-dbaccess-node","type":"text","text":"JWTDBAccess\n• Refresh tokens\n• Token validation","x":250,"y":200,"width":150,"height":80},
+		
+		{"id":"dbcontext-node","type":"text","text":"ApplicationDbContext\n• Entity Framework\n• Model config","x":-200,"y":450,"width":200,"height":60},
+		{"id":"migrations-node","type":"text","text":"Migrations\n• Database schema\n• Version control","x":50,"y":450,"width":200,"height":60},
+		
+		{"id":"postgresql-node","type":"text","text":"PostgreSQL\n• Users table\n• DiscordUsers table\n• WebsiteUsers table","x":-200,"y":650,"width":200,"height":60}
+	],
+	"edges":[
+		{"id":"client-to-api-1","fromNode":"frontend-client","fromSide":"bottom","toNode":"user-controller-node","toSide":"top"},
+		{"id":"client-to-api-2","fromNode":"discord-client","fromSide":"bottom","toNode":"webhook-controller-node","toSide":"top"},
+		{"id":"client-to-api-3","fromNode":"mobile-client","fromSide":"bottom","toNode":"auth-controller-node","toSide":"top"},
+		
+		{"id":"api-to-service-1","fromNode":"user-controller-node","fromSide":"bottom","toNode":"auth-service-node","toSide":"top"},
+		{"id":"api-to-service-2","fromNode":"auth-controller-node","fromSide":"bottom","toNode":"auth-service-node","toSide":"top"},
+		{"id":"api-to-service-3","fromNode":"webhook-controller-node","fromSide":"bottom","toNode":"discord-services-node","toSide":"top"},
+		
+		{"id":"service-to-dbaccess-1","fromNode":"auth-service-node","fromSide":"bottom","toNode":"auth-dbaccess-node","toSide":"top"},
+		{"id":"service-to-dbaccess-2","fromNode":"jwt-service-node","fromSide":"bottom","toNode":"jwt-dbaccess-node","toSide":"top"},
+		{"id":"service-to-dbaccess-3","fromNode":"discord-services-node","fromSide":"bottom","toNode":"discord-dbaccess-node","toSide":"top"},
+		{"id":"service-to-dbaccess-4","fromNode":"auth-service-node","fromSide":"bottom","toNode":"user-dbaccess-node","toSide":"top"},
+		
+		{"id":"dbaccess-to-data-1","fromNode":"user-dbaccess-node","fromSide":"bottom","toNode":"dbcontext-node","toSide":"top"},
+		{"id":"dbaccess-to-data-2","fromNode":"auth-dbaccess-node","fromSide":"bottom","toNode":"dbcontext-node","toSide":"top"},
+		{"id":"dbaccess-to-data-3","fromNode":"discord-dbaccess-node","fromSide":"bottom","toNode":"dbcontext-node","toSide":"top"},
+		{"id":"dbaccess-to-data-4","fromNode":"jwt-dbaccess-node","fromSide":"bottom","toNode":"dbcontext-node","toSide":"top"},
+		
+		{"id":"data-to-database-1","fromNode":"dbcontext-node","fromSide":"bottom","toNode":"postgresql-node","toSide":"top"},
+		{"id":"data-to-database-2","fromNode":"migrations-node","fromSide":"bottom","toNode":"postgresql-node","toSide":"top"}
+	]
+}

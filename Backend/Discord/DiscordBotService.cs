@@ -284,12 +284,12 @@ public class DiscordBotService
 
             var embed = new EmbedBuilder()
                 .WithTitle(
-                    isNewUser ? "Velkommen til Mercantec Space!" : "Du er allerede registreret!"
+                    isNewUser ? "Velkommen til MercanLink!" : "Velkommen (igen) til MercanLink! 👋"
                 )
                 .WithDescription(
                     isNewUser
-                        ? "Din Discord-konto er nu registreret i vores system. Du kan nu optjene XP og stige i level!"
-                        : "Din Discord-konto er allerede registreret i vores system."
+                        ? "Vær venlig og sæt dig ind i regelsettet og brugen af Discord Serveren.\n\nNeden for er nogle trin som kan hjælpe dig med at komme igang."
+                        : "Hej igen! Godt at se dig tilbage på serveren! 😊"
                 )
                 .WithColor(isNewUser ? Color.Green : Color.Blue)
                 .WithThumbnailUrl(guildUser.GetAvatarUrl() ?? guildUser.GetDefaultAvatarUrl())
@@ -299,12 +299,16 @@ public class DiscordBotService
             {
                 await xpService.AddXPAsync(guildUser.Id.ToString(), XPActivityType.DailyLogin);
                 embed.AddField(
-                    "Næste skridt",
-                    "Senere vil du kunne forbinde din konto med vores hjemmeside for at få adgang til flere funktioner."
+                    "Læs Regelsættet",
+                    "I kanalen #Regler under Informations kategorien finder du det nyeste og mest opdaterede reglsæt, venligst læs dette og følg med i tilfælde af opdateringer hertil"
                 );
                 embed.AddField(
-                    "XP System",
-                    "Du optjener XP ved at være aktiv på serveren. Brug !rank for at se dit level og XP."
+                    "Vælg Roller",
+                    "I kanalen #Roller finder du en række reaktions beskeder som du kan bruge til at selectere de roller du ønsker. Det kan være ting som, hvilken uddannelse har du, Hvilke Produkter / områder interesere du dig for."
+                );
+                embed.AddField(
+                    "Mange tak!",
+                    "Mange tak fordi du joinede MercanLink! Din Discord-konto er nu registreret i vores system. Du kan nu optjene XP og stige i level!"
                 );
             }
 
