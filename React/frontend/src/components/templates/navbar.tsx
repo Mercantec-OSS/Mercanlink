@@ -4,6 +4,8 @@ import { useAuth } from "@/contexts/AuthContext"
 import { useState } from "react"
 import { FaBook, FaDiscord, FaSignInAlt } from "react-icons/fa"
 import { ModeToggle } from "@/components/ui/mode-toggle"
+import mercantecLogo from "@/components/images/mercantec-space-logo.png"
+import teamsIcon from "@/components/images/icons8-microsoft-teams-2019-48.png"
 
 export default function Navbar() {
     const { isAuthenticated } = useAuth();
@@ -36,7 +38,7 @@ export default function Navbar() {
                 {/* Center: Logo */}
                 <div className="flex flex-1 justify-center">
                     <div className="flex items-center pl-86">
-                        <img src="/src/components/images/mercantec-space-logo.png" alt="Mercantec Space Logo" className="h-8 w-8 object-contain" />
+                        <img src={mercantecLogo} alt="Mercantec Space Logo" className="h-8 w-8 object-contain" />
                         <Button onClick={() => navigate("/")} className="ml-1 font-semibold text-lg hover:text-gray-600 active:scale-95 transition-transform cursor-pointer bg-transparent border-0 shadow-none text-blue">Mercantec Space</Button>
                     </div>
                 </div>
@@ -52,7 +54,7 @@ export default function Navbar() {
                         style={{ height: "48px", width: "48px" }}
                     >
                         <img
-                            src="/src/components/images/icons8-microsoft-teams-2019-48.png"
+                            src={teamsIcon}
                             alt="Microsoft Teams"
                             className="h-10 w-10 object-contain"
                         />
