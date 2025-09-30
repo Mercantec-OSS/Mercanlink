@@ -1,11 +1,12 @@
 import Navbar from "@/components/templates/navbar"
 import Footer from "@/components/templates/footer"
 import FloatingInput from "@/components/ui/FloatingInput"
-import { useState } from "react"
+import { useState, useRef } from "react"
 
 export default function FormPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [message, setMessage] = useState("");
+    const formRef = useRef<HTMLFormElement>(null);
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -15,11 +16,12 @@ export default function FormPage() {
         const formData = new FormData(e.currentTarget);
 
         const data = {
-            materialType: formData.get('materialType') as string,
+            type: formData.get('materialType') as string,
+            author: "User", // You might want to get this from somewhere else
+            discordId: formData.get('DiscordId') as string,
             title: formData.get('title') as string,
             description: formData.get('description') as string,
-            discordId: formData.get('DiscordId') as string,
-            link: formData.get('link') as string || null,
+            linkToPost: formData.get('link') as string || "",
         };
 
         try {
@@ -33,7 +35,7 @@ export default function FormPage() {
 
             if (response.ok) {
                 setMessage("Successfully submitted!");
-                e.currentTarget.reset(); // Clear the form
+                formRef.current?.reset(); // Clear the form
             } else {
                 const errorText = await response.text();
                 setMessage(`Error: ${errorText}`);
@@ -54,7 +56,7 @@ export default function FormPage() {
                 <div className="max-w w-3xl  mx-auto bg-[#19141c] rounded-2xl shadow-lg p-8">
                     <h1 className="text-4xl font-extrabold text-center tracking-wide text-white drop-shadow-lg">Form</h1>
                     <div className="border-t border-white/20 my-8"></div>
-                    <form className="flex flex-col items-center gap-6" onSubmit={handleSubmit}>
+                    <form ref={formRef} className="flex flex-col items-center gap-6" onSubmit={handleSubmit}>
                         {message && (
                             <div className={`w-full md:w-2/3 p-4 rounded-lg text-center ${message.startsWith('Successfully')
                                 ? 'bg-green-600/20 text-green-400 border border-green-500/30'
@@ -89,7 +91,7 @@ export default function FormPage() {
                             <FloatingInput name="title" label="Titel" required />
                             <FloatingInput name="description" label="Beskrivelse" required />
                             <FloatingInput name="DiscordId" label="DiscordId" required />
-                            <FloatingInput name="link" label="Link" type="url" />
+                            <FloatingInput name="link" label="Link" />
 
                             <button
                                 type="submit"
