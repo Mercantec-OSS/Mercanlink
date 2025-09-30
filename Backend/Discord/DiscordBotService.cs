@@ -28,7 +28,7 @@ public class DiscordBotService
         _token = config["Discord:Token"];
         _modChannelId = Convert.ToUInt64(config["Discord:ModChannelId"]);
         _knowledgeCenterChannelId = Convert.ToUInt64(config["Discord:KnowledgeCenterChannelId"]);
-        _modRoleId =  Convert.ToUInt64(config["Discord:ModRoleId"]);
+        _modRoleId = Convert.ToUInt64(config["Discord:ModRoleId"]);
         _client = new DiscordSocketClient(
             new DiscordSocketConfig
             {
@@ -143,7 +143,7 @@ public class DiscordBotService
         if (reaction.User.Value.IsBot)
             return;
 
-        if (reaction.Channel.Id == _modChannelId && emojiName == "👍") { await KnowledgeCenterPostReaction(reaction, cachedMessage); }
+        if (reaction.Channel.Id == _modChannelId) { await KnowledgeCenterPostReaction(reaction, cachedMessage); }
 
         if (_roleMap.TryGetValue(reaction.Emote.Name, out ulong roleId))
         {
@@ -422,16 +422,21 @@ public class DiscordBotService
         string newMessageContent = message.Content.Replace($"<@&{_modRoleId}>", "@everyone");
 
         var channel = _client.GetChannel(_knowledgeCenterChannelId) as IMessageChannel;
-        
-        if (channel == null || !message.Content.Contains("**Link:**"))
-        {
-            Console.WriteLine($"Channel med {_modChannelId.ToString()} kunne ikke findes");
-        }
-        else
-        {
 
-            await channel.SendMessageAsync(newMessageContent);
-            await message.DeleteAsync();
+        if (reaction.Emote.Name == "👎" || reaction.Emote.Name == "👍")
+        {
+            if (channel == null || !message.Content.Contains("**Link:**"))
+            {
+                Console.WriteLine($"Channel med {_knowledgeCenterChannelId.ToString()} kunne ikke findes");
+            }
+            else
+            {
+                if (reaction.Emote.Name != "👎")
+                {
+                    await channel.SendMessageAsync(newMessageContent);
+                }
+                await message.DeleteAsync();
+            }
         }
     }
 }
