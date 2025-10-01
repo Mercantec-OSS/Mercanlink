@@ -35,7 +35,7 @@ export function Calendar22() {
             mode="single"
             selected={date}
             captionLayout="dropdown"
-            onSelect={(date) => {
+            onSelect={(date: Date | undefined) => {
               setDate(date)
               setOpen(false)
             }}

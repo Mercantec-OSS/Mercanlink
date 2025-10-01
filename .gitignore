@@ -13,3 +13,4 @@ docker-compose.yaml
 /AdminHub/.svelte-kit
 node_modules/
 .vscode/
+.env

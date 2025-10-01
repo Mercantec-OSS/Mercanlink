@@ -6,9 +6,16 @@ services:
       context: ./Backend
       dockerfile: Dockerfile
     ports:
-      - "5053:8080"
+      - "9301:8080"
     environment:
       - ASPNETCORE_URLS=http://+:8080
+      - DEFAULT_CONNECTION=${DEFAULT_CONNECTION}
+      - DISCORD_TOKEN=${DISCORD_TOKEN}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_ISSUER=${JWT_ISSUER}
+      - JWT_AUDIENCE=${JWT_AUDIENCE}
+      - JWT_EXPIRY_MINUTES=${JWT_EXPIRY_MINUTES}
+      - JWT_REFRESH_TOKEN_EXPIRY_DAYS=${JWT_REFRESH_TOKEN_EXPIRY_DAYS}
     depends_on:
       - db
     networks:
@@ -19,7 +26,7 @@ services:
       context: ./React/frontend
       dockerfile: Dockerfile
     ports:
-      - "3000:80"
+      - "9302:80"
     depends_on:
       - backend
     networks:

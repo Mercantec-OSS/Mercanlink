@@ -15,10 +15,21 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://localhost:5053', // Updated to match your backend port
+        target: 'http://mercanteclink.dk', // Updated to match your backend port
         changeOrigin: true,
         secure: false,
       },
     },
   },
+  build: {
+    assetsDir: 'assets',
+    rollupOptions: {
+      output: {
+        assetFileNames: 'assets/[name]-[hash][extname]',
+        chunkFileNames: 'assets/[name]-[hash].js',
+        entryFileNames: 'assets/[name]-[hash].js',
+      },
+    },
+  },
+  base: './',
 })

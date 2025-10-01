@@ -34,7 +34,7 @@ public class Program
 
         // Tilføj PostgreSQL DbContext
         builder.Services.AddDbContext<ApplicationDbContext>(options =>
-            options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"))
+            options.UseNpgsql(Environment.GetEnvironmentVariable("DEFAULT_CONNECTION") ?? builder.Configuration.GetConnectionString("DefaultConnection"))
         );
 
         // Tilføj JWT konfiguration
@@ -43,11 +43,11 @@ public class Program
             if (builder.Configuration.GetSection("JwtConfig").GetChildren().Count() == 0)
             {
                 // Standard konfiguration hvis ingen findes
-                options.SecretKey = builder.Configuration["JWT_SECRET"] ?? "din-super-hemmelige-noegle-der-skal-vaere-mindst-32-karakterer-lang";
-                options.Issuer = "MercantecSpace";
-                options.Audience = "MercantecSpaceUsers";
-                options.ExpiryMinutes = 60;
-                options.RefreshTokenExpiryDays = 7;
+                options.SecretKey = Environment.GetEnvironmentVariable("JWT_SECRET") ?? builder.Configuration["JWT_SECRET"];
+                options.Issuer = Environment.GetEnvironmentVariable("JWT_ISSUER") ?? builder.Configuration["JWT_ISSUER"];
+                options.Audience = Environment.GetEnvironmentVariable("JWT_AUDIENCE") ?? builder.Configuration["JWT_AUDIENCE"];
+                options.ExpiryMinutes = int.TryParse(Environment.GetEnvironmentVariable("JWT_EXPIRY_MINUTES") ?? builder.Configuration["JWT_EXPIRY_MINUTES"], out var expiryMinutes) ? expiryMinutes : 0;
+                options.RefreshTokenExpiryDays = int.TryParse(Environment.GetEnvironmentVariable("JWT_REFRESH_TOKEN_EXPIRY_DAYS") ?? builder.Configuration["JWT_REFRESH_TOKEN_EXPIRY_DAYS"], out var refreshDays) ? refreshDays : 0;
             }
             else
             {
@@ -60,9 +60,9 @@ public class Program
         builder.Configuration.GetSection("JwtConfig").Bind(jwtConfig);
         if (string.IsNullOrEmpty(jwtConfig.SecretKey))
         {
-            jwtConfig.SecretKey = builder.Configuration["JWT_SECRET"] ?? "din-super-hemmelige-noegle-der-skal-vaere-mindst-32-karakterer-lang";
-            jwtConfig.Issuer = "MercantecSpace";
-            jwtConfig.Audience = "MercantecSpaceUsers";
+            jwtConfig.SecretKey = Environment.GetEnvironmentVariable("JWT_SECRET") ?? builder.Configuration["JWT_SECRET"];
+            jwtConfig.Issuer = Environment.GetEnvironmentVariable("JWT_ISSUER") ?? builder.Configuration["JWT_ISSUER"];
+            jwtConfig.Audience = Environment.GetEnvironmentVariable("JWT_AUDIENCE") ?? builder.Configuration["JWT_AUDIENCE"];
         }
 
         builder.Services.AddAuthentication(options =>

@@ -25,10 +25,10 @@ public class DiscordBotService
 
     public DiscordBotService(IConfiguration config, IServiceProvider serviceProvider)
     {
-        _token = config["Discord:Token"];
-        _modChannelId = Convert.ToUInt64(config["Discord:ModChannelId"]);
-        _knowledgeCenterChannelId = Convert.ToUInt64(config["Discord:KnowledgeCenterChannelId"]);
-        _modRoleId = Convert.ToUInt64(config["Discord:ModRoleId"]);
+        _token = Environment.GetEnvironmentVariable("DISCORD_TOKEN") ?? config["Discord:Token"];
+        _modChannelId = Convert.ToUInt64( Environment.GetEnvironmentVariable("DISCORD_MODCHANNELID") ??config["Discord:ModChannelId"]);
+        _knowledgeCenterChannelId = Convert.ToUInt64( Environment.GetEnvironmentVariable("DISCORD_KNOWLEDGECENTERCHANNELID") ?? config["Discord:KnowledgeCenterChannelId"]);
+        _modRoleId = Convert.ToUInt64( Environment.GetEnvironmentVariable("DISCORD_MODROLEID") ?? config["Discord:ModRoleId"]);
         _client = new DiscordSocketClient(
             new DiscordSocketConfig
             {
@@ -297,27 +297,31 @@ public class DiscordBotService
 
             var embed = new EmbedBuilder()
                 .WithTitle(
-                    isNewUser ? "Velkommen til Mercantec Space!" : "Du er allerede registreret!"
+                    "Velkommen til MercanLink!" 
                 )
                 .WithDescription(
-                    isNewUser
-                        ? "Din Discord-konto er nu registreret i vores system. Du kan nu optjene XP og stige i level!"
-                        : "Din Discord-konto er allerede registreret i vores system."
+                    "Vær venlig og sæt dig ind i regelsettet og brugen af Discord Serveren.\n\nNeden for er nogle trin som kan hjælpe dig med at komme igang."
                 )
-                .WithColor(isNewUser ? Color.Green : Color.Blue)
+                .WithColor(new Color(0x447ef2))
                 .WithThumbnailUrl(guildUser.GetAvatarUrl() ?? guildUser.GetDefaultAvatarUrl())
                 .WithCurrentTimestamp();
+
+            // Tilføj altid regler og roller, uanset om brugeren er ny eller ej
+            embed.AddField(
+                "Læs Regelsættet",
+                "I kanalen #Regler under Informations-kategorien finder du det nyeste og mest opdaterede regelsæt. Venligst læs dette og følg med i tilfælde af opdateringer hertil."
+            );
+            embed.AddField(
+                "Vælg Roller",
+                "I kanalen #Roller finder du en række reaktionsbeskeder, som du kan bruge til at vælge de roller, du ønsker. Det kan være ting som hvilken uddannelse du har, hvilke produkter/områder du interesserer dig for."
+            );
 
             if (isNewUser)
             {
                 await xpService.AddXPAsync(guildUser.Id.ToString(), XPActivityType.DailyLogin);
                 embed.AddField(
-                    "Næste skridt",
-                    "Senere vil du kunne forbinde din konto med vores hjemmeside for at få adgang til flere funktioner."
-                );
-                embed.AddField(
-                    "XP System",
-                    "Du optjener XP ved at være aktiv på serveren. Brug !rank for at se dit level og XP."
+                    "Mange tak!",
+                    "Mange tak fordi du joinede MercanLink! Din Discord-konto er nu registreret i vores system. Du kan nu optjene XP og stige i level!"
                 );
             }
 
