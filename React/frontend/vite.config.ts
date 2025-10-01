@@ -12,6 +12,15 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  server: {
+    proxy: {
+      '/api': {
+        target: 'https://mercanteclink.dk', // Updated to match your backend port
+        changeOrigin: true,
+        secure: false,
+      },
+    },
+  },
   build: {
     assetsDir: 'assets',
     rollupOptions: {

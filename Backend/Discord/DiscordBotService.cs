@@ -1,9 +1,12 @@
 using Backend.DiscordBot.Commands;
 using Backend.DiscordServices.Services;
+using Backend.Models.DTOs;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using System.Threading.Channels;
 
 public class DiscordBotService
 {
@@ -11,6 +14,9 @@ public class DiscordBotService
     private readonly string _token;
     private readonly string _prefix = "!"; // Prefix for kommandoer
     private readonly ulong _roleSelectionChannelId = 1358696771596980326;
+    private readonly ulong _modChannelId;
+    private readonly ulong _knowledgeCenterChannelId;
+    private readonly ulong _modRoleId;
     private readonly Dictionary<string, ulong> _roleMap = new() { { "👍", 1353709131500093532 } };
     private readonly ulong _guildId = 1351185531836436541;
     private readonly IServiceProvider _serviceProvider;
@@ -20,6 +26,9 @@ public class DiscordBotService
     public DiscordBotService(IConfiguration config, IServiceProvider serviceProvider)
     {
         _token = Environment.GetEnvironmentVariable("DISCORD_TOKEN") ?? config["Discord:Token"];
+        _modChannelId = Convert.ToUInt64( Environment.GetEnvironmentVariable("DISCORD_MODCHANNELID") ??config["Discord:ModChannelId"]);
+        _knowledgeCenterChannelId = Convert.ToUInt64( Environment.GetEnvironmentVariable("DISCORD_KNOWLEDGECENTERCHANNELID") ?? config["Discord:KnowledgeCenterChannelId"]);
+        _modRoleId = Convert.ToUInt64( Environment.GetEnvironmentVariable("DISCORD_MODROLEID") ?? config["Discord:ModRoleId"]);
         _client = new DiscordSocketClient(
             new DiscordSocketConfig
             {
@@ -129,8 +138,12 @@ public class DiscordBotService
         SocketReaction reaction
     )
     {
+        var emojiName = reaction.Emote.Name;
+
         if (reaction.User.Value.IsBot)
             return;
+
+        if (reaction.Channel.Id == _modChannelId) { await KnowledgeCenterPostReaction(reaction, cachedMessage); }
 
         if (_roleMap.TryGetValue(reaction.Emote.Name, out ulong roleId))
         {
@@ -383,6 +396,52 @@ public class DiscordBotService
     {
         await _client.LogoutAsync();
         await _client.StopAsync();
+    }
+
+    public async Task KnowledgeCenterPostApproval(PostDTO post)
+    {
+
+        var channel = _client.GetChannel(_modChannelId) as IMessageChannel;
+
+        if (channel == null)
+        {
+            Console.WriteLine($"Channel med {_modChannelId.ToString()} kunne ikke findes");
+        }
+        else
+        {
+            await channel.SendMessageAsync(
+                $"<@&{_modRoleId}>\r\n**" +
+                $"Nyt materiale er blevet udgivet af:** {post.Author} (<@{post.DiscordId}>)\r\n**" +
+                $"Materiale type:** {post.Type}\r\n\r\n**" +
+                $"Titel:** {post.Title}\r\n**" +
+                $"Beskrivelse:** {post.Description}\r\n" +
+                $"\r\n**" +
+                $"Link:** {post.LinkToPost}");
+        }
+    }
+
+    public async Task KnowledgeCenterPostReaction(SocketReaction reaction, Cacheable<IUserMessage, ulong> cachedMessage)
+    {
+        var message = await cachedMessage.GetOrDownloadAsync();
+        string newMessageContent = message.Content.Replace($"<@&{_modRoleId}>", "@everyone");
+
+        var channel = _client.GetChannel(_knowledgeCenterChannelId) as IMessageChannel;
+
+        if (reaction.Emote.Name == "👎" || reaction.Emote.Name == "👍")
+        {
+            if (channel == null || !message.Author.IsBot)
+            {
+                Console.WriteLine($"Channel med {_knowledgeCenterChannelId.ToString()} kunne ikke findes");
+            }
+            else
+            {
+                if (reaction.Emote.Name != "👎")
+                {
+                    await channel.SendMessageAsync(newMessageContent);
+                }
+                await message.DeleteAsync();
+            }
+        }
     }
 }
 
