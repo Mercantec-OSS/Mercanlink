@@ -3,8 +3,6 @@ import Navbar from "@/components/templates/navbar";
 import Footer from "@/components/templates/footer";
 import React from "react";
 import { FaRobot, FaGamepad } from "react-icons/fa";
-import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
 
 const electives = [
     {
@@ -36,7 +34,6 @@ const electives = [
     },
 ];
 const Valgfag: React.FC = () => {
-    const navigate = useNavigate();
     return (
 
         <><Navbar></Navbar><div className="min-h-screen flex flex-col bg-gradient-to-br from-[#181c2c] via-[#23263a] to-[#10121a] text-white">
