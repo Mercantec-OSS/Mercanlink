@@ -25,7 +25,7 @@ export default function FloatingInput({
             />
             <label
                 htmlFor={name}
-                className="absolute left-1 top-2 text-white/70 text-sm transition-all peer-placeholder-shown:top-2 peer-placeholder-shown:text-base peer-focus:-top-4 peer-focus:text-blue-400 peer-focus:text-sm"
+                className="absolute left-1 top-2 text-white/70 text-sm transition-all peer-placeholder-shown:top-2 peer-placeholder-shown:text-base peer-focus:-top-4 peer-focus:text-blue-400 peer-focus:text-sm peer-valid:-top-4 peer-valid:text-blue-400 peer-valid:text-sm"
             >
                 {label}
             </label>

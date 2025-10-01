@@ -429,7 +429,7 @@ public class DiscordBotService
 
         if (reaction.Emote.Name == "👎" || reaction.Emote.Name == "👍")
         {
-            if (channel == null || !reaction.User.Value.IsBot)
+            if (channel == null || !message.Author.IsBot)
             {
                 Console.WriteLine($"Channel med {_knowledgeCenterChannelId.ToString()} kunne ikke findes");
             }
