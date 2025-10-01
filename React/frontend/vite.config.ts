@@ -15,7 +15,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://mercanteclink.dk', // Updated to match your backend port
+        target: 'https://mercanteclink.dk', // Updated to match your backend port
         changeOrigin: true,
         secure: false,
       },
