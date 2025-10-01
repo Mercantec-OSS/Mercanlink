@@ -425,7 +425,7 @@ public class DiscordBotService
 
         if (reaction.Emote.Name == "👎" || reaction.Emote.Name == "👍")
         {
-            if (channel == null || !message.Content.Contains("**Link:**"))
+            if (channel == null || !reaction.User.Value.IsBot)
             {
                 Console.WriteLine($"Channel med {_knowledgeCenterChannelId.ToString()} kunne ikke findes");
             }
