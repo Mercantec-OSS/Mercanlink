@@ -1,3 +1,4 @@
+using Backend.Discord;
 using Backend.DiscordBot.Commands;
 using Backend.DiscordServices.Services;
 using Backend.Models.DTOs;
@@ -6,6 +7,7 @@ using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using System.Text.RegularExpressions;
 using System.Threading.Channels;
 
 public class DiscordBotService
@@ -26,9 +28,9 @@ public class DiscordBotService
     public DiscordBotService(IConfiguration config, IServiceProvider serviceProvider)
     {
         _token = Environment.GetEnvironmentVariable("DISCORD_TOKEN") ?? config["Discord:Token"];
-        _modChannelId = Convert.ToUInt64( Environment.GetEnvironmentVariable("DISCORD_MODCHANNELID") ??config["Discord:ModChannelId"]);
-        _knowledgeCenterChannelId = Convert.ToUInt64( Environment.GetEnvironmentVariable("DISCORD_KNOWLEDGECENTERCHANNELID") ?? config["Discord:KnowledgeCenterChannelId"]);
-        _modRoleId = Convert.ToUInt64( Environment.GetEnvironmentVariable("DISCORD_MODROLEID") ?? config["Discord:ModRoleId"]);
+        _modChannelId = Convert.ToUInt64(Environment.GetEnvironmentVariable("DISCORD_MODCHANNELID") ?? config["Discord:ModChannelId"]);
+        _knowledgeCenterChannelId = Convert.ToUInt64(Environment.GetEnvironmentVariable("DISCORD_KNOWLEDGECENTERCHANNELID") ?? config["Discord:KnowledgeCenterChannelId"]);
+        _modRoleId = Convert.ToUInt64(Environment.GetEnvironmentVariable("DISCORD_MODROLEID") ?? config["Discord:ModRoleId"]);
 
         // Debug: Tjek om værdierne er blevet hentet korrekt
         Console.WriteLine("=== DiscordBotService Konfiguration ===");
@@ -307,7 +309,7 @@ public class DiscordBotService
 
             var embed = new EmbedBuilder()
                 .WithTitle(
-                    "Velkommen til MercanLink!" 
+                    "Velkommen til MercanLink!"
                 )
                 .WithDescription(
                     "Vær venlig og sæt dig ind i regelsettet og brugen af Discord Serveren.\n\nNeden for er nogle trin som kan hjælpe dig med at komme igang."
@@ -448,6 +450,16 @@ public class DiscordBotService
                 if (reaction.Emote.Name != "👎")
                 {
                     await channel.SendMessageAsync(newMessageContent);
+                    using (var scope = _serviceProvider.CreateScope())
+                    {
+                        var externalBotIntegration = scope.ServiceProvider.GetRequiredService<ExternalBotIntegration>();
+
+                        var match = Regex.Match(newMessageContent, @"<@!?(\d+)>");
+                        if (match.Success)
+                        {
+                            await externalBotIntegration.Addexp(1000, ulong.Parse(match.Groups[1].Value));
+                        }
+                    }
                 }
                 await message.DeleteAsync();
             }

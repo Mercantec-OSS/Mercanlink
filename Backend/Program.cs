@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Backend.DBAccess;
+using Backend.Discord;
 
 public class Program
 {
@@ -183,7 +184,8 @@ public class Program
         // Tilføj Discord services        
         builder.Services.AddHostedService<DiscordHostedService>();        
         builder.Services.AddSingleton<DiscordBotService>(provider =>            
-        new DiscordBotService(builder.Configuration, provider));        
+        new DiscordBotService(builder.Configuration, provider));
+        builder.Services.AddScoped<ExternalBotIntegration>();
         builder.Services.AddScoped<UserService>();        
         builder.Services.AddScoped<XPService>();        
         builder.Services.AddSingleton<LevelSystem>();        

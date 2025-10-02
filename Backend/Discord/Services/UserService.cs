@@ -4,10 +4,10 @@ using System;
 using System.Threading.Tasks;
 using Backend.Data;
 using Backend.Models;
-using Discord.WebSocket;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using Backend.DBAccess;
+using global::Discord.WebSocket;
 
 public class UserService
 {
