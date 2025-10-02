@@ -11,18 +11,18 @@ namespace Backend.Controllers
     public class XpRewardController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
-        private readonly string _sercretCode;
+        private readonly string _secretCode;
 
         public XpRewardController(ApplicationDbContext context, IConfiguration config)
         {
             _context = context;
-            _sercretCode = Environment.GetEnvironmentVariable("XPREWARDSECRETCODE") ?? config["XpRewardSecretCode"];
+            _secretCode = Environment.GetEnvironmentVariable("XP_REWARD_SECRET_CODE") ?? config["XpRewardSecretCode"];
         }
 
         [HttpPost]
         public async Task<ActionResult> AddXpReward([FromBody] XpRewardDTO xpReward, string secretCode)
         {
-            if (secretCode != _sercretCode)
+            if (secretCode != _secretCode)
             {
                 return Unauthorized();
             }
@@ -39,7 +39,7 @@ namespace Backend.Controllers
         [HttpGet]
         public async Task<ActionResult<List<XpReward>>> GetAllXpReward(string secretCode)
         {
-            if (secretCode != _sercretCode)
+            if (secretCode != _secretCode)
             {
                 return Unauthorized();
             }
@@ -52,7 +52,7 @@ namespace Backend.Controllers
         [HttpPut]
         public async Task<ActionResult> UpdateXpReward([FromBody] XpRewardDTO xpReward, int Id, string secretCode)
         {
-            if (secretCode != _sercretCode)
+            if (secretCode != _secretCode)
             {
                 return Unauthorized();
             }
@@ -74,7 +74,7 @@ namespace Backend.Controllers
         [HttpDelete]
         public async Task<ActionResult<List<XpReward>>> DeleteXpReward(int Id, string secretCode)
         {
-            if (secretCode != _sercretCode)
+            if (secretCode != _secretCode)
             {
                 return Unauthorized();
             }
