@@ -17,6 +17,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<UserDailyActivity> UserDailyActivities { get; set; }
     public DbSet<RefreshToken> RefreshTokens { get; set; }
     public DbSet<DiscordVerification> DiscordVerifications { get; set; }
+    public DbSet<XpReward> XpRewards { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
