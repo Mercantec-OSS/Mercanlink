@@ -29,6 +29,16 @@ public class DiscordBotService
         _modChannelId = Convert.ToUInt64( Environment.GetEnvironmentVariable("DISCORD_MODCHANNELID") ??config["Discord:ModChannelId"]);
         _knowledgeCenterChannelId = Convert.ToUInt64( Environment.GetEnvironmentVariable("DISCORD_KNOWLEDGECENTERCHANNELID") ?? config["Discord:KnowledgeCenterChannelId"]);
         _modRoleId = Convert.ToUInt64( Environment.GetEnvironmentVariable("DISCORD_MODROLEID") ?? config["Discord:ModRoleId"]);
+
+        // Debug: Tjek om værdierne er blevet hentet korrekt
+        Console.WriteLine("=== DiscordBotService Konfiguration ===");
+        Console.WriteLine($"Token: {(string.IsNullOrEmpty(_token) ? "MANGELENDE" : "OK")}");
+        Console.WriteLine($"Mod Channel ID: {_modChannelId}");
+        Console.WriteLine($"Knowledge Center Channel ID: {_knowledgeCenterChannelId}");
+        Console.WriteLine($"Mod Role ID: {_modRoleId}");
+        Console.WriteLine($"Role Selection Channel ID: {_roleSelectionChannelId}");
+        Console.WriteLine($"Guild ID: {_guildId}");
+        Console.WriteLine("========================================");
         _client = new DiscordSocketClient(
             new DiscordSocketConfig
             {
