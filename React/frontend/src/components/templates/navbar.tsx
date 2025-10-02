@@ -39,7 +39,7 @@ export default function Navbar() {
                 <div className="flex flex-1 justify-center">
                     <div className="flex items-center pl-86">
                         <img src={mercantecLogo} alt="Mercantec Space Logo" className="h-8 w-8 object-contain" />
-                        <Button onClick={() => navigate("/")} className="ml-1 font-semibold text-lg hover:text-gray-600 active:scale-95 transition-transform cursor-pointer bg-transparent border-0 shadow-none text-blue">Mercantec Space</Button>
+                        <Button onClick={() => navigate("/")} className="ml-1 font-semibold text-lg hover:text-gray-600 active:scale-95 transition-transform cursor-pointer bg-transparent border-0 shadow-none text-blue">MercanLink </Button>
                     </div>
                 </div>
 
@@ -91,58 +91,76 @@ export default function Navbar() {
             </nav>
             {/* Sidebar under navbar, left side */}
             {sidebarOpen && (
-                <aside className="absolute left-0 top-full w-64 h-189 bg-gradient-to-br from-[#232a36] to-[#181c22] flex flex-col p-4 z-40 ">
-                    <button
-                        className="self-end mb-4 p-2 rounded text-white hover:bg-gray-600"
-                        onClick={() => setSidebarOpen(false)}
-                        aria-label="Close sidebar"
-                    >
-                        ✕
-                    </button>
-                    <div className="flex items-center left-0 justify-center border-b-4 mb-4 bg-red-300">
-
-
+                <aside className="absolute left-0 top-full w-72 min-h-screen bg-gradient-to-br from-[#1a1f2e] via-[#232a36] to-[#181c22] flex flex-col shadow-2xl z-40 border-r border-gray-600/30">
+                    {/* Header section with close button */}
+                    <div className="flex items-center justify-between p-6 border-b border-gray-600/30">
+                        <div className="flex items-center gap-3">
+                            <img src={mercantecLogo} alt="Logo" className="h-8 w-8 object-contain" />
+                            <span className="text-white font-semibold text-lg">Menu</span>
+                        </div>
+                        <button
+                            className="p-2 rounded-lg text-gray-300 hover:text-white hover:bg-gray-700/50 transition-all duration-200"
+                            onClick={() => setSidebarOpen(false)}
+                            aria-label="Close sidebar"
+                        >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
                     </div>
-                    <nav className="flex flex-col gap-2 items-start justify-start h-full w-full">
+
+                    {/* Navigation section */}
+                    <nav className="flex flex-col p-4 space-y-2 flex-1">
                         <Link
                             to="/valgfag"
                             onClick={() => setSidebarOpen(false)}
-                            className="flex flex-row items-center px-4 mb-5 py-2 text-lg rounded-none transition-all duration-300 border-b border-white text-white hover:rounded-2xl hover:border-b-white hover:bg-gray-700 hover:text-gray-200 w-full"
+                            className="flex items-center gap-4 px-4 py-3 text-gray-200 rounded-xl transition-all duration-200 hover:bg-gradient-to-r hover:from-blue-600/20 hover:to-purple-600/20 hover:text-white hover:shadow-lg hover:scale-[1.02] group"
                         >
-                            <FaBook className="mr-4 min-w-[24px]" />
-                            <span>Valgfag</span>
+                            <FaBook className="text-blue-400 group-hover:text-blue-300 transition-colors" size={20} />
+                            <span className="font-medium">Valgfag</span>
                         </Link>
+
                         {!isAuthenticated && (
                             <>
                                 <Link
                                     to="/login"
                                     onClick={() => setSidebarOpen(false)}
-                                    className="flex flex-row items-center px-4 mb-5 py-2 text-lg rounded-none transition-all duration-300 border-b border-white text-white hover:rounded-2xl hover:border-b-white hover:bg-gray-700 hover:text-gray-200 w-full"
+                                    className="flex items-center gap-4 px-4 py-3 text-gray-200 rounded-xl transition-all duration-200 hover:bg-gradient-to-r hover:from-green-600/20 hover:to-emerald-600/20 hover:text-white hover:shadow-lg hover:scale-[1.02] group"
                                 >
-                                    <FaSignInAlt className="mr-4 min-w-[24px]" />
-                                    <span>Login</span>
+                                    <FaSignInAlt className="text-green-400 group-hover:text-green-300 transition-colors" size={20} />
+                                    <span className="font-medium">Login</span>
                                 </Link>
                                 <Link
                                     to="/signup"
                                     onClick={() => setSidebarOpen(false)}
-                                    className="flex flex-row items-center px-4 py-2 text-lg rounded-none transition-all duration-300 border-b border-white text-white hover:rounded-2xl hover:border-b-white hover:bg-gray-700 hover:text-gray-200 w-full"
+                                    className="flex items-center gap-4 px-4 py-3 text-gray-200 rounded-xl transition-all duration-200 hover:bg-gradient-to-r hover:from-purple-600/20 hover:to-pink-600/20 hover:text-white hover:shadow-lg hover:scale-[1.02] group"
                                 >
-                                    <FaSignInAlt className="mr-4 min-w-[24px]" />
-                                    <span>Sign up</span>
+                                    <FaSignInAlt className="text-purple-400 group-hover:text-purple-300 transition-colors" size={20} />
+                                    <span className="font-medium">Sign up</span>
                                 </Link>
                             </>
                         )}
+
                         {isAuthenticated && (
                             <Link
                                 to="/"
                                 onClick={() => setSidebarOpen(false)}
-                                className="flex flex-row items-center px-4 py-2 text-lg rounded bg-black text-white hover:bg-gray-600 transition w-full"
+                                className="flex items-center gap-4 px-4 py-3 text-gray-200 rounded-xl transition-all duration-200 hover:bg-gradient-to-r hover:from-red-600/20 hover:to-orange-600/20 hover:text-white hover:shadow-lg hover:scale-[1.02] group"
                             >
-                                <span className="min-w-[24px]" />
-                                <span>Logout</span>
+                                <svg className="w-5 h-5 text-red-400 group-hover:text-red-300 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                                </svg>
+                                <span className="font-medium">Logout</span>
                             </Link>
                         )}
                     </nav>
+
+                    {/* Footer section */}
+                    <div className="p-4 border-t border-gray-600/30">
+                        <div className="text-center text-gray-400 text-sm">
+                            <span>MercanLink</span>
+                        </div>
+                    </div>
                 </aside>
             )}
         </div>

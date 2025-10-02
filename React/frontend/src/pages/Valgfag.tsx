@@ -39,7 +39,7 @@ const Valgfag: React.FC = () => {
         <><Navbar></Navbar><div className="min-h-screen flex flex-col bg-gradient-to-br from-[#181c2c] via-[#23263a] to-[#10121a] text-white">
 
 
-            <h1 className="text-4xl font-extrabold text-center mb-10 tracking-wide text-white drop-shadow-lg">Valgfag</h1><div className="max-w-5xl mx-auto bg-[#19141c] rounded-2xl shadow-lg p-8">
+            <h1 className="text-4xl font-extrabold text-center mt-20 mb-10 tracking-wide text-white drop-shadow-lg">Valgfag</h1><div className="max-w-5xl mx-auto bg-[#19141c] rounded-2xl shadow-lg p-8">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
                     {electives.map((e, i) => (
                         <div

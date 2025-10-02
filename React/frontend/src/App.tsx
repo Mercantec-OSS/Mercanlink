@@ -15,18 +15,18 @@ function App() {
       <div className="flex flex-row items-center justify-center gap-15 mb-10">
         {/* Card 1 */}
         <div className="relative flex flex-col items-center">
-          <Card onClick={() => navigate("/valgfag")} className="border-0 w-[300px] text-[#d8cdcd] bg-[#19141c] h-[450px] cursor-pointer hover:text-white active:scale-3d hover:scale-110 backdrop-blur-md mt-10 overflow-hidden hover:shadow-blue-500/40 transition-shadow duration-300 shadow-2xl ">
+          <Card className="border-0 w-[300px] text-[#d8cdcd] bg-[#19141c] h-[450px] cursor-pointer hover:text-white active:scale-3d hover:scale-110 backdrop-blur-md mt-10 overflow-hidden hover:shadow-blue-500/40 transition-shadow duration-300 shadow-2xl ">
             <div className="relative w-full">
               <img src={blueyImage} alt="Description" className="w-full h-70 object-cover rounded-t-2xl hover:shadow-blue-500/30 transition-shadow duration-300" />
               <div className="absolute left-1/2 -translate-x-1/2 -top-10 w-64 h-16 bg-[#19141c] rounded-b-full z-10"></div>
             </div>
-            <CardTitle className=" text-center font-bold text-2xl mb-0">Valgfag</CardTitle>
-            <CardDescription className="text-center font-sans text-md">Vælg dit ønskede valgfag her! Du kan se mulighederne.</CardDescription>
+            <CardTitle className=" text-center font-bold text-2xl mb-0"></CardTitle>
+            <CardDescription className="text-center font-sans text-md"></CardDescription>
           </Card>
         </div>
         {/* Card 2 */}
         <div className="relative flex flex-col items-center">
-          <Card className="border-0 w-[300px] text-[#d8cdcd] bg-[#19141c] h-[450px] cursor-pointer hover:text-white active:scale-3d hover:scale-110 backdrop-blur-md mt-10 overflow-hidden hover:shadow-blue-500/40 transition-shadow duration-300 shadow-2xl">
+          <Card onClick={() => navigate("/valgfag")} className="border-0 w-[300px] text-[#d8cdcd] bg-[#19141c] h-[450px] cursor-pointer hover:text-white active:scale-3d hover:scale-110 backdrop-blur-md mt-10 overflow-hidden hover:shadow-blue-500/40 transition-shadow duration-300 shadow-2xl">
             <div className="relative w-full">
               <img src={mercImage} alt="Description" className="w-full h-70 object-cover display-block rounded-t-2xl" />
               <div className="absolute left-1/2 -translate-x-1/2 -top-10 w-64 h-16 bg-[#19141c] rounded-b-full z-10"></div>
@@ -37,13 +37,13 @@ function App() {
         </div>
         {/* Card 3 */}
         <div className="relative flex flex-col items-center">
-          <Card onClick={() => navigate("/valgfag")} className="border-0 w-[300px] text-[#d8cdcd] bg-[#19141c] h-[450px] cursor-pointer hover:text-white active:scale-3d hover:scale-110 backdrop-blur-md mt-10 overflow-hidden hover:shadow-blue-500/40 transition-shadow duration-300 shadow-2xl ">
+          <Card className="border-0 w-[300px] text-[#d8cdcd] bg-[#19141c] h-[450px] cursor-pointer hover:text-white active:scale-3d hover:scale-110 backdrop-blur-md mt-10 overflow-hidden hover:shadow-blue-500/40 transition-shadow duration-300 shadow-2xl ">
             <div className="relative w-full">
               <img src={blueyImage} alt="Description" className="w-full h-70 object-cover display-block rounded-t-2xl" />
               <div className="absolute left-1/2 -translate-x-1/2 -top-10 w-64 h-16 bg-[#19141c] rounded-b-full z-10"></div>
             </div>
-            <CardTitle className=" text-center font-bold text-2xl mb-0 ">Valgfag</CardTitle>
-            <CardDescription className="text-center font-sans text-md">Vælg dit ønskede valgfag her! Du kan se mulighederne.</CardDescription>
+            <CardTitle className=" text-center font-bold text-2xl mb-0 "></CardTitle>
+            <CardDescription className="text-center font-sans text-md"></CardDescription>
           </Card>
         </div>
       </div>
