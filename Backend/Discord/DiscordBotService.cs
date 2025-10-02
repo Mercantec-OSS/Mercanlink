@@ -415,7 +415,7 @@ public class DiscordBotService
 
         if (channel == null)
         {
-            Console.WriteLine($"Channel med {_modChannelId.ToString()} kunne ikke findes");
+            Console.WriteLine($"Mod Channel med {_modChannelId.ToString()} kunne ikke findes");
         }
         else
         {
@@ -441,7 +441,7 @@ public class DiscordBotService
         {
             if (channel == null || !message.Author.IsBot)
             {
-                Console.WriteLine($"Channel med {_knowledgeCenterChannelId.ToString()} kunne ikke findes");
+                Console.WriteLine($"Knowledge Center Channel med {_knowledgeCenterChannelId.ToString()} kunne ikke findes");
             }
             else
             {
