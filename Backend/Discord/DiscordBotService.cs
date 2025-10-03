@@ -9,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System.Text.RegularExpressions;
 using System.Threading.Channels;
+using Backend.Discord.Enums;
 
 public class DiscordBotService
 {
@@ -208,7 +209,7 @@ public class DiscordBotService
             await xpService.CheckAndAwardDailyLoginAsync(message.Author.Id.ToString());
 
             // Derefter giv XP for beskeden
-            await xpService.AddXPAsync(message.Author.Id.ToString(), XPActivityType.Message);
+            await xpService.AddXPAsync(message.Author.Id.ToString(), XpActivityType.Message);
         }
     }
 
@@ -232,7 +233,7 @@ public class DiscordBotService
                 await xpService.CheckAndAwardDailyLoginAsync(reaction.UserId.ToString());
 
                 // Derefter giv XP for reaktionen
-                await xpService.AddXPAsync(reaction.UserId.ToString(), XPActivityType.Reaction);
+                await xpService.AddXPAsync(reaction.UserId.ToString(), XpActivityType.Reaction);
             }
         }
     }
@@ -279,7 +280,7 @@ public class DiscordBotService
                         {
                             await xpService.AddXPAsync(
                                 user.Id.ToString(),
-                                XPActivityType.VoiceMinute
+                                XpActivityType.VoiceMinute
                             );
                         }
                     }
@@ -330,7 +331,7 @@ public class DiscordBotService
 
             if (isNewUser)
             {
-                await xpService.AddXPAsync(guildUser.Id.ToString(), XPActivityType.DailyLogin);
+                await xpService.AddXPAsync(guildUser.Id.ToString(), XpActivityType.DailyLogin);
                 embed.AddField(
                     "Mange tak!",
                     "Mange tak fordi du joinede MercanLink! Din Discord-konto er nu registreret i vores system. Du kan nu optjene XP og stige i level!"

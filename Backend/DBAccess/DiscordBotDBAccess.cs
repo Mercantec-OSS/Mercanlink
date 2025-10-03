@@ -1,4 +1,5 @@
 ﻿using Backend.Data;
+using Backend.Discord.Enums;
 using Backend.DiscordServices.Services;
 using Backend.Models;
 using Backend.Models.DTOs;
@@ -39,7 +40,7 @@ namespace Backend.DBAccess
         {
             var dailyLoginActivity = await _context.Set<UserDailyActivity>()
             .FirstOrDefaultAsync(a => a.DiscordUserId == discordUserId &&
-                                    a.ActivityType == XPActivityType.DailyLogin.ToString() &&
+                                    a.ActivityType == XpActivityType.DailyLogin.GetName() &&
                                     a.Date == today);
             return dailyLoginActivity;
         }

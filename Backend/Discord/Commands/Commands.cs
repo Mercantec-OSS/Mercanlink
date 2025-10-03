@@ -1,3 +1,5 @@
+using Backend.Discord.Enums;
+
 namespace Backend.DiscordBot.Commands;
 
 using System;
@@ -188,7 +190,7 @@ public partial class Commands
                 // Giv XP for en besked
                 bool success = await xpService.AddXPAsync(
                     message.Author.Id.ToString(),
-                    XPActivityType.Message
+                    XpActivityType.Message
                 );
 
                 if (success)
@@ -290,7 +292,7 @@ public partial class Commands
             {
                 bool success = await xpService.AddXPAsync(
                     message.Author.Id.ToString(),
-                    XPActivityType.DailyLogin
+                    XpActivityType.DailyLogin
                 );
 
                 if (success)

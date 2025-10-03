@@ -1,25 +1,4 @@
 {
-  "ActivityRewards": {
-    "Message": 10,
-    "Reaction": 5,
-    "VoiceMinute": 15,
-    "CommandUsed": 2,
-    "DailyLogin": 25
-  },
-  "ActivityCooldowns": {
-    "Message": 60,
-    "Reaction": 30,
-    "VoiceMinute": 0,
-    "CommandUsed": 10,
-    "DailyLogin": 86400
-  },
-  "DailyLimits": {
-    "Message": 100,
-    "Reaction": 50,
-    "VoiceMinute": 120,
-    "CommandUsed": 50,
-    "DailyLogin": 1
-  },
   "BaseXP": 100,
   "LevelMultiplier": 1.5
-} 
+}

@@ -1,3 +1,5 @@
+using Backend.Discord.Enums;
+
 namespace Backend;
 
 using Backend.Data;
@@ -89,35 +91,11 @@ public class Program
         builder.Services.AddAuthorization();
 
         // Tilføj XP konfiguration
-        builder.Services.Configure<XPConfig>(options =>
+        builder.Services.Configure<XpConfig>(options =>
         {
             // Direkte indlæsning af konfiguration hvis filen ikke findes
             if (builder.Configuration.GetSection("XPConfig").GetChildren().Count() == 0)
             {
-                options.ActivityRewards = new Dictionary<string, int>
-                {
-                    { "Message", 10 },
-                    { "Reaction", 5 },
-                    { "VoiceMinute", 15 },
-                    { "CommandUsed", 2 },
-                    { "DailyLogin", 25 }
-                };
-                options.ActivityCooldowns = new Dictionary<string, int>
-                {
-                    { "Message", 60 },
-                    { "Reaction", 30 },
-                    { "VoiceMinute", 0 },
-                    { "CommandUsed", 10 },
-                    { "DailyLogin", 86400 }
-                };
-                options.DailyLimits = new Dictionary<string, int>
-                {
-                    { "Message", 100 },
-                    { "Reaction", 50 },
-                    { "VoiceMinute", 120 },
-                    { "CommandUsed", 50 },
-                    { "DailyLogin", 1 }
-                };
                 options.BaseXP = 100;
                 options.LevelMultiplier = 1.5;
             }
@@ -188,7 +166,7 @@ public class Program
         builder.Services.AddScoped<ExternalBotIntegration>();
         builder.Services.AddScoped<UserService>();        
         builder.Services.AddScoped<XPService>();        
-        builder.Services.AddSingleton<LevelSystem>();        
+        builder.Services.AddScoped<LevelSystem>();
         // Tilføj authentication services        
         builder.Services.AddScoped<JwtService>();        
         builder.Services.AddScoped<AuthService>();        

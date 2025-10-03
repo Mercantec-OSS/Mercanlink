@@ -1,3 +1,7 @@
+using Backend.Data;
+using Backend.Discord.Enums;
+using Microsoft.OpenApi.Extensions;
+
 namespace Backend.DiscordServices.Services;
 
 using Backend.Models;
@@ -5,11 +9,13 @@ using Microsoft.Extensions.Options;
 
 public class LevelSystem
 {
-    private readonly XPConfig _xpConfig;
+    private readonly XpConfig _xpConfig;
+    private readonly ApplicationDbContext _context;
 
-    public LevelSystem(IOptions<XPConfig> xpConfig)
+    public LevelSystem(IOptions<XpConfig> xpConfig, ApplicationDbContext context)
     {
         _xpConfig = xpConfig.Value;
+        _context = context;
     }
 
     public int CalculateRequiredXP(int level)
@@ -29,22 +35,8 @@ public class LevelSystem
         return (currentLevel, false);
     }
 
-    public int GetXPForActivity(XPActivityType activity)
+    public int GetXPForActivity(XpActivityType activity)
     {
-        string activityName = activity.ToString();
-        if (_xpConfig.ActivityRewards.TryGetValue(activityName, out int xpAmount))
-        {
-            return xpAmount;
-        }
-        return 0;
+        return _context.XpRewards.First(reward => reward.Name == activity.GetName()).Reward;
     }
-}
-
-public enum XPActivityType
-{
-    Message,
-    Reaction,
-    VoiceMinute,
-    DailyLogin,
-    CommandUsed
 }

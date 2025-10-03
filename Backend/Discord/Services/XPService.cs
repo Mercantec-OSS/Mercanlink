@@ -1,3 +1,5 @@
+using Backend.Discord.Enums;
+
 namespace Backend.DiscordServices.Services;
 using Backend.Models;
 using Microsoft.EntityFrameworkCore;
@@ -12,7 +14,7 @@ public class XPService
     private readonly ILogger<XPService> _logger;
     private readonly DiscordBotService _discordService;
     private readonly LevelSystem _levelSystem;
-    private readonly XPConfig _xpConfig;
+    private readonly XpConfig _xpConfig;
     private readonly DiscordBotDBAccess _discordBotDBAccess;
 
     public XPService(
@@ -20,7 +22,7 @@ public class XPService
         ILogger<XPService> logger,
         DiscordBotService discordService,
         LevelSystem levelSystem,
-        IOptions<XPConfig> xpConfig)
+        IOptions<XpConfig> xpConfig)
     {
         _discordService = discordService;
         _logger = logger;
@@ -30,7 +32,7 @@ public class XPService
         _discordBotDBAccess = discordBotDBAccess;
     }
 
-    public async Task<bool> AddXPAsync(string discordId, XPActivityType activity)
+    public async Task<bool> AddXPAsync(string discordId, XpActivityType activity)
     {
         _logger.LogInformation("Forsøger at tilføje XP for aktivitet {Activity} til bruger {DiscordId}", activity, discordId);
 
@@ -151,7 +153,7 @@ public class XPService
 
         var dailyActivities = await _discordBotDBAccess.GetAllTodaysActivity(discordUser.Id, today);
 
-        foreach (var activityType in Enum.GetNames(typeof(XPActivityType)))
+        foreach (var activityType in Enum.GetNames(typeof(XpActivityType)))
         {
             var activity = dailyActivities.FirstOrDefault(a => a.ActivityType == activityType);
             stats[activityType] = activity?.Count ?? 0;
@@ -175,7 +177,7 @@ public class XPService
         if (dailyLoginActivity == null || dailyLoginActivity.Count == 0)
         {
             _logger.LogInformation("Tildeler daglig login bonus til bruger {DiscordUserId}", discordUser.Id);
-            return await AddXPAsync(discordId, XPActivityType.DailyLogin);
+            return await AddXPAsync(discordId, XpActivityType.DailyLogin);
         }
 
         return false;
