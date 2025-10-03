@@ -9,6 +9,7 @@ public enum XpActivityType
     VoiceMinute,
     DailyLogin,
     CommandUsed,
+    KnowledgeCenterApproved,
 }
 
 internal static class XpActivityTypeMethods
@@ -22,6 +23,7 @@ internal static class XpActivityTypeMethods
             XpActivityType.VoiceMinute => "VoiceMinute",
             XpActivityType.DailyLogin => "DailyLogin",
             XpActivityType.CommandUsed => "CommandUsed",
+            XpActivityType.KnowledgeCenterApproved => "KnowledgeCenterApproved",
             _ => throw new UnreachableException()
         };
     }

@@ -1,3 +1,4 @@
+using Backend.Discord;
 using Backend.Discord.Enums;
 
 namespace Backend.DiscordServices.Services;
@@ -16,13 +17,15 @@ public class XPService
     private readonly LevelSystem _levelSystem;
     private readonly XpConfig _xpConfig;
     private readonly DiscordBotDBAccess _discordBotDBAccess;
+    private readonly IServiceProvider _serviceProvider;
 
     public XPService(
         DiscordBotDBAccess discordBotDBAccess,
         ILogger<XPService> logger,
         DiscordBotService discordService,
         LevelSystem levelSystem,
-        IOptions<XpConfig> xpConfig)
+        IOptions<XpConfig> xpConfig,
+        IServiceProvider serviceProvider)
     {
         _discordService = discordService;
         _logger = logger;
@@ -30,6 +33,7 @@ public class XPService
         _levelSystem = levelSystem;
         _xpConfig = xpConfig.Value;
         _discordBotDBAccess = discordBotDBAccess;
+        _serviceProvider = serviceProvider;
     }
 
     public async Task<bool> AddXPAsync(string discordId, XpActivityType activity)
@@ -131,6 +135,10 @@ public class XPService
         }
 
         await _discordBotDBAccess.UpdateDailyAcitivity(dailyActivity);
+
+        var externalBotIntegration = _serviceProvider.CreateScope().ServiceProvider.GetRequiredService<ExternalBotIntegration>();
+        await externalBotIntegration.Addexp(xpToAdd, ulong.Parse(discordId));
+
         return true;
     }
 

@@ -20,7 +20,7 @@ namespace Backend.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult> AddXpReward([FromBody] XpRewardDTO xpReward, string secretCode)
+        public async Task<ActionResult> AddXpReward([FromBody] XpRewardCreateDTO xpReward, string secretCode)
         {
             if (secretCode != _secretCode)
             {
@@ -50,7 +50,7 @@ namespace Backend.Controllers
         }
 
         [HttpPut]
-        public async Task<ActionResult> UpdateXpReward([FromBody] XpRewardDTO xpReward, int Id, string secretCode)
+        public async Task<ActionResult> UpdateXpReward([FromBody] XpRewardUpdateDTO xpReward, int Id, string secretCode)
         {
             if (secretCode != _secretCode)
             {
@@ -61,7 +61,6 @@ namespace Backend.Controllers
 
             if (oldXpReward == null) { return NotFound(); }
 
-            oldXpReward.Name = xpReward.Name;
             oldXpReward.Cooldown = xpReward.Cooldown;
             oldXpReward.DailyLimit = xpReward.DailyLimit;
             oldXpReward.Reward = xpReward.Reward;
