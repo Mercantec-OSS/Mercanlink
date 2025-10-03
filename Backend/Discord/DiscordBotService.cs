@@ -9,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System.Text.RegularExpressions;
 using System.Threading.Channels;
+using Backend.Discord.Enums;
 
 public class DiscordBotService
 {
@@ -22,7 +23,6 @@ public class DiscordBotService
     private readonly Dictionary<string, ulong> _roleMap = new() { { "👍", 1353709131500093532 } };
     private readonly ulong _guildId = 1351185531836436541;
     private readonly IServiceProvider _serviceProvider;
-    private readonly XPService _xpService;
     private readonly Dictionary<ulong, DateTime> _voiceUsers = new Dictionary<ulong, DateTime>();
 
     public DiscordBotService(IConfiguration config, IServiceProvider serviceProvider)
@@ -208,7 +208,7 @@ public class DiscordBotService
             await xpService.CheckAndAwardDailyLoginAsync(message.Author.Id.ToString());
 
             // Derefter giv XP for beskeden
-            await xpService.AddXPAsync(message.Author.Id.ToString(), XPActivityType.Message);
+            await xpService.AddXPAsync(message.Author.Id.ToString(), XpActivityType.Message);
         }
     }
 
@@ -232,7 +232,7 @@ public class DiscordBotService
                 await xpService.CheckAndAwardDailyLoginAsync(reaction.UserId.ToString());
 
                 // Derefter giv XP for reaktionen
-                await xpService.AddXPAsync(reaction.UserId.ToString(), XPActivityType.Reaction);
+                await xpService.AddXPAsync(reaction.UserId.ToString(), XpActivityType.Reaction);
             }
         }
     }
@@ -279,7 +279,7 @@ public class DiscordBotService
                         {
                             await xpService.AddXPAsync(
                                 user.Id.ToString(),
-                                XPActivityType.VoiceMinute
+                                XpActivityType.VoiceMinute
                             );
                         }
                     }
@@ -330,7 +330,7 @@ public class DiscordBotService
 
             if (isNewUser)
             {
-                await xpService.AddXPAsync(guildUser.Id.ToString(), XPActivityType.DailyLogin);
+                await xpService.AddXPAsync(guildUser.Id.ToString(), XpActivityType.DailyLogin);
                 embed.AddField(
                     "Mange tak!",
                     "Mange tak fordi du joinede MercanLink! Din Discord-konto er nu registreret i vores system. Du kan nu optjene XP og stige i level!"
@@ -439,31 +439,32 @@ public class DiscordBotService
 
         var channel = _client.GetChannel(_knowledgeCenterChannelId) as IMessageChannel;
 
-        if (reaction.Emote.Name == "👎" || reaction.Emote.Name == "👍")
+        if (reaction.Emote.Name != "👎" && reaction.Emote.Name != "👍")
         {
-            if (channel == null || !message.Author.IsBot)
-            {
-                Console.WriteLine($"Knowledge Center Channel med {_knowledgeCenterChannelId.ToString()} kunne ikke findes");
-            }
-            else
-            {
-                if (reaction.Emote.Name != "👎")
-                {
-                    await channel.SendMessageAsync(newMessageContent);
-                    using (var scope = _serviceProvider.CreateScope())
-                    {
-                        var externalBotIntegration = scope.ServiceProvider.GetRequiredService<ExternalBotIntegration>();
+            return;
+        }
 
-                        var match = Regex.Match(newMessageContent, @"<@!?(\d+)>");
-                        if (match.Success)
-                        {
-                            await externalBotIntegration.Addexp(1000, ulong.Parse(match.Groups[1].Value));
-                        }
-                    }
-                }
-                await message.DeleteAsync();
+        if (channel == null || !message.Author.IsBot)
+        {
+            Console.WriteLine($"Knowledge Center Channel med {_knowledgeCenterChannelId.ToString()} kunne ikke findes");
+
+            return;
+        }
+
+        // Move to knowledge center on approval
+        if (reaction.Emote.Name == "👍")
+        {
+            await channel.SendMessageAsync(newMessageContent);
+
+            var match = Regex.Match(newMessageContent, @"<@!?(\d+)>");
+            if (match.Success)
+            {
+                var xpService = _serviceProvider.CreateScope().ServiceProvider.GetRequiredService<XPService>();
+                await xpService.AddXPAsync(match.Groups[1].Value, XpActivityType.KnowledgeCenterApproved);
             }
         }
+
+        await message.DeleteAsync();
     }
 }
 

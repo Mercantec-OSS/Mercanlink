@@ -1,6 +1,6 @@
 namespace Backend.Models;
 
-public class XPConfig
+public class XpConfig
 {
     public Dictionary<string, int> ActivityRewards { get; set; } = new Dictionary<string, int>();
     public Dictionary<string, int> ActivityCooldowns { get; set; } = new Dictionary<string, int>();
