@@ -5,12 +5,15 @@ import Footer from "@/components/templates/footer"
 import { useNavigate } from "react-router-dom"
 import { LoginForm } from "@/components/templates/loginForm"
 import { Button } from "@/components/ui/button"
+import { useTheme } from "@/components/ui/theme-provider"
 
 export function LoginPage() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const { login } = useAuth()
   const navigate = useNavigate()
+  const { theme } = useTheme()
+  const isDark = theme === "dark" || (theme === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches)
 
   const handleLogin = async ({ emailOrUsername, password }: { emailOrUsername: string; password: string }) => {
     setError(null)
@@ -26,9 +29,9 @@ export function LoginPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-svh bg-background">
+    <div className="flex flex-col min-h-svh bg-black">
       <Navbar />
-      <div className="flex flex-1 items-center justify-center bg-black">
+      <div className={`flex flex-1 items-center justify-center ${isDark ? "bg-white text-black" : "bg-black text-white"}`}>
 
         <Button
           type="button"
