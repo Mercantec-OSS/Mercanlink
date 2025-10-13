@@ -44,7 +44,7 @@ namespace Backend.Controllers
                 return Unauthorized();
             }
 
-            var xpRewards = await _context.XpRewards.ToListAsync();
+            var xpRewards = await _context.XpRewards.OrderBy(reward => reward.Id).ToListAsync();
 
             return Ok(xpRewards);
         }
