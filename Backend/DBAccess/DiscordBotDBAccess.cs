@@ -110,5 +110,13 @@ namespace Backend.DBAccess
 
             return userPosition;
         }
+
+        public async Task<XpReward> GetXpReward(string activityName)
+        {
+            var xpReward = await _context
+                .XpRewards.Where(x => x.Name == activityName).FirstOrDefaultAsync();
+
+            return xpReward;
+        }
     }
 }
