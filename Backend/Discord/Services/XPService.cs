@@ -89,24 +89,25 @@ public class XPService
         // Hvis det er første aktivitet, skal vi ikke tjekke cooldown
         if (!isFirstActivity)
         {
+            var xpReward = await _discordBotDBAccess.GetXpReward(activityName);
             // Tjek cooldown
-            if (_xpConfig.ActivityCooldowns.TryGetValue(activityName, out int cooldownSeconds) && cooldownSeconds > 0)
+            if (xpReward.Cooldown > 0)
             {
                 var timeSinceLastActivity = DateTime.UtcNow - dailyActivity.LastActivity;
-                if (timeSinceLastActivity.TotalSeconds < cooldownSeconds)
+                if (timeSinceLastActivity.TotalSeconds < xpReward.Cooldown)
                 {
                     _logger.LogInformation("Cooldown aktiv for bruger {DiscordUserId}, aktivitet {Activity}. Mangler {Seconds} sekunder",
-                        discordUser.Id, activityName, cooldownSeconds - (int)timeSinceLastActivity.TotalSeconds);
+                        discordUser.Id, xpReward.Name, xpReward.Cooldown - (int)timeSinceLastActivity.TotalSeconds);
                     return false;
                 }
             }
 
             // Tjek daglig grænse
-            if (_xpConfig.DailyLimits.TryGetValue(activityName, out int dailyLimit) && dailyLimit > 0)
+            if (xpReward.DailyLimit > 0)
             {
-                if (dailyActivity.Count >= dailyLimit)
+                if (dailyActivity.Count >= xpReward.DailyLimit)
                 {
-                    _logger.LogInformation("Daglig grænse nået for bruger {DiscordUserId}, aktivitet {Activity}", discordUser.Id, activityName);
+                    _logger.LogInformation("Daglig grænse nået for bruger {DiscordUserId}, aktivitet {Activity}", discordUser.Id, xpReward.Name);
                     return false;
                 }
             }
