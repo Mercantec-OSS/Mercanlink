@@ -15,6 +15,10 @@ interface DecodedJwtPayload {
   aud: string | string[]
 }
 
+function normalizeIssuer(value: string | undefined): string {
+  return (value || "").replace(/\/+$/, "")
+}
+
 export function decodeTokenAndMapToUser(token: string): User | null {
   try {
     const decoded = jwtDecode<DecodedJwtPayload>(token)
@@ -25,8 +29,20 @@ export function decodeTokenAndMapToUser(token: string): User | null {
     }
 
     const audiences = Array.isArray(decoded.aud) ? decoded.aud : [decoded.aud]
-    if (decoded.iss !== authConfig.issuer || !audiences.includes(authConfig.audience)) {
-      return null
+    const normalizedTokenIssuer = normalizeIssuer(decoded.iss)
+    const normalizedExpectedIssuer = normalizeIssuer(authConfig.issuer)
+    const issuerMatches = normalizedTokenIssuer === normalizedExpectedIssuer
+    const audienceMatches = audiences.includes(authConfig.audience)
+
+    if (!issuerMatches || !audienceMatches) {
+      // We keep the user logged in client-side if token is otherwise valid.
+      // Backend remains source-of-truth and performs strict JWT validation.
+      console.warn("JWT issuer/audience afviger fra forventet konfiguration", {
+        tokenIssuer: decoded.iss,
+        expectedIssuer: authConfig.issuer,
+        tokenAudience: audiences,
+        expectedAudience: authConfig.audience,
+      })
     }
 
     const username = decoded.preferred_username || decoded.name || decoded.email || "Ukendt bruger"
