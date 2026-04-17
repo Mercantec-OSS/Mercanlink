@@ -27,12 +27,6 @@ const quickActions = [
   },
 ]
 
-const highlights = [
-  "Enterprise-lignende UI med tydelig informationsarkitektur",
-  "Responsivt layout designet til mobil, tablet og desktop",
-  "Fokus på klarhed, hastighed og pålidelig brugeroplevelse",
-]
-
 function App() {
   const navigate = useNavigate()
 
