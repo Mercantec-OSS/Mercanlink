@@ -1,6 +1,6 @@
 import { clearStoredTokens, getAccessToken, refreshTokens } from "./authService"
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://api.mercanteclink.dk/api"
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api"
 
 export async function apiClient<T>(
   url: string,
