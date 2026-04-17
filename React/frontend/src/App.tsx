@@ -1,8 +1,10 @@
 import Layout_alt from "@/components/templates/layout"
 import { useNavigate } from "react-router-dom"
-import { ArrowRight, CheckCircle2, Layers, Rocket, Users2, MessageCircle, Users } from "lucide-react"
+import { ArrowRight, CheckCircle2, Layers, Rocket, Users2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardDescription, CardHeader, CardTitle } from "./components/ui/card"
+import { FaDiscord } from "react-icons/fa"
+import teamsIcon from "@/components/images/icons8-microsoft-teams-2019-48.png"
 
 const quickActions = [
   {
@@ -84,7 +86,7 @@ function App() {
                   <CardHeader className="p-4">
                     <CardDescription className="text-xs uppercase tracking-wide text-slate-500">Fællesskab</CardDescription>
                     <CardTitle className="mt-1 flex items-center gap-2 text-base text-slate-900">
-                      <MessageCircle className="h-4 w-4 text-indigo-600" />
+                      <FaDiscord className="h-4 w-4 text-[#5865F2]" />
                       Join vores Discord
                     </CardTitle>
                   </CardHeader>
@@ -99,9 +101,9 @@ function App() {
               >
                 <Card className="soft-card soft-card-hover w-52 border-slate-100">
                   <CardHeader className="p-4">
-                    <CardDescription className="text-xs uppercase tracking-wide text-slate-500">Samarbejde</CardDescription>
+                    <CardDescription className="text-xs uppercase tracking-wide text-slate-500">Officiel Mercanlink platform</CardDescription>
                     <CardTitle className="mt-1 flex items-center gap-2 text-base text-slate-900">
-                      <Users className="h-4 w-4 text-indigo-600" />
+                      <img src={teamsIcon} alt="Microsoft Teams logo" className="h-4 w-4 object-contain" />
                       Join Teams kanalen
                     </CardTitle>
                   </CardHeader>
