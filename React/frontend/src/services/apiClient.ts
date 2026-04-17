@@ -38,6 +38,16 @@ export async function apiClient<T>(
     const errorBody = await response.text()
     console.error("API Request Failed:", response.status, errorBody)
     const trimmedBody = errorBody.trim()
+    if (trimmedBody) {
+      try {
+        const parsedBody = JSON.parse(trimmedBody) as { message?: string }
+        if (parsedBody?.message) {
+          throw new Error(parsedBody.message)
+        }
+      } catch {
+        // Fald tilbage til rå tekst hvis body ikke er JSON.
+      }
+    }
     throw new Error(trimmedBody || `API request failed: ${response.statusText}`)
   }
 

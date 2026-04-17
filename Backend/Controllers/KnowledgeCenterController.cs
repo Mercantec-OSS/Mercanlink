@@ -182,7 +182,12 @@ public class KnowledgeCenterController : ControllerBase
     private async Task<User?> ResolveCurrentUserAsync()
     {
         var currentUserId = GetCurrentUserId();
-        if (string.IsNullOrWhiteSpace(currentUserId))
+        var email = GetClaimValue(ClaimTypes.Email, "email");
+        var username = GetClaimValue("preferred_username", ClaimTypes.Name, "name");
+
+        if (string.IsNullOrWhiteSpace(currentUserId)
+            && string.IsNullOrWhiteSpace(email)
+            && string.IsNullOrWhiteSpace(username))
         {
             return null;
         }
@@ -191,7 +196,23 @@ public class KnowledgeCenterController : ControllerBase
             .Include(u => u.DiscordUser)
             .Include(u => u.WebsiteUser)
             .Include(u => u.SchoolADUser)
-            .FirstOrDefaultAsync(u => u.Id == currentUserId || u.WebsiteUserId == currentUserId);
+            .FirstOrDefaultAsync(u =>
+                (!string.IsNullOrWhiteSpace(currentUserId) && (
+                    u.Id == currentUserId
+                    || u.WebsiteUserId == currentUserId
+                    || u.DiscordUserId == currentUserId
+                    || u.DiscordUser.DiscordId == currentUserId
+                ))
+                || (!string.IsNullOrWhiteSpace(email) && (
+                    u.WebsiteUser.Email == email
+                ))
+                || (!string.IsNullOrWhiteSpace(username) && (
+                    u.UserName == username
+                    || u.WebsiteUser.UserName == username
+                    || u.DiscordUser.UserName == username
+                    || u.DiscordUser.GlobalName == username
+                ))
+            );
     }
 
     private string ResolveAuthorName(User user)
@@ -224,6 +245,20 @@ public class KnowledgeCenterController : ControllerBase
     private string? GetCurrentUserId()
     {
         return User.FindFirst("sub")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+    }
+
+    private string? GetClaimValue(params string[] claimTypes)
+    {
+        foreach (var claimType in claimTypes)
+        {
+            var value = User.FindFirst(claimType)?.Value;
+            if (!string.IsNullOrWhiteSpace(value))
+            {
+                return value.Trim();
+            }
+        }
+
+        return null;
     }
 
     private static KnowledgeSubmissionResponse MapToResponse(KnowledgeSubmission submission)
