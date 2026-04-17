@@ -101,7 +101,7 @@ function App() {
               >
                 <Card className="soft-card soft-card-hover w-52 border-slate-100">
                   <CardHeader className="p-4">
-                    <CardDescription className="text-xs uppercase tracking-wide text-slate-500">Officiel Mercanlink platform</CardDescription>
+                    <CardDescription className="text-xs uppercase tracking-wide text-slate-500"> Mercantec platform</CardDescription>
                     <CardTitle className="mt-1 flex items-center gap-2 text-base text-slate-900">
                       <img src={teamsIcon} alt="Microsoft Teams logo" className="h-4 w-4 object-contain" />
                       Join Teams kanalen
