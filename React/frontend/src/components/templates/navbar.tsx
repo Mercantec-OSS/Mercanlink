@@ -21,8 +21,8 @@ export default function Navbar() {
       <div className="container-shell">
         <nav className="flex min-h-[76px] items-center justify-between gap-4">
           <Link to="/" className="flex items-center gap-3" onClick={closeMenu}>
-            <img src="/Mercanlink-Logo.png" alt="MercanLink logo" className="h-10 w-auto object-contain" />
-            <span className="hidden text-sm font-medium text-slate-500 sm:inline">Mercantec Space Platform</span>
+            <img src="/Mercanlink-Logo.png" alt="Mercanlink logo" className="h-10 w-auto object-contain" />
+            <span className="hidden text-sm font-medium text-slate-500 sm:inline">Mercanlink Platform</span>
           </Link>
 
           <div className="hidden items-center gap-1 lg:flex">

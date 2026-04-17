@@ -34,7 +34,7 @@ export function SignupPage() {
               Hurtig oprettelse
             </p>
             <h1 className="text-4xl font-extrabold leading-[1.1] tracking-[-0.02em] text-slate-900 sm:text-5xl">
-              Start med <span className="brand-gradient-text">MercanLink</span> i dag
+              Start med <span className="brand-gradient-text">Mercanlink</span> i dag
             </h1>
             <p className="mt-4 text-base leading-7 text-slate-600">
               Opret en konto for at få adgang til jeres valgfagsoverblik og dele materialer med resten af teamet.

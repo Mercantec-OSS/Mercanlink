@@ -3,7 +3,7 @@ export default function Footer() {
     <footer className="mt-auto border-t border-slate-200 bg-white/90">
       <div className="container-shell flex flex-col items-start justify-between gap-3 py-6 text-sm text-slate-500 sm:flex-row sm:items-center">
         <div className="flex flex-col gap-1">
-          <p className="font-medium text-slate-700">MercanLink</p>
+          <p className="font-medium text-slate-700">Mercanlink</p>
           <div className="flex items-center gap-3">
             <p>Bygget af MAGS</p>
             <a
@@ -30,7 +30,7 @@ export default function Footer() {
             </a>
           </div>
         </div>
-        <p className="text-sm">© 2026 Mercantec Space. Alle rettigheder forbeholdes.</p>
+        <p className="text-sm">© 2026 Mercanlink. Alle rettigheder forbeholdes.</p>
       </div>
     </footer>
   )

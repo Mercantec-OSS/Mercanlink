@@ -34,7 +34,7 @@ export function LoginPage() {
               Sikker adgang
             </p>
             <h1 className="text-4xl font-extrabold leading-[1.1] tracking-[-0.02em] text-slate-900 sm:text-5xl">
-              Velkommen tilbage til <span className="brand-gradient-text">MercanLink</span>
+              Velkommen tilbage til <span className="brand-gradient-text">Mercanlink</span>
             </h1>
             <p className="mt-4 text-base leading-7 text-slate-600">
               Log ind for at håndtere valgfag, udfylde formularer og samarbejde med resten af holdet i et samlet workflow.
