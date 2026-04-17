@@ -1,6 +1,6 @@
 import { storageService } from "./storageService"
 
-const API_BASE_URL = "https://apihub.mercantec.tech/api"
+const API_BASE_URL = "https://api.mercanteclink.dk/api"
 
 export async function apiClient<T>(
   url: string,
