@@ -134,6 +134,7 @@ export async function startLoginRedirect(): Promise<void> {
     response_type: "code",
     client_id: clientId,
     redirect_uri: authConfig.redirectUri,
+    scope: authConfig.scopes,
     state,
     code_challenge: codeChallenge,
     code_challenge_method: "S256",
