@@ -16,8 +16,9 @@ export function LoginPage() {
     setLoading(true)
     try {
       await login()
-    } catch {
-      setError("Log ind kunne ikke startes. Kontrollér OAuth-konfigurationen.")
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Kontrollér OAuth-konfigurationen."
+      setError(`Log ind kunne ikke startes. ${message}`)
       setLoading(false)
     }
   }

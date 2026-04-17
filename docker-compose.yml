@@ -35,6 +35,14 @@ services:
     build:
       context: ./React/frontend
       dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-https://api.mercanteclink.dk/api}
+        VITE_AUTH_ISSUER: ${VITE_AUTH_ISSUER:-https://auth.mercantec.tech}
+        VITE_AUTH_CLIENT_ID: ${VITE_AUTH_CLIENT_ID}
+        VITE_AUTH_AUDIENCE: ${VITE_AUTH_AUDIENCE:-mercantec-apps}
+        VITE_AUTH_SCOPES: ${VITE_AUTH_SCOPES:-openid profile email}
+        VITE_AUTH_REDIRECT_URI: ${VITE_AUTH_REDIRECT_URI}
+        VITE_AUTH_LOGOUT_RETURN_URL: ${VITE_AUTH_LOGOUT_RETURN_URL}
     ports:
       - "9302:80"
     depends_on:
