@@ -201,6 +201,35 @@ public class Program
         var logger = app.Services.GetRequiredService<ILogger<Program>>();
         logger.LogInformation("Discord bot starter op...");
 
+        // Kør migrationer automatisk ved deploy/startup.
+        using (var scope = app.Services.CreateScope())
+        {
+            var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            const int maxMigrationAttempts = 10;
+            const int delayBetweenAttemptsMs = 5000;
+
+            for (var attempt = 1; attempt <= maxMigrationAttempts; attempt++)
+            {
+                try
+                {
+                    dbContext.Database.Migrate();
+                    logger.LogInformation("Database migrationer gennemført.");
+                    break;
+                }
+                catch (Exception ex) when (attempt < maxMigrationAttempts)
+                {
+                    logger.LogWarning(
+                        ex,
+                        "Migration forsøg {Attempt}/{MaxAttempts} fejlede. Prøver igen om {DelaySeconds} sekunder.",
+                        attempt,
+                        maxMigrationAttempts,
+                        delayBetweenAttemptsMs / 1000
+                    );
+                    Thread.Sleep(delayBetweenAttemptsMs);
+                }
+            }
+        }
+
         // Configure the HTTP request pipeline.
         app.MapOpenApi();
         app.UseSwagger();

@@ -44,10 +44,6 @@ if [ -f .env ]; then\n\
 else\n\
   echo "No .env file found, using system environment variables"\n\
 fi\n\
-echo "Waiting for database..."\n\
-sleep 10\n\
-echo "Running database migrations..."\n\
-dotnet ef database update --no-build\n\
 echo "Starting application..."\n\
 dotnet Backend.dll' > /app/startup.sh && chmod +x /app/startup.sh
 
