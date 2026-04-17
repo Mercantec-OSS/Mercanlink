@@ -1,28 +1,30 @@
-import Navbar from "@/components/templates/navbar"
-import Footer from "@/components/templates/footer"
-import FloatingInput from "@/components/ui/FloatingInput"
+import Layout_alt from "@/components/templates/layout"
 import { useState, useRef } from "react"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Card } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 
 export default function FormPage() {
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [message, setMessage] = useState("");
-    const formRef = useRef<HTMLFormElement>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false)
+    const [message, setMessage] = useState("")
+    const formRef = useRef<HTMLFormElement>(null)
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        setIsSubmitting(true);
-        setMessage("");
+        e.preventDefault()
+        setIsSubmitting(true)
+        setMessage("")
 
-        const formData = new FormData(e.currentTarget);
+        const formData = new FormData(e.currentTarget)
 
         const data = {
             type: formData.get('materialType') as string,
-            author: "User", // You might want to get this from somewhere else
+            author: "User",
             discordId: formData.get('DiscordId') as string,
             title: formData.get('title') as string,
             description: formData.get('description') as string,
             linkToPost: formData.get('link') as string || "",
-        };
+        }
 
         try {
             const response = await fetch('/api/KnowledgeCenter', {
@@ -31,80 +33,95 @@ export default function FormPage() {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify(data),
-            });
+            })
 
             if (response.ok) {
-                setMessage("Successfully submitted!");
-                formRef.current?.reset(); // Clear the form
+                setMessage("Materiale blev indsendt.")
+                formRef.current?.reset()
             } else {
-                const errorText = await response.text();
-                setMessage(`Error: ${errorText}`);
+                const errorText = await response.text()
+                setMessage(`Kunne ikke indsende: ${errorText}`)
             }
         } catch (error) {
-            setMessage(`Network error: ${error}`);
+            setMessage(`Netværksfejl: ${String(error)}`)
         } finally {
-            setIsSubmitting(false);
+            setIsSubmitting(false)
         }
-    };
+    }
     return (
+        <Layout_alt>
+            <section className="container-shell py-12 sm:py-16 lg:py-20">
+                <div className="mb-8 max-w-2xl">
+                    <h1 className="text-4xl font-extrabold tracking-[-0.02em] text-slate-900 sm:text-5xl">
+                        Indsend nyt <span className="brand-gradient-text">materiale</span>
+                    </h1>
+                    <p className="mt-4 text-base leading-7 text-slate-600">
+                        Del links, noter eller videoer med holdet. Formularen sender direkte til Knowledge Center endpoint.
+                    </p>
+                </div>
 
-        <><Navbar></Navbar>
-            <div className="min-h-screen flex flex-col bg-gradient-to-br from-[#181c2c] via-[#23263a] to-[#10121a] text-white pt-20">
-
-
-
-                <div className="max-w w-3xl  mx-auto bg-[#19141c] rounded-2xl shadow-lg p-8">
-                    <h1 className="text-4xl font-extrabold text-center tracking-wide text-white drop-shadow-lg">Form</h1>
-                    <div className="border-t border-white/20 my-8"></div>
-                    <form ref={formRef} className="flex flex-col items-center gap-6" onSubmit={handleSubmit}>
+                <Card className="soft-card border-slate-100 p-6 sm:p-8">
+                    <form ref={formRef} className="grid gap-5 md:grid-cols-2" onSubmit={handleSubmit}>
                         {message && (
-                            <div className={`w-full md:w-2/3 p-4 rounded-lg text-center ${message.startsWith('Successfully')
-                                ? 'bg-green-600/20 text-green-400 border border-green-500/30'
-                                : 'bg-red-600/20 text-red-400 border border-red-500/30'
+                            <div className={`md:col-span-2 rounded-lg border px-4 py-3 text-sm ${message.startsWith("Materiale blev")
+                                ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                                : "border-red-200 bg-red-50 text-red-600"
                                 }`}>
                                 {message}
                             </div>
                         )}
-                        <div className="w-full md:w-2/3">
-                            {/* Material Type Dropdown */}
-                            <div className="relative mb-6">
-                                <select
-                                    name="materialType"
-                                    id="materialType"
-                                    className="peer text-white bg-[#23263a] w-full border-b-2 border-blue-400 focus:border-blue-600 outline-none py-2 px-1 transition-all"
-                                    required
-                                >
-                                    <option value="">Vælg materiale type</option>
-                                    <option value="blog-post">Blog Post</option>
-                                    <option value="video">Video</option>
-                                    <option value="artikel">Artikel</option>
-                                    <option value="andet">Andet</option>
-                                </select>
-                                <label
-                                    htmlFor="materialType"
-                                    className="absolute left-1 -top-4 text-blue-400 text-sm transition-all"
-                                >
-                                    Materiale type
-                                </label>
-                            </div>
 
-                            <FloatingInput name="title" label="Titel" required />
-                            <FloatingInput name="description" label="Beskrivelse" required />
-                            <FloatingInput name="DiscordId" label="DiscordId" required />
-                            <FloatingInput name="link" label="Link" />
-
-                            <button
-                                type="submit"
-                                disabled={isSubmitting}
-                                className="w-full text-center mt-4 bg-gradient-to-r from-blue-500 to-blue-700 text-white py-3 px-4 rounded-lg shadow hover:scale-[1.04] hover:from-blue-600 hover:to-blue-800 transition-all font-bold text-lg tracking-wide disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                        <div className="space-y-2 md:col-span-2">
+                            <Label htmlFor="materialType" className="text-sm font-semibold text-slate-700">Materialetype</Label>
+                            <select
+                                name="materialType"
+                                id="materialType"
+                                className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30"
+                                required
                             >
-                                {isSubmitting ? 'Submitting...' : 'Tilmeld'}
-                            </button>
+                                <option value="">Vælg materialetype</option>
+                                <option value="blog-post">Blog post</option>
+                                <option value="video">Video</option>
+                                <option value="artikel">Artikel</option>
+                                <option value="andet">Andet</option>
+                            </select>
+                        </div>
+
+                        <div className="space-y-2 md:col-span-2">
+                            <Label htmlFor="title" className="text-sm font-semibold text-slate-700">Titel</Label>
+                            <Input id="title" name="title" required className="h-11" placeholder="Skriv en titel" />
+                        </div>
+
+                        <div className="space-y-2 md:col-span-2">
+                            <Label htmlFor="description" className="text-sm font-semibold text-slate-700">Beskrivelse</Label>
+                            <textarea
+                                id="description"
+                                name="description"
+                                required
+                                rows={5}
+                                placeholder="Beskriv materialet kort"
+                                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30"
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="DiscordId" className="text-sm font-semibold text-slate-700">Discord ID</Label>
+                            <Input id="DiscordId" name="DiscordId" required className="h-11" placeholder="fx User#1234" />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="link" className="text-sm font-semibold text-slate-700">Link (valgfri)</Label>
+                            <Input id="link" name="link" className="h-11" placeholder="https://..." />
+                        </div>
+
+                        <div className="md:col-span-2">
+                            <Button type="submit" disabled={isSubmitting} className="h-11 w-full sm:w-auto">
+                                {isSubmitting ? "Indsender..." : "Indsend materiale"}
+                            </Button>
                         </div>
                     </form>
-                </div>
-                <Footer />
-            </div ></>
-
-    );
+                </Card>
+            </section>
+        </Layout_alt>
+    )
 }

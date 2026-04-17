@@ -3,6 +3,7 @@ services:
     build:
       context: ./Backend
       dockerfile: Dockerfile
+    restart: unless-stopped
     ports:
       - "9301:8080"
     environment:
@@ -20,6 +21,13 @@ services:
       - DISCORD_LURKRAPIKEY=${DISCORD_LURKRAPIKEY}
       - DISCORD_SERVERID=${DISCORD_SERVERID}
       - XP_REWARD_SECRET_CODE=${XP_REWARD_SECRET_CODE}
+      - DISCORD_HEALTH_STALE_SECONDS=${DISCORD_HEALTH_STALE_SECONDS:-180}
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 45s
     depends_on:
       - db
     networks:
@@ -48,9 +56,20 @@ services:
     networks:
       - app-network
 
+  uptime-kuma:
+    image: louislam/uptime-kuma:1
+    restart: unless-stopped
+    ports:
+      - "9303:3001"
+    volumes:
+      - uptime_kuma_data:/app/data
+    networks:
+      - app-network
+
 networks:
   app-network:
     driver: bridge
 
 volumes:
   postgres_data:
+  uptime_kuma_data:

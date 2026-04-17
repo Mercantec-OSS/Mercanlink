@@ -24,6 +24,12 @@ public class DiscordBotService
     private readonly ulong _guildId = 1351185531836436541;
     private readonly IServiceProvider _serviceProvider;
     private readonly Dictionary<ulong, DateTime> _voiceUsers = new Dictionary<ulong, DateTime>();
+    private DateTime? _lastGatewayActivityUtc;
+    private DateTime? _lastReadyUtc;
+    private DateTime? _lastDisconnectUtc;
+    private string? _lastDisconnectReason;
+    private bool _isReady;
+    private bool _isConnected;
 
     public DiscordBotService(IConfiguration config, IServiceProvider serviceProvider)
     {
@@ -62,9 +68,18 @@ public class DiscordBotService
 
     public async Task StartAsync()
     {
+        _isReady = false;
+        _isConnected = false;
+
         _client.Log += LogAsync;
+        _client.Connected += HandleConnectedAsync;
+        _client.Disconnected += HandleDisconnectedAsync;
+        _client.LatencyUpdated += HandleLatencyUpdatedAsync;
         _client.Ready += async () =>
         {
+            _isReady = true;
+            _lastReadyUtc = DateTime.UtcNow;
+            UpdateGatewayActivity();
             Console.WriteLine($"Bot er forbundet til {_client.Guilds.Count} servere!");
             foreach (var guild in _client.Guilds)
             {
@@ -100,8 +115,25 @@ public class DiscordBotService
         await _client.StartAsync();
     }
 
+    public DiscordHealthSnapshot GetHealthSnapshot()
+    {
+        return new DiscordHealthSnapshot
+        {
+            IsConnected = _isConnected,
+            IsReady = _isReady,
+            LastGatewayActivityUtc = _lastGatewayActivityUtc,
+            LastReadyUtc = _lastReadyUtc,
+            LastDisconnectUtc = _lastDisconnectUtc,
+            LastDisconnectReason = _lastDisconnectReason,
+            ConnectionState = _client.ConnectionState.ToString(),
+            LoginState = _client.LoginState.ToString()
+        };
+    }
+
     private async Task HandleCommandAsync(SocketMessage messageParam)
     {
+        UpdateGatewayActivity();
+
         // Ignorer beskeder fra bots
         if (messageParam is not SocketUserMessage message || message.Author.IsBot)
             return;
@@ -150,6 +182,7 @@ public class DiscordBotService
         SocketReaction reaction
     )
     {
+        UpdateGatewayActivity();
         var emojiName = reaction.Emote.Name;
 
         if (reaction.User.Value.IsBot)
@@ -176,6 +209,8 @@ public class DiscordBotService
         SocketReaction reaction
     )
     {
+        UpdateGatewayActivity();
+
         if (reaction.User.Value.IsBot)
             return;
 
@@ -195,6 +230,8 @@ public class DiscordBotService
     // XP for beskeder
     private async Task HandleMessageXpAsync(SocketMessage message)
     {
+        UpdateGatewayActivity();
+
         // Ignorer beskeder fra bots
         if (message.Author.IsBot)
             return;
@@ -219,6 +256,8 @@ public class DiscordBotService
         SocketReaction reaction
     )
     {
+        UpdateGatewayActivity();
+
         // Ignorer reaktioner fra bots
         if (reaction.User.IsSpecified && reaction.User.Value.IsBot)
             return;
@@ -244,6 +283,8 @@ public class DiscordBotService
         SocketVoiceState newState
     )
     {
+        UpdateGatewayActivity();
+
         // Ignorer bots
         if (user.IsBot)
             return;
@@ -292,6 +333,8 @@ public class DiscordBotService
 
     public async Task HandleRegisterAsync(SocketGuildUser guildUser)
     {
+        UpdateGatewayActivity();
+
         if (_serviceProvider == null)
         {
             await guildUser.SendMessageAsync("Fejl: Service provider er ikke konfigureret.");
@@ -349,6 +392,7 @@ public class DiscordBotService
 
     private Task LogAsync(LogMessage log)
     {
+        UpdateGatewayActivity();
         Console.WriteLine(log);
         return Task.CompletedTask;
     }
@@ -406,12 +450,15 @@ public class DiscordBotService
 
     public async Task StopAsync()
     {
+        _isConnected = false;
+        _isReady = false;
         await _client.LogoutAsync();
         await _client.StopAsync();
     }
 
     public async Task KnowledgeCenterPostApproval(PostDTO post)
     {
+        UpdateGatewayActivity();
 
         var channel = _client.GetChannel(_modChannelId) as IMessageChannel;
 
@@ -434,6 +481,8 @@ public class DiscordBotService
 
     public async Task KnowledgeCenterPostReaction(SocketReaction reaction, Cacheable<IUserMessage, ulong> cachedMessage)
     {
+        UpdateGatewayActivity();
+
         var message = await cachedMessage.GetOrDownloadAsync();
         string newMessageContent = message.Content.Replace($"<@&{_modRoleId}>", "@everyone");
 
@@ -466,6 +515,45 @@ public class DiscordBotService
 
         await message.DeleteAsync();
     }
+
+    private Task HandleConnectedAsync()
+    {
+        _isConnected = true;
+        UpdateGatewayActivity();
+        return Task.CompletedTask;
+    }
+
+    private Task HandleDisconnectedAsync(Exception exception)
+    {
+        _isConnected = false;
+        _isReady = false;
+        _lastDisconnectUtc = DateTime.UtcNow;
+        _lastDisconnectReason = exception?.Message ?? "Unknown disconnect reason";
+        return Task.CompletedTask;
+    }
+
+    private Task HandleLatencyUpdatedAsync(int oldLatency, int newLatency)
+    {
+        UpdateGatewayActivity();
+        return Task.CompletedTask;
+    }
+
+    private void UpdateGatewayActivity()
+    {
+        _lastGatewayActivityUtc = DateTime.UtcNow;
+    }
+}
+
+public class DiscordHealthSnapshot
+{
+    public bool IsConnected { get; set; }
+    public bool IsReady { get; set; }
+    public DateTime? LastGatewayActivityUtc { get; set; }
+    public DateTime? LastReadyUtc { get; set; }
+    public DateTime? LastDisconnectUtc { get; set; }
+    public string? LastDisconnectReason { get; set; }
+    public string ConnectionState { get; set; } = "Unknown";
+    public string LoginState { get; set; } = "Unknown";
 }
 
 public class DiscordHostedService : IHostedService

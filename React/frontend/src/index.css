@@ -1,1 +1,80 @@
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap");
 @import "tailwindcss";
+
+:root {
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+  --popover: #ffffff;
+  --popover-foreground: #0f172a;
+  --primary: #4f46e5;
+  --primary-foreground: #ffffff;
+  --secondary: #7c3aed;
+  --secondary-foreground: #ffffff;
+  --muted: #eef2ff;
+  --muted-foreground: #64748b;
+  --accent: #eef2ff;
+  --accent-foreground: #1e293b;
+  --destructive: #dc2626;
+  --border: #e2e8f0;
+  --input: #e2e8f0;
+  --ring: #4f46e5;
+  --radius: 0.75rem;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: var(--foreground);
+  background: radial-gradient(circle at 10% 10%, rgba(99, 102, 241, 0.16), transparent 34%),
+    radial-gradient(circle at 88% 12%, rgba(124, 58, 237, 0.15), transparent 33%),
+    var(--background);
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.container-shell {
+  width: min(1280px, calc(100% - 2rem));
+  margin-inline: auto;
+}
+
+.soft-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 20px -2px rgba(79, 70, 229, 0.1);
+}
+
+.soft-card-hover {
+  transition: all 200ms ease-out;
+}
+
+.soft-card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    0 10px 25px -5px rgba(79, 70, 229, 0.15),
+    0 8px 10px -6px rgba(79, 70, 229, 0.1);
+}
+
+.brand-gradient-text {
+  background: linear-gradient(90deg, #4f46e5 0%, #7c3aed 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.orb {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(72px);
+  pointer-events: none;
+  z-index: 0;
+}

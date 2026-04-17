@@ -13,6 +13,7 @@ Velkommen til Mercantec Space dokumentationen. Dette indeks giver dig et overbli
 ### 🚀 Backend System
 - **[Backend-Architecture.md](Backend-Architecture.md)** - Omfattende dokumentation af backend arkitekturen og lagdeling
 - **[Backend-DBAccess-Layer.md](Backend-DBAccess-Layer.md)** - Detaljeret dokumentation af DBAccess laget
+- **[Bot-Monitorering-Runbook.md](Bot-Monitorering-Runbook.md)** - Drift runbook for healthchecks, Uptime Kuma og alarmer
 - **[Backend-Architecture-Diagram.canvas](Backend-Architecture-Diagram.canvas)** - Visuelt diagram af backend system struktur
 
 ### 🗄️ Database Management

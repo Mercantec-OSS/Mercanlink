@@ -3,6 +3,8 @@ import { type User } from "@/types"
 import { getUsers } from "@/services/userService"
 import { useAuth } from "@/contexts/AuthContext"
 import { Button } from "@/components/ui/button"
+import Layout_alt from "@/components/templates/layout"
+import { LogOut } from "lucide-react"
 
 import {
   Table,
@@ -36,7 +38,7 @@ export function UsersPage() {
         if (error instanceof Error) {
           setError(error.message)
         } else {
-          setError("An unknown error occurred")
+          setError("Ukendt fejl opstod")
         }
       } finally {
         setLoading(false)
@@ -47,53 +49,68 @@ export function UsersPage() {
   }, [])
 
   if (loading) {
-    return <div>Loading...</div>
+    return (
+      <Layout_alt>
+        <div className="container-shell py-16 text-slate-600">Indlæser brugere...</div>
+      </Layout_alt>
+    )
   }
 
   if (error) {
-    return <div>Error: {error}</div>
+    return (
+      <Layout_alt>
+        <div className="container-shell py-16 text-red-600">Fejl: {error}</div>
+      </Layout_alt>
+    )
   }
 
   return (
-    <div className="container mx-auto py-10">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <CardTitle>Welcome, {user?.username ?? "User"}</CardTitle>
-            <CardDescription>
-              A list of all users in the system.
-            </CardDescription>
-          </div>
-          <Button variant="outline" onClick={logout}>Logout</Button>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Avatar</TableHead>
-                <TableHead>Username</TableHead>
-                <TableHead>Level</TableHead>
-                <TableHead>Experience</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {users.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell>
-                    <Avatar>
-                      <AvatarImage src={user.avatarUrl} alt={user.username} />
-                      <AvatarFallback>{user.username.slice(0, 2).toUpperCase()}</AvatarFallback>
-                    </Avatar>
-                  </TableCell>
-                  <TableCell>{user.username}</TableCell>
-                  <TableCell>{user.level}</TableCell>
-                  <TableCell>{user.experience}</TableCell>
+    <Layout_alt>
+      <section className="container-shell py-12 sm:py-16 lg:py-20">
+        <Card className="soft-card border-slate-100">
+          <CardHeader className="flex flex-col gap-4 border-b border-slate-100 py-6 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <CardTitle className="text-2xl font-bold tracking-[-0.02em] text-slate-900">
+                Velkommen, {user?.username ?? "bruger"}
+              </CardTitle>
+              <CardDescription className="mt-2 text-slate-600">
+                Her er en oversigt over brugere i systemet.
+              </CardDescription>
+            </div>
+            <Button variant="outline" onClick={logout} className="inline-flex items-center gap-2">
+              <LogOut className="h-4 w-4" />
+              Log ud
+            </Button>
+          </CardHeader>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-slate-50/70">
+                  <TableHead className="pl-6">Avatar</TableHead>
+                  <TableHead>Brugernavn</TableHead>
+                  <TableHead>Niveau</TableHead>
+                  <TableHead className="pr-6">Erfaring</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-    </div>
+              </TableHeader>
+              <TableBody>
+                {users.map((currentUser) => (
+                  <TableRow key={currentUser.id} className="hover:bg-indigo-50/35">
+                    <TableCell className="pl-6">
+                      <Avatar>
+                        <AvatarImage src={currentUser.avatarUrl} alt={currentUser.username} />
+                        <AvatarFallback>{currentUser.username.slice(0, 2).toUpperCase()}</AvatarFallback>
+                      </Avatar>
+                    </TableCell>
+                    <TableCell className="font-medium text-slate-900">{currentUser.username}</TableCell>
+                    <TableCell>{currentUser.level}</TableCell>
+                    <TableCell className="pr-6">{currentUser.experience}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      </section>
+    </Layout_alt>
   )
 } 

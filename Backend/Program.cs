@@ -188,6 +188,13 @@ public class Program
         // Tilføj HttpClient til DI container
         builder.Services.AddHttpClient();
 
+        var discordHealthStaleSeconds = int.TryParse(
+            Environment.GetEnvironmentVariable("DISCORD_HEALTH_STALE_SECONDS"),
+            out var configuredStaleSeconds
+        )
+            ? configuredStaleSeconds
+            : 180;
+
         var app = builder.Build();
 
         // Log at Discord botten starter
@@ -212,6 +219,47 @@ public class Program
         // Vigtig rækkefølge: Authentication før Authorization
         app.UseAuthentication();
         app.UseAuthorization();
+
+        app.MapGet("/health", async (ApplicationDbContext dbContext, DiscordBotService discordBotService, CancellationToken cancellationToken) =>
+        {
+            var dbHealthy = await dbContext.Database.CanConnectAsync(cancellationToken);
+            var discord = discordBotService.GetHealthSnapshot();
+            var nowUtc = DateTime.UtcNow;
+            var staleAfter = TimeSpan.FromSeconds(discordHealthStaleSeconds);
+            var freshnessProbeUtc = discord.LastGatewayActivityUtc ?? discord.LastReadyUtc;
+            var gatewayIsFresh = freshnessProbeUtc.HasValue
+                && nowUtc - freshnessProbeUtc.Value <= staleAfter;
+            var discordHealthy = discord.IsConnected && discord.IsReady && gatewayIsFresh;
+            var overallHealthy = dbHealthy && discordHealthy;
+
+            var payload = new
+            {
+                status = overallHealthy ? "healthy" : "unhealthy",
+                checkedAtUtc = nowUtc,
+                checks = new
+                {
+                    api = new { ok = true },
+                    database = new { ok = dbHealthy },
+                    discord = new
+                    {
+                        ok = discordHealthy,
+                        isConnected = discord.IsConnected,
+                        isReady = discord.IsReady,
+                        gatewayIsFresh,
+                        lastGatewayActivityUtc = discord.LastGatewayActivityUtc,
+                        lastReadyUtc = discord.LastReadyUtc,
+                        lastDisconnectUtc = discord.LastDisconnectUtc,
+                        lastDisconnectReason = discord.LastDisconnectReason,
+                        connectionState = discord.ConnectionState,
+                        loginState = discord.LoginState
+                    }
+                }
+            };
+
+            return overallHealthy
+                ? Results.Ok(payload)
+                : Results.Json(payload, statusCode: StatusCodes.Status503ServiceUnavailable);
+        }).AllowAnonymous();
 
         app.MapControllers();
 
