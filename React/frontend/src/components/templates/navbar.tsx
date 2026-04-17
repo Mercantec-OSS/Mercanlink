@@ -2,7 +2,7 @@ import { Link, useLocation } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/contexts/AuthContext"
 import { useState } from "react"
-import { Menu, X, LogOut, Users, Layers, FileText } from "lucide-react"
+import { Menu, X, LogOut, Users, Layers, FileText, UserCircle2 } from "lucide-react"
 
 const navItems = [
   { to: "/valgfag", label: "Valgfag", icon: Layers },
@@ -47,6 +47,12 @@ export default function Navbar() {
           <div className="hidden items-center gap-2 lg:flex">
             {isAuthenticated ? (
               <>
+                <Button asChild variant="outline">
+                  <Link to="/profile" className="inline-flex items-center gap-2">
+                    <UserCircle2 className="h-4 w-4" />
+                    Profil
+                  </Link>
+                </Button>
                 <Button asChild variant="outline">
                   <Link to="/users" className="inline-flex items-center gap-2">
                     <Users className="h-4 w-4" />
@@ -98,6 +104,9 @@ export default function Navbar() {
               <div className="mt-2 grid grid-cols-2 gap-2">
                 {isAuthenticated ? (
                   <>
+                    <Button asChild variant="outline">
+                      <Link to="/profile" onClick={closeMenu}>Profil</Link>
+                    </Button>
                     <Button asChild variant="outline">
                       <Link to="/users" onClick={closeMenu}>Brugere</Link>
                     </Button>

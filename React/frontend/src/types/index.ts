@@ -2,6 +2,7 @@ export interface User {
   id: string;
   email: string;
   username: string;
+  loginMethod?: string;
   discordId: string;
   globalName: string;
   avatarUrl: string;

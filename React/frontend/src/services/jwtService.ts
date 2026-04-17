@@ -51,6 +51,7 @@ export function decodeTokenAndMapToUser(token: string): User | null {
       id: decoded.sub,
       email: decoded.email || "",
       username,
+      loginMethod: decoded.login_method || "ukendt",
       discordId: "",
       level: 1,
       experience: 0,

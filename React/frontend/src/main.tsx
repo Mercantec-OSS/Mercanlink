@@ -3,6 +3,7 @@ import ReactDOM from "react-dom/client"
 import { BrowserRouter, Route, Routes } from "react-router-dom"
 import App from "./App.tsx"
 import { UsersPage } from "./pages/UsersPage.tsx"
+import { ProfilePage } from "./pages/ProfilePage.tsx"
 import { LoginPage } from "./pages/LoginPage.tsx"
 import { SignupPage } from "./pages/SignupPage.tsx"
 import { AuthCallbackPage } from "./pages/AuthCallbackPage.tsx"
@@ -26,6 +27,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             <Route path="/valgfag" element={<Valgfag />} />
             <Route path="/form" element={<FormPage />} />
             <Route element={<ProtectedRoute />}>
+              <Route path="/profile" element={<ProfilePage />} />
               <Route path="/users" element={<UsersPage />} />
             </Route>
           </Routes>
