@@ -2,17 +2,25 @@ import { Link, useLocation } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/contexts/AuthContext"
 import { useState } from "react"
-import { Menu, X, LogOut, Users, Layers, FileText, UserCircle2 } from "lucide-react"
-
-const navItems = [
-  { to: "/valgfag", label: "Valgfag", icon: Layers },
-  { to: "/form", label: "Indsend materiale", icon: FileText },
-]
+import { Menu, X, LogOut, Users, Layers, FileText, UserCircle2, ShieldCheck } from "lucide-react"
 
 export default function Navbar() {
-  const { isAuthenticated, logout } = useAuth()
+  const { isAuthenticated, logout, user } = useAuth()
   const location = useLocation()
   const [menuOpen, setMenuOpen] = useState(false)
+  const canModerateKnowledgeCenter =
+    user?.roles?.some((role) => {
+      const normalizedRole = role.toLowerCase()
+      return normalizedRole === "admin" || normalizedRole === "teacher"
+    }) ?? false
+
+  const navItems = [
+    { to: "/valgfag", label: "Valgfag", icon: Layers },
+    { to: "/form", label: "Indsend materiale", icon: FileText },
+    ...(canModerateKnowledgeCenter
+      ? [{ to: "/admin/knowledge-center", label: "Moderation", icon: ShieldCheck }]
+      : []),
+  ]
 
   const closeMenu = () => setMenuOpen(false)
 

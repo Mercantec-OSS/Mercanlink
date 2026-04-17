@@ -37,7 +37,8 @@ export async function apiClient<T>(
   if (!response.ok) {
     const errorBody = await response.text()
     console.error("API Request Failed:", response.status, errorBody)
-    throw new Error(`API request failed: ${response.statusText}`)
+    const trimmedBody = errorBody.trim()
+    throw new Error(trimmedBody || `API request failed: ${response.statusText}`)
   }
 
   if (response.status === 204 || response.headers.get("Content-Length") === "0") {

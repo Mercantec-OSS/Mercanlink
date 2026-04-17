@@ -18,6 +18,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<RefreshToken> RefreshTokens { get; set; }
     public DbSet<DiscordVerification> DiscordVerifications { get; set; }
     public DbSet<XpReward> XpRewards { get; set; }
+    public DbSet<KnowledgeSubmission> KnowledgeSubmissions { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -76,5 +77,21 @@ public class ApplicationDbContext : DbContext
 
         modelBuilder.Entity<DiscordVerification>()
             .HasIndex(dv => new { dv.DiscordUserId, dv.DiscordId });
+
+        modelBuilder.Entity<KnowledgeSubmission>()
+            .HasIndex(ks => ks.Status);
+
+        modelBuilder.Entity<KnowledgeSubmission>()
+            .HasIndex(ks => ks.CreatedAt);
+
+        modelBuilder.Entity<KnowledgeSubmission>()
+            .HasIndex(ks => ks.ModMessageId)
+            .IsUnique();
+
+        modelBuilder.Entity<KnowledgeSubmission>()
+            .HasOne(ks => ks.User)
+            .WithMany()
+            .HasForeignKey(ks => ks.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

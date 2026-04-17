@@ -14,6 +14,7 @@ using Microsoft.IdentityModel.Tokens;
 using Backend.DBAccess;
 using Backend.Discord;
 using System.Security.Claims;
+using System.Threading.RateLimiting;
 
 public class Program
 {
@@ -130,6 +131,31 @@ public class Program
         });
 
         builder.Services.AddAuthorization();
+        builder.Services.AddRateLimiter(options =>
+        {
+            options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+            options.AddPolicy("KnowledgeCenterSubmit", httpContext =>
+            {
+                var partitionKey =
+                    httpContext.User?.Identity?.IsAuthenticated == true
+                        ? httpContext.User.FindFirst("sub")?.Value
+                            ?? httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                            ?? httpContext.Connection.RemoteIpAddress?.ToString()
+                            ?? "authenticated-anonymous"
+                        : httpContext.Connection.RemoteIpAddress?.ToString() ?? "anonymous";
+
+                return RateLimitPartition.GetFixedWindowLimiter(
+                    partitionKey,
+                    _ => new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = 5,
+                        Window = TimeSpan.FromMinutes(1),
+                        QueueLimit = 0,
+                        AutoReplenishment = true
+                    }
+                );
+            });
+        });
 
         // Tilføj XP konfiguration
         builder.Services.Configure<XpConfig>(options =>
@@ -284,6 +310,7 @@ public class Program
 
         // Vigtig rækkefølge: Authentication før Authorization
         app.UseAuthentication();
+        app.UseRateLimiter();
         app.UseAuthorization();
 
         app.MapGet("/health", async (ApplicationDbContext dbContext, DiscordBotService discordBotService, CancellationToken cancellationToken) =>

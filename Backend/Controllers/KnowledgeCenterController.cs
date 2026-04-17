@@ -1,33 +1,251 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Backend.Models.DTOs;
+﻿using Backend.Data;
 using Backend.Models;
+using Backend.Models.DTOs;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
-namespace Backend.Controllers
+namespace Backend.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]
+public class KnowledgeCenterController : ControllerBase
 {
-    [ApiController]
-    [Route("api/[controller]")]
-    public class KnowledgeCenterController : ControllerBase
+    private readonly DiscordBotService _discordBotService;
+    private readonly ApplicationDbContext _context;
+    private readonly ILogger<KnowledgeCenterController> _logger;
+
+    public KnowledgeCenterController(
+        DiscordBotService discordBotService,
+        ApplicationDbContext context,
+        ILogger<KnowledgeCenterController> logger
+    )
     {
-        private readonly DiscordBotService _discordBotService;
+        _discordBotService = discordBotService;
+        _context = context;
+        _logger = logger;
+    }
 
-        public KnowledgeCenterController(DiscordBotService discordBotService)
+    [HttpPost]
+    [Authorize]
+    [EnableRateLimiting("KnowledgeCenterSubmit")]
+    public async Task<ActionResult<KnowledgeSubmissionResponse>> AddNewPostForApproval([FromBody] CreateKnowledgeSubmissionRequest request)
+    {
+        if (!request.HasValidType())
         {
-            _discordBotService = discordBotService;
+            return BadRequest(new { message = "Ugyldig materialetype." });
         }
 
-        [HttpPost]
-        public async Task<ActionResult> AddNewPostForApproval([FromBody] PostDTO post)
+        var currentUser = await ResolveCurrentUserAsync();
+        if (currentUser == null)
         {
-            try
-            {
-                await _discordBotService.KnowledgeCenterPostApproval(post);
-
-                return Ok();
-            }
-            catch (Exception)
-            {
-                return StatusCode(500, new { message = "Der opstod en fejl under forbinelse med discordbot" });
-            }
+            return Unauthorized(new { message = "Kunne ikke finde den indloggede bruger i systemet." });
         }
+
+        if (string.IsNullOrWhiteSpace(currentUser.DiscordUser?.DiscordId))
+        {
+            return BadRequest(new { message = "Du skal linke din Discord-konto før du kan indsende materiale." });
+        }
+
+        var submission = new KnowledgeSubmission
+        {
+            Type = request.Type.Trim().ToLowerInvariant(),
+            Title = request.Title.Trim(),
+            Description = request.Description.Trim(),
+            LinkToPost = request.LinkToPost?.Trim() ?? string.Empty,
+            UserId = currentUser.Id,
+            DiscordId = currentUser.DiscordUser.DiscordId,
+            AuthorName = ResolveAuthorName(currentUser),
+            Status = KnowledgeSubmissionStatus.Pending
+        };
+
+        await using var transaction = await _context.Database.BeginTransactionAsync();
+
+        try
+        {
+            _context.KnowledgeSubmissions.Add(submission);
+            await _context.SaveChangesAsync();
+
+            submission.ModMessageId = await _discordBotService.SendSubmissionForApprovalAsync(submission);
+            submission.UpdatedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+            _logger.LogInformation(
+                "Knowledge submission {SubmissionId} oprettet af bruger {UserId} og sendt til moderation",
+                submission.Id,
+                currentUser.Id
+            );
+
+            return Ok(MapToResponse(submission));
+        }
+        catch (Exception ex)
+        {
+            await transaction.RollbackAsync();
+            _logger.LogError(ex, "Fejl under oprettelse af knowledge submission for bruger {UserId}", currentUser.Id);
+            return StatusCode(500, new { message = "Der opstod en fejl under indsendelse til moderation." });
+        }
+    }
+
+    [HttpGet("pending")]
+    [Authorize(Roles = "Admin,Teacher")]
+    public async Task<ActionResult<List<KnowledgeSubmissionResponse>>> GetPendingSubmissions()
+    {
+        var submissions = await _context.KnowledgeSubmissions
+            .AsNoTracking()
+            .Where(s => s.Status == KnowledgeSubmissionStatus.Pending)
+            .OrderByDescending(s => s.CreatedAt)
+            .ToListAsync();
+
+        return Ok(submissions.Select(MapToResponse).ToList());
+    }
+
+    [HttpPatch("{submissionId}/approve")]
+    [Authorize(Roles = "Admin,Teacher")]
+    public async Task<ActionResult<KnowledgeSubmissionResponse>> ApproveSubmission(string submissionId)
+    {
+        var submission = await _context.KnowledgeSubmissions.FirstOrDefaultAsync(s => s.Id == submissionId);
+        if (submission == null)
+        {
+            return NotFound(new { message = "Submission blev ikke fundet." });
+        }
+
+        if (submission.Status != KnowledgeSubmissionStatus.Pending)
+        {
+            return Conflict(new { message = "Submission er allerede behandlet." });
+        }
+
+        try
+        {
+            submission.Status = KnowledgeSubmissionStatus.Approved;
+            submission.ReviewedByUserId = ResolveReviewerId();
+            submission.ReviewedAt = DateTime.UtcNow;
+            submission.RejectionReason = null;
+            submission.PublishedMessageId = await _discordBotService.PublishApprovedSubmissionAsync(submission);
+            submission.PublishedToDiscordAt = DateTime.UtcNow;
+            submission.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+            _logger.LogInformation(
+                "Knowledge submission {SubmissionId} godkendt af {ReviewerId}",
+                submissionId,
+                submission.ReviewedByUserId
+            );
+            return Ok(MapToResponse(submission));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Fejl under godkendelse af submission {SubmissionId}", submissionId);
+            return StatusCode(500, new { message = "Der opstod en fejl under godkendelse." });
+        }
+    }
+
+    [HttpPatch("{submissionId}/reject")]
+    [Authorize(Roles = "Admin,Teacher")]
+    public async Task<ActionResult<KnowledgeSubmissionResponse>> RejectSubmission(
+        string submissionId,
+        [FromBody] KnowledgeSubmissionReviewRequest request
+    )
+    {
+        if (string.IsNullOrWhiteSpace(request.Reason))
+        {
+            return BadRequest(new { message = "Afvisningsgrund er påkrævet." });
+        }
+
+        var submission = await _context.KnowledgeSubmissions.FirstOrDefaultAsync(s => s.Id == submissionId);
+        if (submission == null)
+        {
+            return NotFound(new { message = "Submission blev ikke fundet." });
+        }
+
+        if (submission.Status != KnowledgeSubmissionStatus.Pending)
+        {
+            return Conflict(new { message = "Submission er allerede behandlet." });
+        }
+
+        submission.Status = KnowledgeSubmissionStatus.Rejected;
+        submission.ReviewedByUserId = ResolveReviewerId();
+        submission.ReviewedAt = DateTime.UtcNow;
+        submission.RejectionReason = request.Reason.Trim();
+        submission.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+        _logger.LogInformation(
+            "Knowledge submission {SubmissionId} afvist af {ReviewerId}",
+            submissionId,
+            submission.ReviewedByUserId
+        );
+        return Ok(MapToResponse(submission));
+    }
+
+    private async Task<User?> ResolveCurrentUserAsync()
+    {
+        var currentUserId = GetCurrentUserId();
+        if (string.IsNullOrWhiteSpace(currentUserId))
+        {
+            return null;
+        }
+
+        return await _context.Users
+            .Include(u => u.DiscordUser)
+            .Include(u => u.WebsiteUser)
+            .Include(u => u.SchoolADUser)
+            .FirstOrDefaultAsync(u => u.Id == currentUserId || u.WebsiteUserId == currentUserId);
+    }
+
+    private string ResolveAuthorName(User user)
+    {
+        if (!string.IsNullOrWhiteSpace(user.DiscordUser?.GlobalName))
+        {
+            return user.DiscordUser.GlobalName;
+        }
+
+        if (!string.IsNullOrWhiteSpace(user.UserName))
+        {
+            return user.UserName;
+        }
+
+        if (!string.IsNullOrWhiteSpace(user.WebsiteUser?.UserName))
+        {
+            return user.WebsiteUser.UserName;
+        }
+
+        return "Ukendt bruger";
+    }
+
+    private string ResolveReviewerId()
+    {
+        return User.FindFirst("sub")?.Value
+            ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+            ?? "unknown-reviewer";
+    }
+
+    private string? GetCurrentUserId()
+    {
+        return User.FindFirst("sub")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+    }
+
+    private static KnowledgeSubmissionResponse MapToResponse(KnowledgeSubmission submission)
+    {
+        return new KnowledgeSubmissionResponse
+        {
+            Id = submission.Id,
+            Type = submission.Type,
+            Title = submission.Title,
+            Description = submission.Description,
+            LinkToPost = submission.LinkToPost,
+            AuthorName = submission.AuthorName,
+            DiscordId = submission.DiscordId,
+            Status = submission.Status,
+            ReviewedByUserId = submission.ReviewedByUserId,
+            ReviewedAt = submission.ReviewedAt,
+            RejectionReason = submission.RejectionReason,
+            ModMessageId = submission.ModMessageId,
+            PublishedMessageId = submission.PublishedMessageId,
+            PublishedToDiscordAt = submission.PublishedToDiscordAt,
+            CreatedAt = submission.CreatedAt,
+            UpdatedAt = submission.UpdatedAt
+        };
     }
 }

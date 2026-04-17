@@ -10,6 +10,9 @@ using Microsoft.Extensions.Hosting;
 using System.Text.RegularExpressions;
 using System.Threading.Channels;
 using Backend.Discord.Enums;
+using Backend.Data;
+using Backend.Models;
+using Microsoft.EntityFrameworkCore;
 
 public class DiscordBotService
 {
@@ -456,7 +459,7 @@ public class DiscordBotService
         await _client.StopAsync();
     }
 
-    public async Task KnowledgeCenterPostApproval(PostDTO post)
+    public async Task<ulong> SendSubmissionForApprovalAsync(KnowledgeSubmission submission)
     {
         UpdateGatewayActivity();
 
@@ -464,19 +467,26 @@ public class DiscordBotService
 
         if (channel == null)
         {
-            Console.WriteLine($"Mod Channel med {_modChannelId.ToString()} kunne ikke findes");
+            throw new InvalidOperationException($"Mod Channel med {_modChannelId} kunne ikke findes");
         }
-        else
+
+        var message = await channel.SendMessageAsync(BuildModerationMessageContent(submission));
+        return message.Id;
+    }
+
+    public async Task<ulong> PublishApprovedSubmissionAsync(KnowledgeSubmission submission)
+    {
+        UpdateGatewayActivity();
+        var channel = _client.GetChannel(_knowledgeCenterChannelId) as IMessageChannel;
+
+        if (channel == null)
         {
-            await channel.SendMessageAsync(
-                $"<@&{_modRoleId}>\r\n**" +
-                $"Nyt materiale er blevet udgivet af:** {post.Author} (<@{post.DiscordId}>)\r\n**" +
-                $"Materiale type:** {post.Type}\r\n\r\n**" +
-                $"Titel:** {post.Title}\r\n**" +
-                $"Beskrivelse:** {post.Description}\r\n" +
-                $"\r\n**" +
-                $"Link:** {post.LinkToPost}");
+            throw new InvalidOperationException($"Knowledge Center Channel med {_knowledgeCenterChannelId} kunne ikke findes");
         }
+
+        var message = await channel.SendMessageAsync(BuildPublishedMessageContent(submission));
+        await AwardKnowledgeCenterXpAsync(submission.DiscordId);
+        return message.Id;
     }
 
     public async Task KnowledgeCenterPostReaction(SocketReaction reaction, Cacheable<IUserMessage, ulong> cachedMessage)
@@ -484,36 +494,94 @@ public class DiscordBotService
         UpdateGatewayActivity();
 
         var message = await cachedMessage.GetOrDownloadAsync();
-        string newMessageContent = message.Content.Replace($"<@&{_modRoleId}>", "@everyone");
-
-        var channel = _client.GetChannel(_knowledgeCenterChannelId) as IMessageChannel;
 
         if (reaction.Emote.Name != "👎" && reaction.Emote.Name != "👍")
         {
             return;
         }
 
-        if (channel == null || !message.Author.IsBot)
+        if (!message.Author.IsBot)
         {
-            Console.WriteLine($"Knowledge Center Channel med {_knowledgeCenterChannelId.ToString()} kunne ikke findes");
-
             return;
         }
 
-        // Move to knowledge center on approval
-        if (reaction.Emote.Name == "👍")
-        {
-            await channel.SendMessageAsync(newMessageContent);
+        using var scope = _serviceProvider.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var submission = await dbContext.KnowledgeSubmissions
+            .FirstOrDefaultAsync(s => s.ModMessageId == message.Id);
 
-            var match = Regex.Match(newMessageContent, @"<@!?(\d+)>");
-            if (match.Success)
-            {
-                var xpService = _serviceProvider.CreateScope().ServiceProvider.GetRequiredService<XPService>();
-                await xpService.AddXPAsync(match.Groups[1].Value, XpActivityType.KnowledgeCenterApproved);
-            }
+        if (submission == null)
+        {
+            Console.WriteLine($"Kunne ikke finde submission for mod-message id {message.Id}");
+            return;
         }
 
+        if (submission.Status != KnowledgeSubmissionStatus.Pending)
+        {
+            return;
+        }
+
+        if (reaction.Emote.Name == "👍")
+        {
+            submission.Status = KnowledgeSubmissionStatus.Approved;
+            submission.ReviewedByUserId = reaction.UserId.ToString();
+            submission.ReviewedAt = DateTime.UtcNow;
+            submission.RejectionReason = null;
+            submission.PublishedMessageId = await PublishApprovedSubmissionAsync(submission);
+            submission.PublishedToDiscordAt = DateTime.UtcNow;
+        }
+        else
+        {
+            submission.Status = KnowledgeSubmissionStatus.Rejected;
+            submission.ReviewedByUserId = reaction.UserId.ToString();
+            submission.ReviewedAt = DateTime.UtcNow;
+            submission.RejectionReason = "Afvist via Discord moderation.";
+        }
+
+        submission.UpdatedAt = DateTime.UtcNow;
+        await dbContext.SaveChangesAsync();
         await message.DeleteAsync();
+    }
+
+    private string BuildModerationMessageContent(KnowledgeSubmission submission)
+    {
+        return
+            $"<@&{_modRoleId}>\r\n"
+            + $"**Submission ID:** `{submission.Id}`\r\n"
+            + $"**Nyt materiale af:** {submission.AuthorName} (<@{submission.DiscordId}>)\r\n"
+            + $"**Materiale type:** {submission.Type}\r\n\r\n"
+            + $"**Titel:** {submission.Title}\r\n"
+            + $"**Beskrivelse:** {submission.Description}\r\n"
+            + $"**Link:** {(string.IsNullOrWhiteSpace(submission.LinkToPost) ? "Intet link angivet" : submission.LinkToPost)}";
+    }
+
+    private string BuildPublishedMessageContent(KnowledgeSubmission submission)
+    {
+        return
+            $"@everyone\r\n"
+            + $"**Nyt godkendt materiale fra:** {submission.AuthorName} (<@{submission.DiscordId}>)\r\n"
+            + $"**Materiale type:** {submission.Type}\r\n\r\n"
+            + $"**Titel:** {submission.Title}\r\n"
+            + $"**Beskrivelse:** {submission.Description}\r\n"
+            + $"**Link:** {(string.IsNullOrWhiteSpace(submission.LinkToPost) ? "Intet link angivet" : submission.LinkToPost)}";
+    }
+
+    private async Task AwardKnowledgeCenterXpAsync(string discordId)
+    {
+        if (string.IsNullOrWhiteSpace(discordId))
+        {
+            return;
+        }
+
+        var match = Regex.Match(discordId, @"\d+");
+        if (!match.Success)
+        {
+            return;
+        }
+
+        using var scope = _serviceProvider.CreateScope();
+        var xpService = scope.ServiceProvider.GetRequiredService<XPService>();
+        await xpService.AddXPAsync(match.Value, XpActivityType.KnowledgeCenterApproved);
     }
 
     private Task HandleConnectedAsync()

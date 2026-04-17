@@ -4,11 +4,14 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { apiClient } from "@/services/apiClient"
+import { useAuth } from "@/contexts/AuthContext"
 
 export default function FormPage() {
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [message, setMessage] = useState("")
     const formRef = useRef<HTMLFormElement>(null)
+    const { user } = useAuth()
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
@@ -19,31 +22,24 @@ export default function FormPage() {
 
         const data = {
             type: formData.get('materialType') as string,
-            author: "User",
-            discordId: formData.get('DiscordId') as string,
             title: formData.get('title') as string,
             description: formData.get('description') as string,
             linkToPost: formData.get('link') as string || "",
         }
 
         try {
-            const response = await fetch('/api/KnowledgeCenter', {
+            await apiClient('/KnowledgeCenter', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
                 body: JSON.stringify(data),
             })
 
-            if (response.ok) {
-                setMessage("Materiale blev indsendt.")
-                formRef.current?.reset()
-            } else {
-                const errorText = await response.text()
-                setMessage(`Kunne ikke indsende: ${errorText}`)
-            }
+            setMessage("Materiale blev indsendt til godkendelse.")
+            formRef.current?.reset()
         } catch (error) {
-            setMessage(`Netværksfejl: ${String(error)}`)
+            const errorMessage = error instanceof Error
+                ? error.message
+                : "Ukendt fejl under indsendelse."
+            setMessage(`Kunne ikke indsende: ${errorMessage}`)
         } finally {
             setIsSubmitting(false)
         }
@@ -56,7 +52,10 @@ export default function FormPage() {
                         Indsend nyt <span className="brand-gradient-text">materiale</span>
                     </h1>
                     <p className="mt-4 text-base leading-7 text-slate-600">
-                        Del links, noter eller videoer med holdet. Formularen sender direkte til Knowledge Center endpoint.
+                        Del links og læringsressourcer med holdet. Din indsendelse går først til moderation før publicering.
+                    </p>
+                    <p className="mt-2 text-sm text-slate-500">
+                        Indsendt som: <span className="font-medium text-slate-700">{user?.username ?? "Ukendt bruger"}</span>
                     </p>
                 </div>
 
@@ -104,12 +103,7 @@ export default function FormPage() {
                             />
                         </div>
 
-                        <div className="space-y-2">
-                            <Label htmlFor="DiscordId" className="text-sm font-semibold text-slate-700">Discord ID</Label>
-                            <Input id="DiscordId" name="DiscordId" required className="h-11" placeholder="fx User#1234" />
-                        </div>
-
-                        <div className="space-y-2">
+                        <div className="space-y-2 md:col-span-2">
                             <Label htmlFor="link" className="text-sm font-semibold text-slate-700">Link (valgfri)</Label>
                             <Input id="link" name="link" className="h-11" placeholder="https://..." />
                         </div>

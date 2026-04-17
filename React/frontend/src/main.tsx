@@ -13,6 +13,7 @@ import { ThemeProvider } from "@/components/ui/theme-provider"
 import "./index.css"
 import Valgfag from "./pages/Valgfag.tsx"
 import FormPage from "./pages/FormPage.tsx"
+import { KnowledgeCenterAdminPage } from "./pages/KnowledgeCenterAdminPage.tsx"
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
@@ -25,10 +26,13 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             <Route path="/signup" element={<SignupPage />} />
             <Route path="/auth/callback" element={<AuthCallbackPage />} />
             <Route path="/valgfag" element={<Valgfag />} />
-            <Route path="/form" element={<FormPage />} />
             <Route element={<ProtectedRoute />}>
+              <Route path="/form" element={<FormPage />} />
               <Route path="/profile" element={<ProfilePage />} />
+            </Route>
+            <Route element={<ProtectedRoute allowedRoles={["Admin", "Teacher"]} />}>
               <Route path="/users" element={<UsersPage />} />
+              <Route path="/admin/knowledge-center" element={<KnowledgeCenterAdminPage />} />
             </Route>
           </Routes>
         </AuthProvider>
