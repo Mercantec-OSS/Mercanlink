@@ -545,10 +545,14 @@ public class DiscordBotService
 
     private string BuildModerationMessageContent(KnowledgeSubmission submission)
     {
+        var authorLabel = string.IsNullOrWhiteSpace(submission.DiscordId)
+            ? submission.AuthorName
+            : $"{submission.AuthorName} (<@{submission.DiscordId}>)";
+
         return
             $"<@&{_modRoleId}>\r\n"
             + $"**Submission ID:** `{submission.Id}`\r\n"
-            + $"**Nyt materiale af:** {submission.AuthorName} (<@{submission.DiscordId}>)\r\n"
+            + $"**Nyt materiale af:** {authorLabel}\r\n"
             + $"**Materiale type:** {submission.Type}\r\n\r\n"
             + $"**Titel:** {submission.Title}\r\n"
             + $"**Beskrivelse:** {submission.Description}\r\n"
@@ -557,9 +561,13 @@ public class DiscordBotService
 
     private string BuildPublishedMessageContent(KnowledgeSubmission submission)
     {
+        var authorLabel = string.IsNullOrWhiteSpace(submission.DiscordId)
+            ? submission.AuthorName
+            : $"{submission.AuthorName} (<@{submission.DiscordId}>)";
+
         return
             $"@everyone\r\n"
-            + $"**Nyt godkendt materiale fra:** {submission.AuthorName} (<@{submission.DiscordId}>)\r\n"
+            + $"**Nyt godkendt materiale fra:** {authorLabel}\r\n"
             + $"**Materiale type:** {submission.Type}\r\n\r\n"
             + $"**Titel:** {submission.Title}\r\n"
             + $"**Beskrivelse:** {submission.Description}\r\n"

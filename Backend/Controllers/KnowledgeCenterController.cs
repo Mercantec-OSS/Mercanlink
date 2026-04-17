@@ -41,12 +41,11 @@ public class KnowledgeCenterController : ControllerBase
         var currentUser = await ResolveCurrentUserAsync();
         if (currentUser == null)
         {
-            return Unauthorized(new { message = "Kunne ikke finde den indloggede bruger i systemet." });
-        }
-
-        if (string.IsNullOrWhiteSpace(currentUser.DiscordUser?.DiscordId))
-        {
-            return BadRequest(new { message = "Du skal linke din Discord-konto før du kan indsende materiale." });
+            currentUser = await ProvisionUserFromClaimsAsync();
+            if (currentUser == null)
+            {
+                return Unauthorized(new { message = "Kunne ikke finde eller oprette den indloggede bruger i systemet." });
+            }
         }
 
         var submission = new KnowledgeSubmission
@@ -56,7 +55,7 @@ public class KnowledgeCenterController : ControllerBase
             Description = request.Description.Trim(),
             LinkToPost = request.LinkToPost?.Trim() ?? string.Empty,
             UserId = currentUser.Id,
-            DiscordId = currentUser.DiscordUser.DiscordId,
+            DiscordId = currentUser.DiscordUser?.DiscordId ?? string.Empty,
             AuthorName = ResolveAuthorName(currentUser),
             Status = KnowledgeSubmissionStatus.Pending
         };
@@ -233,6 +232,86 @@ public class KnowledgeCenterController : ControllerBase
         }
 
         return "Ukendt bruger";
+    }
+
+    private async Task<User?> ProvisionUserFromClaimsAsync()
+    {
+        var subject = GetCurrentUserId();
+        var email = GetClaimValue(ClaimTypes.Email, "email");
+        var username = GetClaimValue("preferred_username", ClaimTypes.Name, "name");
+        var fallbackUserName = username
+            ?? (!string.IsNullOrWhiteSpace(email) ? email.Split('@')[0] : null)
+            ?? "user";
+
+        // Opretter en minimal User + relationer, så features kan bruges med det samme.
+        // DiscordId linkes separat via eksisterende verification-flow.
+        var websiteUser = new WebsiteUser
+        {
+            UserName = fallbackUserName,
+            Email = email ?? "",
+            Password = "",
+            EmailConfirmed = !string.IsNullOrWhiteSpace(email),
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+
+        var discordUser = new DiscordUser
+        {
+            UserName = fallbackUserName,
+            GlobalName = fallbackUserName,
+            DiscordId = null,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+
+        var schoolAdUser = new SchoolADUser
+        {
+            UserName = fallbackUserName,
+            StudentId = null,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+
+        var user = new User
+        {
+            UserName = fallbackUserName,
+            Roles = new List<string> { "Student" },
+            WebsiteUserId = websiteUser.Id,
+            DiscordUserId = discordUser.Id,
+            SchoolADUserId = schoolAdUser.Id,
+            WebsiteUser = websiteUser,
+            DiscordUser = discordUser,
+            SchoolADUser = schoolAdUser,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+
+        await using var transaction = await _context.Database.BeginTransactionAsync();
+        try
+        {
+            _context.WebsiteUsers.Add(websiteUser);
+            _context.DiscordUsers.Add(discordUser);
+            _context.SchoolADUsers.Add(schoolAdUser);
+            _context.Users.Add(user);
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+
+            _logger.LogInformation(
+                "Provisionerede ny bruger fra claims (sub={Sub}, email={Email}, username={Username}) -> userId={UserId}",
+                subject,
+                email,
+                username,
+                user.Id
+            );
+
+            return user;
+        }
+        catch (Exception ex)
+        {
+            await transaction.RollbackAsync();
+            _logger.LogError(ex, "Fejl under provisioning af bruger fra claims (sub={Sub})", subject);
+            return null;
+        }
     }
 
     private string ResolveReviewerId()
