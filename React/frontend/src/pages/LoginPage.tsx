@@ -1,10 +1,9 @@
-import { useState } from "react"
 import { useAuth } from "@/contexts/AuthContext"
 import { useNavigate } from "react-router-dom"
-import LoginForm from "@/components/templates/loginForm"
 import { Button } from "@/components/ui/button"
 import Layout_alt from "@/components/templates/layout"
 import { ShieldCheck, Sparkles } from "lucide-react"
+import { useState } from "react"
 
 export function LoginPage() {
   const [error, setError] = useState<string | null>(null)
@@ -12,14 +11,13 @@ export function LoginPage() {
   const { login } = useAuth()
   const navigate = useNavigate()
 
-  const handleLogin = async ({ emailOrUsername, password }: { emailOrUsername: string; password: string }) => {
+  const handleLogin = async () => {
     setError(null)
     setLoading(true)
     try {
-      await login({ emailOrUsername, password })
+      await login()
     } catch {
-      setError("Log ind fejlede. Tjek dine oplysninger og prøv igen.")
-    } finally {
+      setError("Log ind kunne ikke startes. Kontrollér OAuth-konfigurationen.")
       setLoading(false)
     }
   }
@@ -45,8 +43,19 @@ export function LoginPage() {
             </div>
           </div>
 
-          <div className="flex flex-col items-center gap-4 lg:items-end">
-            <LoginForm onSubmit={handleLogin} loading={loading} error={error} />
+          <div className="flex w-full max-w-lg flex-col items-center gap-4 rounded-xl border border-slate-100 bg-white p-8 shadow-sm lg:items-stretch">
+            <h2 className="text-2xl font-bold text-slate-900">Log ind via Mercantec Auth</h2>
+            <p className="text-sm text-slate-600">
+              Du viderestilles til Mercantec Auth for sikker login med authorization code og PKCE.
+            </p>
+            {error && (
+              <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
+                {error}
+              </p>
+            )}
+            <Button type="button" className="h-11 w-full text-sm" disabled={loading} onClick={handleLogin}>
+              {loading ? "Viderestiller..." : "Fortsæt til login"}
+            </Button>
             <Button type="button" variant="outline" className="w-full max-w-lg" onClick={() => navigate(-1)}>
               Tilbage
             </Button>

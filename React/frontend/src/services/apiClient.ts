@@ -1,25 +1,38 @@
-import { storageService } from "./storageService"
+import { clearStoredTokens, getAccessToken, refreshTokens } from "./authService"
 
-const API_BASE_URL = "https://api.mercanteclink.dk/api"
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://api.mercanteclink.dk/api"
 
 export async function apiClient<T>(
   url: string,
   options?: RequestInit,
 ): Promise<T> {
-  const token = storageService.getItem<string>("accessToken")
-  const headers = new Headers(options?.headers)
+  const executeRequest = async (token: string | null): Promise<Response> => {
+    const headers = new Headers(options?.headers)
 
-  if (token) {
-    headers.append("Authorization", `Bearer ${token}`)
-  }
-  if (!headers.has("Content-Type") && options?.body) {
-    headers.append("Content-Type", "application/json")
+    if (token) {
+      headers.set("Authorization", `Bearer ${token}`)
+    }
+    if (!headers.has("Content-Type") && options?.body) {
+      headers.set("Content-Type", "application/json")
+    }
+
+    return fetch(`${API_BASE_URL}${url}`, {
+      ...options,
+      headers,
+    })
   }
 
-  const response = await fetch(`${API_BASE_URL}${url}`, {
-    ...options,
-    headers,
-  })
+  let response = await executeRequest(getAccessToken())
+
+  if (response.status === 401) {
+    try {
+      const refreshed = await refreshTokens()
+      response = await executeRequest(refreshed.accessToken)
+    } catch {
+      clearStoredTokens()
+      throw new Error("Sessionen er udløbet. Log venligst ind igen.")
+    }
+  }
 
   if (!response.ok) {
     const errorBody = await response.text()

@@ -5,6 +5,7 @@ import App from "./App.tsx"
 import { UsersPage } from "./pages/UsersPage.tsx"
 import { LoginPage } from "./pages/LoginPage.tsx"
 import { SignupPage } from "./pages/SignupPage.tsx"
+import { AuthCallbackPage } from "./pages/AuthCallbackPage.tsx"
 import { AuthProvider } from "./contexts/AuthContext.tsx"
 import { ProtectedRoute } from "./components/ProtectedRoute.tsx"
 import { ThemeProvider } from "@/components/ui/theme-provider"
@@ -21,6 +22,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             <Route path="/" element={<App />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />
+            <Route path="/auth/callback" element={<AuthCallbackPage />} />
             <Route path="/valgfag" element={<Valgfag />} />
             <Route path="/form" element={<FormPage />} />
             <Route element={<ProtectedRoute />}>

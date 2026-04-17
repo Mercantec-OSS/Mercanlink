@@ -11,9 +11,9 @@ using Backend.Config;
 using Backend.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
-using System.Text;
 using Backend.DBAccess;
 using Backend.Discord;
+using System.Security.Claims;
 
 public class Program
 {
@@ -40,33 +40,33 @@ public class Program
             options.UseNpgsql(Environment.GetEnvironmentVariable("DEFAULT_CONNECTION") ?? builder.Configuration.GetConnectionString("DefaultConnection"))
         );
 
-        // Tilføj JWT konfiguration
-        builder.Services.Configure<JwtConfig>(options =>
+        // Tilføj Mercantec Auth konfiguration
+        var mercantecAuthConfig = new MercantecAuthConfig
         {
-            if (builder.Configuration.GetSection("JwtConfig").GetChildren().Count() == 0)
-            {
-                // Standard konfiguration hvis ingen findes
-                options.SecretKey = Environment.GetEnvironmentVariable("JWT_SECRET") ?? builder.Configuration["JWT_SECRET"];
-                options.Issuer = Environment.GetEnvironmentVariable("JWT_ISSUER") ?? builder.Configuration["JWT_ISSUER"];
-                options.Audience = Environment.GetEnvironmentVariable("JWT_AUDIENCE") ?? builder.Configuration["JWT_AUDIENCE"];
-                options.ExpiryMinutes = int.TryParse(Environment.GetEnvironmentVariable("JWT_EXPIRY_MINUTES") ?? builder.Configuration["JWT_EXPIRY_MINUTES"], out var expiryMinutes) ? expiryMinutes : 0;
-                options.RefreshTokenExpiryDays = int.TryParse(Environment.GetEnvironmentVariable("JWT_REFRESH_TOKEN_EXPIRY_DAYS") ?? builder.Configuration["JWT_REFRESH_TOKEN_EXPIRY_DAYS"], out var refreshDays) ? refreshDays : 0;
-            }
-            else
-            {
-                builder.Configuration.GetSection("JwtConfig").Bind(options);
-            }
+            Issuer =
+                Environment.GetEnvironmentVariable("MERCANTEC_AUTH_ISSUER")
+                ?? builder.Configuration["MercantecAuth:Issuer"]
+                ?? "https://auth.mercantec.tech",
+
+            Audience =
+                Environment.GetEnvironmentVariable("MERCANTEC_AUTH_AUDIENCE")
+                ?? builder.Configuration["MercantecAuth:Audience"]
+                ?? "mercantec-apps",
+
+            JwksUri =
+                Environment.GetEnvironmentVariable("MERCANTEC_AUTH_JWKS_URI")
+                ?? builder.Configuration["MercantecAuth:JwksUri"]
+                ?? "https://auth.mercantec.tech/.well-known/jwks.json"
+        };
+
+        builder.Services.Configure<MercantecAuthConfig>(options =>
+        {
+            options.Issuer = mercantecAuthConfig.Issuer;
+            options.Audience = mercantecAuthConfig.Audience;
+            options.JwksUri = mercantecAuthConfig.JwksUri;
         });
 
-        // Tilføj JWT Authentication
-        var jwtConfig = new JwtConfig();
-        builder.Configuration.GetSection("JwtConfig").Bind(jwtConfig);
-        if (string.IsNullOrEmpty(jwtConfig.SecretKey))
-        {
-            jwtConfig.SecretKey = Environment.GetEnvironmentVariable("JWT_SECRET") ?? builder.Configuration["JWT_SECRET"];
-            jwtConfig.Issuer = Environment.GetEnvironmentVariable("JWT_ISSUER") ?? builder.Configuration["JWT_ISSUER"];
-            jwtConfig.Audience = Environment.GetEnvironmentVariable("JWT_AUDIENCE") ?? builder.Configuration["JWT_AUDIENCE"];
-        }
+        var jwksKeyProvider = new MercantecJwksKeyProvider(mercantecAuthConfig.JwksUri);
 
         builder.Services.AddAuthentication(options =>
         {
@@ -75,16 +75,57 @@ public class Program
         })
         .AddJwtBearer(options =>
         {
+            options.MapInboundClaims = false;
+
             options.TokenValidationParameters = new TokenValidationParameters
             {
                 ValidateIssuerSigningKey = true,
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(jwtConfig.SecretKey)),
+                IssuerSigningKeyResolver = (_, _, _, _) => jwksKeyProvider.GetSigningKeys(),
                 ValidateIssuer = true,
-                ValidIssuer = jwtConfig.Issuer,
+                ValidIssuer = mercantecAuthConfig.Issuer,
                 ValidateAudience = true,
-                ValidAudience = jwtConfig.Audience,
+                ValidAudience = mercantecAuthConfig.Audience,
                 ValidateLifetime = true,
-                ClockSkew = TimeSpan.Zero
+                ClockSkew = TimeSpan.Zero,
+                NameClaimType = ClaimTypes.NameIdentifier,
+                RoleClaimType = "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
+            };
+
+            options.Events = new JwtBearerEvents
+            {
+                OnTokenValidated = context =>
+                {
+                    if (context.Principal?.Identity is ClaimsIdentity identity)
+                    {
+                        var roleClaimTypes = new[]
+                        {
+                            "role",
+                            ClaimTypes.Role,
+                            "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
+                        };
+
+                        var roles = identity.Claims
+                            .Where(c => roleClaimTypes.Contains(c.Type))
+                            .Select(c => c.Value)
+                            .Distinct()
+                            .ToList();
+
+                        foreach (var role in roles)
+                        {
+                            if (!identity.HasClaim("http://schemas.microsoft.com/ws/2008/06/identity/claims/role", role))
+                            {
+                                identity.AddClaim(new Claim("http://schemas.microsoft.com/ws/2008/06/identity/claims/role", role));
+                            }
+
+                            if (!identity.HasClaim(ClaimTypes.Role, role))
+                            {
+                                identity.AddClaim(new Claim(ClaimTypes.Role, role));
+                            }
+                        }
+                    }
+
+                    return Task.CompletedTask;
+                }
             };
         });
 
@@ -104,9 +145,7 @@ public class Program
                 builder.Configuration.GetSection("XPConfig").Bind(options);
             }
 
-            var logger = builder.Services.BuildServiceProvider().GetRequiredService<ILogger<Program>>();
-            logger.LogInformation("XP Config indlæst: {ActivityRewards} aktiviteter konfigureret",
-                options.ActivityRewards?.Count ?? 0);
+            // XP config logges senere når app'en er bygget og logger er tilgængelig via DI.
         });
 
         // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
@@ -168,11 +207,9 @@ public class Program
         builder.Services.AddScoped<XPService>();        
         builder.Services.AddScoped<LevelSystem>();
         // Tilføj authentication services        
-        builder.Services.AddScoped<JwtService>();        
         builder.Services.AddScoped<AuthService>();        
         builder.Services.AddScoped<DiscordVerificationService>();
         // Tilføj DBAccess        
-        builder.Services.AddScoped<JWTDBAccess>();
         builder.Services.AddScoped<AuthDBAccess>();
         builder.Services.AddScoped<DiscordVerificationDBAccess>();
         builder.Services.AddScoped<DiscordBotDBAccess>();

@@ -1,19 +1,18 @@
 import { jwtDecode } from "jwt-decode"
 import { type User } from "@/types"
+import { authConfig } from "./authConfig"
 
 interface DecodedJwtPayload {
-  nameid: string
-  email: string
-  unique_name: string
-  discord_id: string
-  level: string
-  experience: string
-  role: string | string[]
-  nbf: number
+  sub: string
+  email?: string
+  name?: string
+  preferred_username?: string
+  login_method?: string
+  role?: string | string[]
   exp: number
   iat: number
   iss: string
-  aud: string
+  aud: string | string[]
 }
 
 export function decodeTokenAndMapToUser(token: string): User | null {
@@ -25,26 +24,34 @@ export function decodeTokenAndMapToUser(token: string): User | null {
       return null
     }
 
+    const audiences = Array.isArray(decoded.aud) ? decoded.aud : [decoded.aud]
+    if (decoded.iss !== authConfig.issuer || !audiences.includes(authConfig.audience)) {
+      return null
+    }
+
+    const username = decoded.preferred_username || decoded.name || decoded.email || "Ukendt bruger"
+
     return {
-      id: decoded.nameid,
-      email: decoded.email,
-      username: decoded.unique_name,
-      discordId: decoded.discord_id,
-      level: parseInt(decoded.level, 10),
-      experience: parseInt(decoded.experience, 10),
-      roles: Array.isArray(decoded.role) ? decoded.role : [decoded.role],
-      // The following fields are not in the JWT, so we set defaults
-      globalName: decoded.unique_name,
-      avatarUrl: "", // This information is not in the token.
+      id: decoded.sub,
+      email: decoded.email || "",
+      username,
+      discordId: "",
+      level: 1,
+      experience: 0,
+      roles: decoded.role
+        ? (Array.isArray(decoded.role) ? decoded.role : [decoded.role])
+        : [],
+      globalName: decoded.name || username,
+      avatarUrl: "",
       firstName: "",
       surnameInitial: "",
-      passwordChanged: false, // Default value
+      passwordChanged: false,
       studentId: "",
       department: "",
       employeeType: "",
       adCreatedAt: "",
       lastAdSync: "",
-      isActive: true, // Assume active if token is valid
+      isActive: true,
       createdAt: new Date(decoded.iat * 1000).toISOString(),
     }
   } catch (error) {

@@ -1,14 +1,19 @@
 import { createContext, useContext, useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { type LoginCredentials, loginUser, type SignupCredentials } from "@/services/authService"
 import { type User } from "@/types"
-import { storageService } from "@/services/storageService"
 import { decodeTokenAndMapToUser } from "@/services/jwtService"
+import {
+  clearStoredTokens,
+  exchangeCodeForTokens,
+  getAccessToken,
+  getLogoutUrl,
+  startLoginRedirect,
+} from "@/services/authService"
 
 interface AuthContextType {
   user: User | null
-  login: (credentials: LoginCredentials) => Promise<void>
-  signup: (credentials: SignupCredentials) => Promise<void>
+  login: () => Promise<void>
+  completeLogin: (code: string, state: string) => Promise<void>
   logout: () => void
   isAuthenticated: boolean
 }
@@ -16,7 +21,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | null>(null)
 
 function getInitialUser(): User | null {
-  const token = storageService.getItem<string>("accessToken")
+  const token = getAccessToken()
   if (!token) return null
   return decodeTokenAndMapToUser(token)
 }
@@ -25,28 +30,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(getInitialUser)
   const navigate = useNavigate()
 
-  const login = async (credentials: LoginCredentials) => {
-    const { accessToken, refreshToken } = await loginUser(credentials)
-    storageService.setItem("accessToken", accessToken)
-    storageService.setItem("refreshToken", refreshToken)
+  const login = async () => {
+    await startLoginRedirect()
+  }
+
+  const completeLogin = async (code: string, state: string) => {
+    const { accessToken } = await exchangeCodeForTokens(code, state)
     const newUser = decodeTokenAndMapToUser(accessToken)
+    if (!newUser) {
+      throw new Error("Access token kunne ikke valideres.")
+    }
     setUser(newUser)
     navigate("/users")
   }
 
-  const signup = async (credentials: SignupCredentials) => {
-    await login(credentials)
-  }
   const logout = () => {
-    storageService.removeItem("accessToken")
-    storageService.removeItem("refreshToken")
+    clearStoredTokens()
     setUser(null)
-    navigate("/login")
+    window.location.assign(getLogoutUrl())
   }
 
   return (
     <AuthContext.Provider
-      value={{ user, login, signup, logout, isAuthenticated: !!user }}
+      value={{ user, login, completeLogin, logout, isAuthenticated: !!user }}
     >
       {children}
     </AuthContext.Provider>

@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 
 /// <summary>
-/// Controller til håndtering af authentication (login, registrering, token refresh)
+/// Controller til brugerinformation og Discord-linking for allerede autentificerede brugere.
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
@@ -27,126 +27,6 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>
-    /// Log ind med email/brugernavn og password
-    /// </summary>
-    /// <param name="request">Login oplysninger</param>
-    /// <returns>Access token og refresh token</returns>
-    /// <response code="200">Login succesfult</response>
-    /// <response code="401">Ugyldige login oplysninger</response>
-    [HttpPost("login")]
-    public async Task<ActionResult<AuthResponse>> Login([FromBody] LoginRequest request)
-    {
-        try
-        {
-            var result = await _authService.LoginAsync(request);
-            if (result == null)
-            {
-                return Unauthorized(new { message = "Ugyldige login oplysninger" });
-            }
-
-            _logger.LogInformation("Bruger {EmailOrUsername} loggede ind", request.EmailOrUsername);
-            return Ok(result);
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            return Unauthorized(new { message = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Fejl under login for {EmailOrUsername}", request.EmailOrUsername);
-            return StatusCode(500, new { message = "Der opstod en fejl under login" });
-        }
-    }
-
-    /// <summary>
-    /// Registrer ny bruger
-    /// </summary>
-    /// <param name="request">Registrerings oplysninger</param>
-    /// <returns>Access token og refresh token for den nye bruger</returns>
-    /// <response code="200">Registrering succesfult</response>
-    /// <response code="400">Fejl ved registrering (email/brugernavn i brug)</response>
-    [HttpPost("register")]
-    public async Task<ActionResult<AuthResponse>> Register([FromBody] RegisterRequest request)
-    {
-        try
-        {
-            var result = await _authService.RegisterAsync(request);
-            if (result == null)
-            {
-                return BadRequest(new { message = "Registrering fejlede" });
-            }
-
-            _logger.LogInformation("Ny bruger registreret: {Email}", request.Email);
-            return Ok(result);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Fejl under registrering for {Email}", request.Email);
-            return StatusCode(500, new { message = "Der opstod en fejl under registrering" });
-        }
-    }
-
-    /// <summary>
-    /// Refresh access token
-    /// </summary>
-    /// <param name="request">Refresh token</param>
-    /// <returns>Nye access og refresh tokens</returns>
-    /// <response code="200">Token refresh succesfult</response>
-    /// <response code="401">Ugyldig refresh token</response>
-    [HttpPost("refresh")]
-    public async Task<ActionResult<AuthResponse>> RefreshToken([FromBody] RefreshTokenRequest request)
-    {
-        try
-        {
-            var result = await _authService.RefreshTokenAsync(request.RefreshToken);
-            if (result == null)
-            {
-                return Unauthorized(new { message = "Ugyldig refresh token" });
-            }
-
-            return Ok(result);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Fejl under token refresh");
-            return StatusCode(500, new { message = "Der opstod en fejl under token refresh" });
-        }
-    }
-
-    /// <summary>
-    /// Log ud og revoke refresh token
-    /// </summary>
-    /// <param name="request">Refresh token der skal revokes</param>
-    /// <returns>Logout bekræftelse</returns>
-    /// <response code="200">Logout succesfult</response>
-    /// <response code="401">Ikke autoriseret</response>
-    [HttpPost("logout")]
-    [Authorize]
-    public async Task<ActionResult> Logout([FromBody] RefreshTokenRequest request)
-    {
-        try
-        {
-            await _authService.LogoutAsync(request.RefreshToken);
-            
-            var websiteUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            _logger.LogInformation("Bruger {WebsiteUserId} loggede ud", websiteUserId);
-            
-            return Ok(new { message = "Logout succesfuld" });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Fejl under logout");
-            return StatusCode(500, new { message = "Der opstod en fejl under logout" });
-        }
-    }
-
-    
-
-    /// <summary>
     /// Hent information om den nuværende indloggede bruger
     /// </summary>
     /// <returns>Bruger information fra JWT token</returns>
@@ -158,14 +38,22 @@ public class AuthController : ControllerBase
     {
         try
         {
-            var claims = User.Claims.ToDictionary(c => c.Type, c => c.Value);
+            var claims = User.Claims.GroupBy(c => c.Type).ToDictionary(group => group.Key, group => group.First().Value);
 
             return Ok(new
             {
-                userid = claims.GetValueOrDefault(ClaimTypes.NameIdentifier),
+                userid = GetCurrentUserId(),
+                sub = claims.GetValueOrDefault("sub"),
                 email = claims.GetValueOrDefault(ClaimTypes.Email),
-                username = claims.GetValueOrDefault(ClaimTypes.Name),
-                roles = User.FindAll(ClaimTypes.Role).Select(c => c.Value).ToList()
+                username = claims.GetValueOrDefault(ClaimTypes.Name) ?? claims.GetValueOrDefault("name"),
+                roles = User.Claims
+                    .Where(c =>
+                        c.Type == ClaimTypes.Role
+                        || c.Type == "role"
+                        || c.Type == "http://schemas.microsoft.com/ws/2008/06/identity/claims/role")
+                    .Select(c => c.Value)
+                    .Distinct()
+                    .ToList()
             });
         }
         catch (Exception ex)
@@ -189,7 +77,7 @@ public class AuthController : ControllerBase
     {
         try
         {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var userId = GetCurrentUserId();
             if (string.IsNullOrEmpty(userId))
             {
                 return Unauthorized(new { message = "Ugyldig bruger ID" });
@@ -199,6 +87,11 @@ public class AuthController : ControllerBase
             
             if (result.Success)
             {
+                if (string.IsNullOrEmpty(result.DiscordUserId))
+                {
+                    return BadRequest(new { message = "Verification kunne ikke startes korrekt." });
+                }
+
                 // Hent verification koden fra databasen
                 var verification = await _verificationService.GetActiveVerificationAsync(result.DiscordUserId, request.DiscordId);
                 if (verification != null)
@@ -240,7 +133,7 @@ public class AuthController : ControllerBase
     {
         try
         {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var userId = GetCurrentUserId();
             if (string.IsNullOrEmpty(userId))
             {
                 return Unauthorized(new { message = "Ugyldig bruger ID" });
@@ -287,7 +180,7 @@ public class AuthController : ControllerBase
     {
         try
         {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var userId = GetCurrentUserId();
             if (string.IsNullOrEmpty(userId))
             {
                 return Unauthorized(new { message = "Ugyldig bruger ID" });
@@ -310,15 +203,9 @@ public class AuthController : ControllerBase
             return StatusCode(500, new { message = "Der opstod en fejl under unlink" });
         }
     }
-}
 
-/// <summary>
-/// Request for refresh token operation
-/// </summary>
-public class RefreshTokenRequest
-{
-    /// <summary>
-    /// Refresh token der skal bruges til at få nye tokens
-    /// </summary>
-    public string RefreshToken { get; set; } = string.Empty;
-} 
+    private string? GetCurrentUserId()
+    {
+        return User.FindFirst("sub")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+    }
+}

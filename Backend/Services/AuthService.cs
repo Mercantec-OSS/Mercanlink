@@ -1,53 +1,15 @@
 namespace Backend.Services;
 
-using Backend.Data;
 using Backend.DBAccess;
 using Backend.Models;
-using Backend.Models.DTOs;
-using Backend.Config;
-using BCrypt.Net;
-using Discord;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 
 public class AuthService
 {
     private readonly AuthDBAccess _authDBAccess;
-    private readonly JwtService _jwtService;
-    private readonly IOptions<JwtConfig> _jwtConfig;
 
-    public AuthService(JwtService jwtService, AuthDBAccess authDBAccess, IOptions<JwtConfig> jwtConfig)
+    public AuthService(AuthDBAccess authDBAccess)
     {
         _authDBAccess = authDBAccess;
-        _jwtService = jwtService;
-        _jwtConfig = jwtConfig;
-    }
-
-    public async Task<AuthResponse?> LoginAsync(LoginRequest request)
-    {
-        // Find bruger via email eller username
-        var websiteUser = await _authDBAccess.Login(request);
-
-        if (websiteUser == null || !BCrypt.Verify(request.Password, websiteUser.Password))
-        {
-            return null;
-        }
-
-        var user = await _authDBAccess.GetWebsiteUser(websiteUser.Id);
-        if (user == null)
-            return null;
-
-        // Generer tokens
-        var accessToken = _jwtService.GenerateAccessToken(user);
-        var refreshToken = await _jwtService.GenerateRefreshTokenAsync(user.WebsiteUserId);
-
-        return new AuthResponse
-        {
-            AccessToken = accessToken,
-            RefreshToken = refreshToken,
-            ExpiresAt = DateTime.UtcNow.AddMinutes(_jwtConfig.Value.ExpiryMinutes),
-            User = MapToUserDto(user)
-        };
     }
 
     public async Task<User?> GetUserFromWebsiteId(string websiteId)
@@ -56,63 +18,6 @@ public class AuthService
         if (user == null)
             return null;
         return user;
-    }
-
-    public async Task<AuthResponse?> RegisterAsync(RegisterRequest request)
-    {
-        // Tjek om email eller username allerede eksisterer
-        if (await _authDBAccess.CheckForExistingUser(request))
-        {
-            throw new InvalidOperationException("Email eller brugernavn er allerede i brug");
-        }
-
-        // Tjek om Discord ID allerede er linket
-        if (!string.IsNullOrEmpty(request.DiscordId))
-        {
-
-            if (await _authDBAccess.CheckForExistingDiscordIdLink(request))
-            {
-                throw new InvalidOperationException("Discord konto er allerede linket til en anden bruger");
-            }
-        }
-
-        // Hash password
-        var passwordHash = BCrypt.HashPassword(request.Password);
-
-        User user;
-
-        // Opret ny bruger uden Discord
-        user = new User
-        {
-            UserName = request.Username,
-            SchoolADUser = new SchoolADUser(),
-            DiscordUser = new DiscordUser(),
-            WebsiteUser = new WebsiteUser
-            {
-                UserName = request.Username,
-                Email = request.Email,
-                Password = passwordHash,
-                EmailConfirmed = false,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
-            }
-        };
-
-        await _authDBAccess.AddUser(user);
-
-
-
-        // Generer tokens
-        var accessToken = _jwtService.GenerateAccessToken(user);
-        var refreshToken = await _jwtService.GenerateRefreshTokenAsync(user.WebsiteUser.Id);
-
-        return new AuthResponse
-        {
-            AccessToken = accessToken,
-            RefreshToken = refreshToken,
-            ExpiresAt = DateTime.UtcNow.AddMinutes(_jwtConfig.Value.ExpiryMinutes),
-            User = MapToUserDto(user)
-        };
     }
 
     public async Task<bool> LinkDiscordAsync(string userId, string discordId)
@@ -161,37 +66,6 @@ public class AuthService
         return true;
     }
 
-    public async Task<AuthResponse?> RefreshTokenAsync(string refreshToken)
-    {
-        var websiteUser = await _jwtService.ValidateRefreshTokenAsync(refreshToken);
-        if (websiteUser == null)
-            return null;
-        var user = await _authDBAccess.GetWebsiteUser(websiteUser.Id);
-        if (user == null)
-            return null;
-
-        // Revoke den gamle token
-        await _jwtService.RevokeRefreshTokenAsync(refreshToken);
-
-        // Generer nye tokens
-        var newAccessToken = _jwtService.GenerateAccessToken(user);
-        var newRefreshToken = await _jwtService.GenerateRefreshTokenAsync(user.WebsiteUserId);
-
-        return new AuthResponse
-        {
-            AccessToken = newAccessToken,
-            RefreshToken = newRefreshToken,
-            ExpiresAt = DateTime.UtcNow.AddMinutes(_jwtConfig.Value.ExpiryMinutes),
-            User = MapToUserDto(user)
-        };
-    }
-
-    public async Task<bool> LogoutAsync(string refreshToken)
-    {
-        await _jwtService.RevokeRefreshTokenAsync(refreshToken);
-        return true;
-    }
-
     public async Task<bool> UnlinkDiscordAsync(string userId)
     {
         var user = await _authDBAccess.GetUser(userId);
@@ -203,7 +77,7 @@ public class AuthService
         // Opret ny bruger med kun Discord-information
         var newUser = new User
         {
-            UserName = user.DiscordUser.UserName,
+            UserName = user.DiscordUser.UserName ?? user.UserName,
             Roles = user.Roles, // Standard rolle
             WebsiteUser = new WebsiteUser(),
             SchoolADUser = new SchoolADUser(),
@@ -215,7 +89,7 @@ public class AuthService
                 Discriminator = user.DiscordUser.Discriminator,
                 AvatarUrl = user.DiscordUser.AvatarUrl,
                 IsBot = user.DiscordUser.IsBot,
-                PublicFlags = (int)user.DiscordUser.PublicFlags,
+                PublicFlags = user.DiscordUser.PublicFlags ?? 0,
                 Nickname = user.DiscordUser.Nickname ?? string.Empty,
                 JoinedAt = user.DiscordUser.JoinedAt,
                 IsBoosting = user.DiscordUser.IsBoosting,
@@ -247,6 +121,4 @@ public class AuthService
         await _authDBAccess.UpdateUser(user);
         return true;
     }
-
-    private static UserDto MapToUserDto(User user) { return new UserDto { UserId = user.Id, Email = user.WebsiteUser.Email, Username = user.UserName, UpdatedAt = user.UpdatedAt, CreatedAt = user.CreatedAt }; }
 }

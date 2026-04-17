@@ -35,13 +35,11 @@ Indeholder basis konfiguration for backend:
 - `ConnectionStrings:DefaultConnection` – Forbindelsesstreng til PostgreSQL (Neon.tech eller lokal)
 - `Logging` – Logniveauer for backend
 
-### JWT konfiguration
-JWT settings kan sættes i `appsettings.json` eller som miljøvariabler:
-- `JWT_SECRET` – Hemmelig nøgle til signering af tokens (minimum 32 tegn, bør kun sættes som miljøvariabel i produktion)
-- `JwtConfig:Issuer` – Hvem udsteder tokens (default: MercantecSpace)
-- `JwtConfig:Audience` – Hvem tokens er til (default: MercantecSpaceUsers)
-- `JwtConfig:ExpiryMinutes` – Hvor længe access tokens er gyldige (default: 60)
-- `JwtConfig:RefreshTokenExpiryDays` – Hvor længe refresh tokens er gyldige (default: 7)
+### Mercantec Auth konfiguration
+Backend validerer access tokens fra Mercantec Auth via JWKS:
+- `MERCANTEC_AUTH_ISSUER` – Udsteder (`https://auth.mercantec.tech`)
+- `MERCANTEC_AUTH_AUDIENCE` – Audience (`mercantec-apps`)
+- `MERCANTEC_AUTH_JWKS_URI` – JWKS endpoint (`https://auth.mercantec.tech/.well-known/jwks.json`)
 
 ### XP/Level system
 XP/level konfiguration kan sættes i `appsettings.json` under `XPConfig` eller som miljøvariabler:
@@ -61,7 +59,7 @@ XP/level konfiguration kan sættes i `appsettings.json` under `XPConfig` eller s
 ## Sikkerhed
 - Brug JWT authentication til alle API-kald fra frontend
 - Discord linking kræver nu verificering via engangskode sendt til Discord DM
-- Sensitive nøgler (Discord, JWT_SECRET) bør **aldrig** committes til repoet
+- Sensitive nøgler (Discord tokens, API keys) bør **aldrig** committes til repoet
 
 ## Kørsel
 1. **Backend:**

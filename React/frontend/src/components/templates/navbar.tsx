@@ -2,7 +2,7 @@ import { Link, useLocation } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/contexts/AuthContext"
 import { useState } from "react"
-import { Menu, X, ArrowRight, LogOut, Users, Layers, FileText } from "lucide-react"
+import { Menu, X, LogOut, Users, Layers, FileText } from "lucide-react"
 
 const navItems = [
   { to: "/valgfag", label: "Valgfag", icon: Layers },
@@ -59,17 +59,9 @@ export default function Navbar() {
                 </Button>
               </>
             ) : (
-              <>
-                <Button asChild variant="outline">
-                  <Link to="/login">Log ind</Link>
-                </Button>
-                <Button asChild>
-                  <Link to="/signup" className="group inline-flex items-center gap-2">
-                    Opret konto
-                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                  </Link>
-                </Button>
-              </>
+              <Button asChild variant="outline">
+                <Link to="/login">Log ind</Link>
+              </Button>
             )}
           </div>
 
@@ -114,14 +106,9 @@ export default function Navbar() {
                     </Button>
                   </>
                 ) : (
-                  <>
-                    <Button asChild variant="outline">
-                      <Link to="/login" onClick={closeMenu}>Log ind</Link>
-                    </Button>
-                    <Button asChild>
-                      <Link to="/signup" onClick={closeMenu}>Opret konto</Link>
-                    </Button>
-                  </>
+                  <Button asChild variant="outline" className="col-span-2">
+                    <Link to="/login" onClick={closeMenu}>Log ind</Link>
+                  </Button>
                 )}
               </div>
             </div>
