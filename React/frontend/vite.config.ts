@@ -31,5 +31,6 @@ export default defineConfig({
       },
     },
   },
-  base: './',
+  // Use absolute asset paths so deep links like /auth/callback can load bundles.
+  base: '/',
 })
