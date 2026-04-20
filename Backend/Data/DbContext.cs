@@ -19,6 +19,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<DiscordVerification> DiscordVerifications { get; set; }
     public DbSet<XpReward> XpRewards { get; set; }
     public DbSet<KnowledgeSubmission> KnowledgeSubmissions { get; set; }
+    public DbSet<ElectiveEnrollment> ElectiveEnrollments { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -92,6 +93,16 @@ public class ApplicationDbContext : DbContext
             .HasOne(ks => ks.User)
             .WithMany()
             .HasForeignKey(ks => ks.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<ElectiveEnrollment>()
+            .HasIndex(e => new { e.ElectiveKey, e.UserId })
+            .IsUnique();
+
+        modelBuilder.Entity<ElectiveEnrollment>()
+            .HasOne(e => e.User)
+            .WithMany()
+            .HasForeignKey(e => e.UserId)
             .OnDelete(DeleteBehavior.Cascade);
     }
 }

@@ -1,11 +1,11 @@
 ﻿using Backend.Data;
 using Backend.Models;
 using Backend.Models.DTOs;
+using Backend.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
-using System.Security.Claims;
 
 namespace Backend.Controllers;
 
@@ -16,16 +16,19 @@ public class KnowledgeCenterController : ControllerBase
     private readonly DiscordBotService _discordBotService;
     private readonly ApplicationDbContext _context;
     private readonly ILogger<KnowledgeCenterController> _logger;
+    private readonly AuthenticatedUserService _authenticatedUserService;
 
     public KnowledgeCenterController(
         DiscordBotService discordBotService,
         ApplicationDbContext context,
-        ILogger<KnowledgeCenterController> logger
+        ILogger<KnowledgeCenterController> logger,
+        AuthenticatedUserService authenticatedUserService
     )
     {
         _discordBotService = discordBotService;
         _context = context;
         _logger = logger;
+        _authenticatedUserService = authenticatedUserService;
     }
 
     [HttpPost]
@@ -38,10 +41,10 @@ public class KnowledgeCenterController : ControllerBase
             return BadRequest(new { message = "Ugyldig materialetype." });
         }
 
-        var currentUser = await ResolveCurrentUserAsync();
+        var currentUser = await _authenticatedUserService.ResolveCurrentUserAsync(User);
         if (currentUser == null)
         {
-            currentUser = await ProvisionUserFromClaimsAsync();
+            currentUser = await _authenticatedUserService.ProvisionUserFromClaimsAsync(User);
             if (currentUser == null)
             {
                 return Unauthorized(new { message = "Kunne ikke finde eller oprette den indloggede bruger i systemet." });
@@ -62,7 +65,7 @@ public class KnowledgeCenterController : ControllerBase
             LinkToPost = request.LinkToPost?.Trim() ?? string.Empty,
             UserId = currentUser.Id,
             DiscordId = discordIdForTag,
-            AuthorName = ResolveAuthorName(currentUser),
+            AuthorName = AuthenticatedUserService.ResolveDisplayName(currentUser),
             Status = KnowledgeSubmissionStatus.Pending
         };
 
@@ -124,7 +127,7 @@ public class KnowledgeCenterController : ControllerBase
         try
         {
             submission.Status = KnowledgeSubmissionStatus.Approved;
-            submission.ReviewedByUserId = ResolveReviewerId();
+            submission.ReviewedByUserId = AuthenticatedUserService.ResolveReviewerId(User);
             submission.ReviewedAt = DateTime.UtcNow;
             submission.RejectionReason = null;
             submission.PublishedMessageId = await _discordBotService.PublishApprovedSubmissionAsync(submission);
@@ -170,7 +173,7 @@ public class KnowledgeCenterController : ControllerBase
         }
 
         submission.Status = KnowledgeSubmissionStatus.Rejected;
-        submission.ReviewedByUserId = ResolveReviewerId();
+        submission.ReviewedByUserId = AuthenticatedUserService.ResolveReviewerId(User);
         submission.ReviewedAt = DateTime.UtcNow;
         submission.RejectionReason = request.Reason.Trim();
         submission.UpdatedAt = DateTime.UtcNow;
@@ -182,42 +185,6 @@ public class KnowledgeCenterController : ControllerBase
             submission.ReviewedByUserId
         );
         return Ok(MapToResponse(submission));
-    }
-
-    private async Task<User?> ResolveCurrentUserAsync()
-    {
-        var currentUserId = GetCurrentUserId();
-        var email = GetClaimValue(ClaimTypes.Email, "email");
-        var username = GetClaimValue("preferred_username", ClaimTypes.Name, "name");
-
-        if (string.IsNullOrWhiteSpace(currentUserId)
-            && string.IsNullOrWhiteSpace(email)
-            && string.IsNullOrWhiteSpace(username))
-        {
-            return null;
-        }
-
-        return await _context.Users
-            .Include(u => u.DiscordUser)
-            .Include(u => u.WebsiteUser)
-            .Include(u => u.SchoolADUser)
-            .FirstOrDefaultAsync(u =>
-                (!string.IsNullOrWhiteSpace(currentUserId) && (
-                    u.Id == currentUserId
-                    || u.WebsiteUserId == currentUserId
-                    || u.DiscordUserId == currentUserId
-                    || u.DiscordUser.DiscordId == currentUserId
-                ))
-                || (!string.IsNullOrWhiteSpace(email) && (
-                    u.WebsiteUser.Email == email
-                ))
-                || (!string.IsNullOrWhiteSpace(username) && (
-                    u.UserName == username
-                    || u.WebsiteUser.UserName == username
-                    || u.DiscordUser.UserName == username
-                    || u.DiscordUser.GlobalName == username
-                ))
-            );
     }
 
     /// <summary>
@@ -237,132 +204,6 @@ public class KnowledgeCenterController : ControllerBase
         }
 
         return trimmed;
-    }
-
-    private string ResolveAuthorName(User user)
-    {
-        if (!string.IsNullOrWhiteSpace(user.DiscordUser?.GlobalName))
-        {
-            return user.DiscordUser.GlobalName;
-        }
-
-        if (!string.IsNullOrWhiteSpace(user.UserName))
-        {
-            return user.UserName;
-        }
-
-        if (!string.IsNullOrWhiteSpace(user.WebsiteUser?.UserName))
-        {
-            return user.WebsiteUser.UserName;
-        }
-
-        return "Ukendt bruger";
-    }
-
-    private async Task<User?> ProvisionUserFromClaimsAsync()
-    {
-        var subject = GetCurrentUserId();
-        var email = GetClaimValue(ClaimTypes.Email, "email");
-        var username = GetClaimValue("preferred_username", ClaimTypes.Name, "name");
-        var fallbackUserName = username
-            ?? (!string.IsNullOrWhiteSpace(email) ? email.Split('@')[0] : null)
-            ?? "user";
-
-        // Opretter en minimal User + relationer, så features kan bruges med det samme.
-        // DiscordId linkes separat via eksisterende verification-flow.
-        var websiteUser = new WebsiteUser
-        {
-            UserName = fallbackUserName,
-            Email = email ?? "",
-            Password = "",
-            EmailConfirmed = !string.IsNullOrWhiteSpace(email),
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
-
-        var discordUser = new DiscordUser
-        {
-            UserName = fallbackUserName,
-            GlobalName = fallbackUserName,
-            DiscordId = null,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
-
-        var schoolAdUser = new SchoolADUser
-        {
-            UserName = fallbackUserName,
-            StudentId = null,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
-
-        var user = new User
-        {
-            UserName = fallbackUserName,
-            Roles = new List<string> { "Student" },
-            WebsiteUserId = websiteUser.Id,
-            DiscordUserId = discordUser.Id,
-            SchoolADUserId = schoolAdUser.Id,
-            WebsiteUser = websiteUser,
-            DiscordUser = discordUser,
-            SchoolADUser = schoolAdUser,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
-
-        await using var transaction = await _context.Database.BeginTransactionAsync();
-        try
-        {
-            _context.WebsiteUsers.Add(websiteUser);
-            _context.DiscordUsers.Add(discordUser);
-            _context.SchoolADUsers.Add(schoolAdUser);
-            _context.Users.Add(user);
-            await _context.SaveChangesAsync();
-            await transaction.CommitAsync();
-
-            _logger.LogInformation(
-                "Provisionerede ny bruger fra claims (sub={Sub}, email={Email}, username={Username}) -> userId={UserId}",
-                subject,
-                email,
-                username,
-                user.Id
-            );
-
-            return user;
-        }
-        catch (Exception ex)
-        {
-            await transaction.RollbackAsync();
-            _logger.LogError(ex, "Fejl under provisioning af bruger fra claims (sub={Sub})", subject);
-            return null;
-        }
-    }
-
-    private string ResolveReviewerId()
-    {
-        return User.FindFirst("sub")?.Value
-            ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value
-            ?? "unknown-reviewer";
-    }
-
-    private string? GetCurrentUserId()
-    {
-        return User.FindFirst("sub")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-    }
-
-    private string? GetClaimValue(params string[] claimTypes)
-    {
-        foreach (var claimType in claimTypes)
-        {
-            var value = User.FindFirst(claimType)?.Value;
-            if (!string.IsNullOrWhiteSpace(value))
-            {
-                return value.Trim();
-            }
-        }
-
-        return null;
     }
 
     private static KnowledgeSubmissionResponse MapToResponse(KnowledgeSubmission submission)

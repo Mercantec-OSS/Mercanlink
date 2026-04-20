@@ -233,7 +233,8 @@ public class Program
         builder.Services.AddScoped<XPService>();        
         builder.Services.AddScoped<LevelSystem>();
         // Tilføj authentication services        
-        builder.Services.AddScoped<AuthService>();        
+        builder.Services.AddScoped<AuthService>();
+        builder.Services.AddScoped<AuthenticatedUserService>();
         builder.Services.AddScoped<DiscordVerificationService>();
         // Tilføj DBAccess        
         builder.Services.AddScoped<AuthDBAccess>();
