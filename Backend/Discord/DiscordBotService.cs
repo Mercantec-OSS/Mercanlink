@@ -471,6 +471,8 @@ public class DiscordBotService
         }
 
         var message = await channel.SendMessageAsync(BuildModerationMessageContent(submission));
+        await message.AddReactionAsync(new Emoji("👍"));
+        await message.AddReactionAsync(new Emoji("👎"));
         return message.Id;
     }
 
@@ -568,11 +570,12 @@ public class DiscordBotService
         // Discord: # / ## = større skrift, ** = fed (jf. Discord markdown)
         return "# 🪐 **Nyt materiale udgivet af:** "
             + $"{author}, **Tjek det ud!**\r\n\r\n\r\n"
-            + $" **{typeEmoji} Materiale type:** {typeLabel}\r\n\r\n"
-            + $" **📌 Titel:** {submission.Title}\r\n\r\n"
-            + " **✉️ Beskrivelse:**\r\n"
+            + $"## **{typeEmoji} Materiale type:** {typeLabel}\r\n\r\n"
+            + $"## **📌 Titel:** {submission.Title}\r\n\r\n"
+            + "## **✉️ Beskrivelse:**\r\n"
             + $"{submission.Description}\r\n\r\n"
-            + $"### **🔗 {linkIntro}:** {linkValue}";
+            + $"## **🔗 {linkIntro}:** {linkValue}";
+    
     }
 
     /// <summary>

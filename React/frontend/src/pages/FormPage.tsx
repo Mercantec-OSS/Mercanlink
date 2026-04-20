@@ -6,6 +6,8 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { apiClient } from "@/services/apiClient"
 import { useAuth } from "@/contexts/AuthContext"
+import { DiscordDarkMessagePreview } from "@/components/DiscordDarkMessagePreview"
+import { buildKnowledgeCenterDiscordMessage } from "@/lib/knowledgeCenterDiscordMessage"
 
 function normalizeUrl(input: string): string {
     const raw = input.trim()
@@ -46,6 +48,11 @@ export default function FormPage() {
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [message, setMessage] = useState("")
     const [linkDraft, setLinkDraft] = useState("")
+    const [materialType, setMaterialType] = useState("")
+    const [discordId, setDiscordId] = useState("")
+    const [title, setTitle] = useState("")
+    const [description, setDescription] = useState("")
+    const [previewMarkdownOverride, setPreviewMarkdownOverride] = useState("")
     const formRef = useRef<HTMLFormElement>(null)
     const { user } = useAuth()
 
@@ -56,19 +63,33 @@ export default function FormPage() {
         return `${parsedLink.origin}/favicon.ico`
     }, [parsedLink])
 
+    const builtDiscordMessage = useMemo(
+        () =>
+            buildKnowledgeCenterDiscordMessage({
+                type: materialType,
+                title,
+                description,
+                linkToPost: normalizeUrl(linkDraft || ""),
+                discordId,
+                authorDisplayName: user?.username ?? "Ukendt bruger",
+            }),
+        [materialType, title, description, linkDraft, discordId, user?.username],
+    )
+
+    const previewContent =
+        previewMarkdownOverride.trim().length > 0 ? previewMarkdownOverride : builtDiscordMessage
+
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
         setIsSubmitting(true)
         setMessage("")
 
-        const formData = new FormData(e.currentTarget)
-
-        const discordIdRaw = ((formData.get("discordId") as string) || "").trim()
+        const discordIdRaw = discordId.trim()
         const data = {
-            type: formData.get('materialType') as string,
-            title: formData.get('title') as string,
-            description: formData.get('description') as string,
-            linkToPost: normalizeUrl((formData.get('link') as string) || ""),
+            type: materialType,
+            title: title.trim(),
+            description: description.trim(),
+            linkToPost: normalizeUrl(linkDraft || ""),
             ...(discordIdRaw ? { discordId: discordIdRaw } : {}),
         }
 
@@ -81,6 +102,11 @@ export default function FormPage() {
             setMessage("Materiale blev indsendt til godkendelse.")
             formRef.current?.reset()
             setLinkDraft("")
+            setMaterialType("")
+            setDiscordId("")
+            setTitle("")
+            setDescription("")
+            setPreviewMarkdownOverride("")
         } catch (error) {
             const errorMessage = error instanceof Error
                 ? error.message
@@ -105,6 +131,7 @@ export default function FormPage() {
                     </p>
                 </div>
 
+                <div className="grid gap-8 lg:grid-cols-2 lg:items-start">
                 <Card className="soft-card border-slate-100 p-6 sm:p-8">
                     <form ref={formRef} className="grid gap-5 md:grid-cols-2" onSubmit={handleSubmit}>
                         {message && (
@@ -121,6 +148,8 @@ export default function FormPage() {
                             <select
                                 name="materialType"
                                 id="materialType"
+                                value={materialType}
+                                onChange={(e) => setMaterialType(e.target.value)}
                                 className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30"
                                 required
                             >
@@ -139,6 +168,8 @@ export default function FormPage() {
                             <Input
                                 id="discordId"
                                 name="discordId"
+                                value={discordId}
+                                onChange={(e) => setDiscordId(e.target.value)}
                                 className="h-11 font-mono text-sm"
                                 placeholder="Fx 123456789012345678"
                                 inputMode="numeric"
@@ -154,15 +185,33 @@ export default function FormPage() {
 
                         <div className="space-y-2 md:col-span-2">
                             <Label htmlFor="title" className="text-sm font-semibold text-slate-700">Titel</Label>
-                            <Input id="title" name="title" required className="h-11" placeholder="Skriv en titel" />
+                            <Input
+                                id="title"
+                                name="title"
+                                value={title}
+                                onChange={(e) => setTitle(e.target.value)}
+                                required
+                                className="h-11"
+                                placeholder="Skriv en titel"
+                            />
                         </div>
 
                         <div className="space-y-2 md:col-span-2">
-                            <Label htmlFor="description" className="text-sm font-semibold text-slate-700">Beskrivelse</Label>
+                            <Label htmlFor="description" className="text-sm font-semibold text-slate-700">
+                                Beskrivelse
+                            </Label>
+                            <p className="text-xs text-slate-500">
+                                Du kan bruge Discord-markdown i teksten, fx <code className="rounded bg-slate-100 px-1">**fed**</code>{" "}
+                                eller nye linjer med <code className="rounded bg-slate-100 px-1"># Overskrift</code> i starten af en linje
+                                — se forhåndsvisningen til højre.
+                            </p>
                             <textarea
                                 id="description"
                                 name="description"
+                                value={description}
+                                onChange={(e) => setDescription(e.target.value)}
                                 required
+                                minLength={10}
                                 rows={5}
                                 placeholder="Beskriv materialet kort"
                                 className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30"
@@ -271,6 +320,40 @@ export default function FormPage() {
                         </div>
                     </form>
                 </Card>
+
+                <div className="space-y-4 lg:sticky lg:top-4">
+                    <DiscordDarkMessagePreview content={previewContent} />
+                    <Card className="border-slate-200 bg-slate-50/80 p-4">
+                        <Label htmlFor="previewOverride" className="text-sm font-semibold text-slate-800">
+                            Eksperimentér med rå markdown
+                        </Label>
+                        <p className="mt-1 text-xs text-slate-600">
+                            Tilsidesætter kun <strong>forhåndsvisningen</strong> — feltet sendes ikke til serveren. Godt til at lege med{" "}
+                            <code className="rounded bg-white px-1">#</code>, <code className="rounded bg-white px-1">##</code> og{" "}
+                            <code className="rounded bg-white px-1">**x**</code> som i Discord.
+                        </p>
+                        <textarea
+                            id="previewOverride"
+                            value={previewMarkdownOverride}
+                            onChange={(e) => setPreviewMarkdownOverride(e.target.value)}
+                            rows={6}
+                            placeholder="Lad stå tom for at bruge automatisk besked fra formularen…"
+                            className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 font-mono text-xs text-slate-800 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30"
+                        />
+                        {previewMarkdownOverride.trim().length > 0 ? (
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="mt-2"
+                                onClick={() => setPreviewMarkdownOverride("")}
+                            >
+                                Nulstil — vis formularens besked
+                            </Button>
+                        ) : null}
+                    </Card>
+                </div>
+                </div>
             </section>
         </Layout_alt>
     )
