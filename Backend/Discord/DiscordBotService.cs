@@ -565,11 +565,14 @@ public class DiscordBotService
             ? "Intet link angivet"
             : submission.LinkToPost.Trim();
 
-        return $"🪐 Nyt materiale udgivet af: {author}, Tjek det ud!\r\n\r\n"
-            + $"{typeEmoji} Materiale type: {typeLabel}\r\n\r\n"
-            + $"📌 Titel: {submission.Title}\r\n\r\n"
-            + $"✉️ Beskrivelse:\r\n{submission.Description}\r\n\r\n"
-            + $"🔗 {linkIntro}: {linkValue}";
+        // Discord: # / ## = større skrift, ** = fed (jf. Discord markdown)
+        return "# 🪐 **Nyt materiale udgivet af:** "
+            + $"{author}, **Tjek det ud!**\r\n\r\n"
+            + $"## **{typeEmoji} Materiale type:** {typeLabel}\r\n\r\n"
+            + $"## **📌 Titel:** {submission.Title}\r\n\r\n"
+            + "## **✉️ Beskrivelse:**\r\n"
+            + $"{submission.Description}\r\n\r\n"
+            + $"## **🔗 {linkIntro}:** {linkValue}";
     }
 
     /// <summary>

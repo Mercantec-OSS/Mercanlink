@@ -48,6 +48,12 @@ public class KnowledgeCenterController : ControllerBase
             }
         }
 
+        var discordIdForTag = ResolveSubmissionDiscordId(request.DiscordId, currentUser);
+        if (discordIdForTag is null)
+        {
+            return BadRequest(new { message = "Ugyldigt Discord bruger-ID. Brug kun det numeriske ID (snowflake), fx fra Discord → Indstillinger → Avanceret → udviklertilstand." });
+        }
+
         var submission = new KnowledgeSubmission
         {
             Type = request.Type.Trim().ToLowerInvariant(),
@@ -55,7 +61,7 @@ public class KnowledgeCenterController : ControllerBase
             Description = request.Description.Trim(),
             LinkToPost = request.LinkToPost?.Trim() ?? string.Empty,
             UserId = currentUser.Id,
-            DiscordId = currentUser.DiscordUser?.DiscordId ?? string.Empty,
+            DiscordId = discordIdForTag,
             AuthorName = ResolveAuthorName(currentUser),
             Status = KnowledgeSubmissionStatus.Pending
         };
@@ -212,6 +218,25 @@ public class KnowledgeCenterController : ControllerBase
                     || u.DiscordUser.GlobalName == username
                 ))
             );
+    }
+
+    /// <summary>
+    /// Tom streng fra request = brug linkede Discord. Ellers skal input være et gyldigt snowflake.
+    /// </summary>
+    private static string? ResolveSubmissionDiscordId(string? requestDiscordId, User currentUser)
+    {
+        var trimmed = requestDiscordId?.Trim() ?? string.Empty;
+        if (string.IsNullOrEmpty(trimmed))
+        {
+            return currentUser.DiscordUser?.DiscordId?.Trim() ?? string.Empty;
+        }
+
+        if (!ulong.TryParse(trimmed, out _) || trimmed.Length is < 17 or > 22)
+        {
+            return null;
+        }
+
+        return trimmed;
     }
 
     private string ResolveAuthorName(User user)

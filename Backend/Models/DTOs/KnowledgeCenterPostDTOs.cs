@@ -23,6 +23,12 @@ public class CreateKnowledgeSubmissionRequest
     [Url(ErrorMessage = "Link skal være en gyldig URL.")]
     public string? LinkToPost { get; set; }
 
+    /// <summary>
+    /// Valgfrit Discord snowflake-ID til @-omtale. Tomt = bruger kontoens linkede Discord.
+    /// </summary>
+    [StringLength(22)]
+    public string? DiscordId { get; set; }
+
     public bool HasValidType()
     {
         return AllowedTypes.Contains(Type?.Trim(), StringComparer.OrdinalIgnoreCase);

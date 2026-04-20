@@ -63,11 +63,13 @@ export default function FormPage() {
 
         const formData = new FormData(e.currentTarget)
 
+        const discordIdRaw = ((formData.get("discordId") as string) || "").trim()
         const data = {
             type: formData.get('materialType') as string,
             title: formData.get('title') as string,
             description: formData.get('description') as string,
             linkToPost: normalizeUrl((formData.get('link') as string) || ""),
+            ...(discordIdRaw ? { discordId: discordIdRaw } : {}),
         }
 
         try {
@@ -128,6 +130,26 @@ export default function FormPage() {
                                 <option value="artikel">Artikel</option>
                                 <option value="andet">Andet</option>
                             </select>
+                        </div>
+
+                        <div className="space-y-2 md:col-span-2">
+                            <Label htmlFor="discordId" className="text-sm font-semibold text-slate-700">
+                                Discord bruger-ID <span className="font-normal text-slate-500">(valgfrit)</span>
+                            </Label>
+                            <Input
+                                id="discordId"
+                                name="discordId"
+                                className="h-11 font-mono text-sm"
+                                placeholder="Fx 123456789012345678"
+                                inputMode="numeric"
+                                autoComplete="off"
+                                pattern="\d*"
+                                title="Kun cifre — dit numeriske Discord-ID (snowflake)"
+                            />
+                            <p className="text-xs text-slate-500">
+                                Bruges til @-omtale i Knowledge Center på Discord. Find ID under Discord → Indstillinger → Avanceret →
+                                udviklertilstand → højreklik på profil → Kopier bruger-ID. Tomt felt = dit linkede Discord, hvis du har et.
+                            </p>
                         </div>
 
                         <div className="space-y-2 md:col-span-2">
