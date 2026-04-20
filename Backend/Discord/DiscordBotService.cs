@@ -545,9 +545,7 @@ public class DiscordBotService
 
     private string BuildModerationMessageContent(KnowledgeSubmission submission)
     {
-        var authorLabel = string.IsNullOrWhiteSpace(submission.DiscordId)
-            ? submission.AuthorName
-            : $"{submission.AuthorName} (<@{submission.DiscordId}>)";
+        var authorLabel = FormatKnowledgeCenterAuthorLine(submission);
 
         return
             $"<@&{_modRoleId}>\r\n"
@@ -561,17 +559,44 @@ public class DiscordBotService
 
     private string BuildPublishedMessageContent(KnowledgeSubmission submission)
     {
-        var authorLabel = string.IsNullOrWhiteSpace(submission.DiscordId)
-            ? submission.AuthorName
-            : $"{submission.AuthorName} (<@{submission.DiscordId}>)";
+        var author = FormatKnowledgeCenterAuthorLine(submission);
+        var (typeEmoji, typeLabel, linkIntro) = MapKnowledgeSubmissionTypeParts(submission.Type);
+        var linkValue = string.IsNullOrWhiteSpace(submission.LinkToPost)
+            ? "Intet link angivet"
+            : submission.LinkToPost.Trim();
 
-        return
-            $"@everyone\r\n"
-            + $"**Nyt godkendt materiale fra:** {authorLabel}\r\n"
-            + $"**Materiale type:** {submission.Type}\r\n\r\n"
-            + $"**Titel:** {submission.Title}\r\n"
-            + $"**Beskrivelse:** {submission.Description}\r\n"
-            + $"**Link:** {(string.IsNullOrWhiteSpace(submission.LinkToPost) ? "Intet link angivet" : submission.LinkToPost)}";
+        return $"🪐 Nyt materiale udgivet af: {author}, Tjek det ud!\r\n\r\n"
+            + $"{typeEmoji} Materiale type: {typeLabel}\r\n\r\n"
+            + $"📌 Titel: {submission.Title}\r\n\r\n"
+            + $"✉️ Beskrivelse:\r\n{submission.Description}\r\n\r\n"
+            + $"🔗 {linkIntro}: {linkValue}";
+    }
+
+    /// <summary>
+    /// Discord mention når vi har et gyldigt snowflake; ellers SSO-/visningsnavn.
+    /// </summary>
+    private static string FormatKnowledgeCenterAuthorLine(KnowledgeSubmission submission)
+    {
+        var discordId = submission.DiscordId?.Trim() ?? string.Empty;
+        if (!string.IsNullOrEmpty(discordId) && ulong.TryParse(discordId, out _))
+        {
+            return $"<@{discordId}>";
+        }
+
+        return string.IsNullOrWhiteSpace(submission.AuthorName) ? "Ukendt bruger" : submission.AuthorName;
+    }
+
+    private static (string Emoji, string TypeLabel, string LinkIntro) MapKnowledgeSubmissionTypeParts(string? typeRaw)
+    {
+        var type = (typeRaw ?? string.Empty).Trim().ToLowerInvariant();
+        return type switch
+        {
+            "blog-post" => ("📝", "Blogindlæg", "Link til blogindlæg"),
+            "video" => ("🎥", "Video", "Link til video"),
+            "artikel" => ("📰", "Artikel", "Link til artikel"),
+            "andet" => ("📎", "Andet", "Link til materiale"),
+            _ => ("📝", typeRaw?.Trim() ?? "Ukendt", $"Link til {typeRaw?.Trim() ?? "materiale"}"),
+        };
     }
 
     private async Task AwardKnowledgeCenterXpAsync(string discordId)
