@@ -130,4 +130,30 @@ public class ValgfagController : ControllerBase
         _logger.LogInformation("Bruger {UserId} tilmeldt valgfag {Key}", user.Id, key);
         return Ok(new { message = "Tilmelding registreret." });
     }
+
+    [HttpDelete("enroll/{electiveKey}")]
+    [Authorize]
+    public async Task<ActionResult> Unenroll(string electiveKey)
+    {
+        var key = electiveKey?.Trim();
+        if (string.IsNullOrEmpty(key))
+            return BadRequest(new { message = "electiveKey er påkrævet." });
+
+        var user = await _authenticatedUserService.ResolveCurrentUserAsync(User);
+        if (user == null)
+        {
+            user = await _authenticatedUserService.ProvisionUserFromClaimsAsync(User);
+            if (user == null)
+                return Unauthorized(new { message = "Kunne ikke finde eller oprette den indloggede bruger i systemet." });
+        }
+
+        var enrollment = await _context.ElectiveEnrollments.FirstOrDefaultAsync(e => e.ElectiveKey == key && e.UserId == user.Id);
+        if (enrollment == null)
+            return NotFound(new { message = "Du er ikke tilmeldt dette valgfag." });
+
+        _context.ElectiveEnrollments.Remove(enrollment);
+        await _context.SaveChangesAsync();
+        _logger.LogInformation("Bruger {UserId} frameldt valgfag {Key}", user.Id, key);
+        return Ok(new { message = "Frameldning registreret." });
+    }
 }

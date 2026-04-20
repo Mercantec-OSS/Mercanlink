@@ -1,12 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react"
-import type { FormEvent } from "react"
 import Layout_alt from "@/components/templates/layout"
 import { Bot, Gamepad2, Rocket, CalendarDays, UserRound, Clock4, GraduationCap, Users } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { Label } from "@/components/ui/label"
 import { useAuth } from "@/contexts/AuthContext"
-import { useNavigate } from "react-router-dom"
 import { apiClient } from "@/services/apiClient"
 
 type ElectiveEnrollmentParticipantDto = {
@@ -73,15 +70,13 @@ const electives: Elective[] = [
 
 const Valgfag: React.FC = () => {
   const { isAuthenticated, login } = useAuth()
-  const navigate = useNavigate()
 
   const [groups, setGroups] = useState<ElectiveEnrollmentsGroupDto[]>([])
   const [myKeys, setMyKeys] = useState<string[]>([])
   const [listLoading, setListLoading] = useState(true)
   const [listError, setListError] = useState<string | null>(null)
-  const [selectedKey, setSelectedKey] = useState("")
-  const [submitLoading, setSubmitLoading] = useState(false)
-  const [submitMessage, setSubmitMessage] = useState<{ type: "ok" | "err"; text: string } | null>(null)
+  const [pendingKey, setPendingKey] = useState<string | null>(null)
+  const [actionHint, setActionHint] = useState<{ electiveKey: string; ok: boolean; text: string } | null>(null)
 
   const availableElectives = electives.filter((elective) => {
     const endDate = new Date(`${elective.endDate}T23:59:59`)
@@ -129,44 +124,57 @@ const Valgfag: React.FC = () => {
     else setMyKeys([])
   }, [isAuthenticated, loadMyEnrollments])
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault()
-    setSubmitMessage(null)
+  const join = async (electiveKey: string) => {
+    setActionHint(null)
     if (!isAuthenticated) {
       void login()
       return
     }
-    if (!selectedKey) {
-      setSubmitMessage({ type: "err", text: "Vælg et valgfag." })
-      return
-    }
-    setSubmitLoading(true)
+    setPendingKey(electiveKey)
     try {
       await apiClient("/valgfag/enroll", {
         method: "POST",
-        body: JSON.stringify({ electiveKey: selectedKey }),
+        body: JSON.stringify({ electiveKey }),
       })
-      setSubmitMessage({ type: "ok", text: "Du er nu tilmeldt." })
+      setActionHint({ electiveKey, ok: true, text: "Du er tilmeldt." })
       await loadPublicEnrollments()
       await loadMyEnrollments()
     } catch (err) {
       const text = err instanceof Error ? err.message : "Tilmelding mislykkedes."
-      setSubmitMessage({ type: "err", text })
+      setActionHint({ electiveKey, ok: false, text })
     } finally {
-      setSubmitLoading(false)
+      setPendingKey(null)
+    }
+  }
+
+  const unjoin = async (electiveKey: string) => {
+    setActionHint(null)
+    if (!isAuthenticated) return
+    setPendingKey(electiveKey)
+    try {
+      const encoded = encodeURIComponent(electiveKey)
+      await apiClient(`/valgfag/enroll/${encoded}`, { method: "DELETE" })
+      setActionHint({ electiveKey, ok: true, text: "Du er frameldt." })
+      await loadPublicEnrollments()
+      await loadMyEnrollments()
+    } catch (err) {
+      const text = err instanceof Error ? err.message : "Frameldning mislykkedes."
+      setActionHint({ electiveKey, ok: false, text })
+    } finally {
+      setPendingKey(null)
     }
   }
 
   return (
     <Layout_alt>
-      <section className="container-shell py-12 sm:py-16 lg:py-20">
+      <section className="container-shell py-12 sm:py-16 lg:pb-24">
         <div className="mb-10 max-w-2xl">
           <h1 className="text-4xl font-extrabold tracking-[-0.02em] text-slate-900 sm:text-5xl">
             Vælg dit næste <span className="brand-gradient-text">valgfag</span>
           </h1>
           <p className="mt-4 text-base leading-7 text-slate-600">
-            Få overblik over kommende hold, undervisere og varighed. Tilmeld dig med din Mercantec-konto — alle kan se
-            hvem der er tilmeldt hvert hold.
+            Få overblik over kommende hold, undervisere og varighed. Brug knapperne på kortene for at tilmelde eller
+            framelde dig med din Mercantec-konto — alle kan se hvem der er tilmeldt.
           </p>
         </div>
 
@@ -181,6 +189,8 @@ const Valgfag: React.FC = () => {
             const Icon = e.icon
             const participants = participantsByKey.get(e.electiveKey) ?? []
             const imEnrolled = myKeys.includes(e.electiveKey)
+            const busy = pendingKey === e.electiveKey
+            const hint = actionHint?.electiveKey === e.electiveKey ? actionHint : null
             return (
               <Card key={e.electiveKey} className="soft-card soft-card-hover flex flex-col p-5">
                 <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
@@ -213,6 +223,29 @@ const Valgfag: React.FC = () => {
                   </li>
                 </ul>
 
+                <div className="mt-5 flex flex-wrap gap-2">
+                  {imEnrolled ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="h-10"
+                      disabled={busy}
+                      onClick={() => void unjoin(e.electiveKey)}
+                    >
+                      {busy ? "Arbejder…" : "Frameld"}
+                    </Button>
+                  ) : (
+                    <Button type="button" className="h-10" disabled={busy} onClick={() => void join(e.electiveKey)}>
+                      {busy ? "Arbejder…" : isAuthenticated ? "Tilmeld dig" : "Log ind og tilmeld dig"}
+                    </Button>
+                  )}
+                </div>
+                {hint && (
+                  <p className={`mt-2 text-sm ${hint.ok ? "text-emerald-700" : "text-red-600"}`} role="status">
+                    {hint.text}
+                  </p>
+                )}
+
                 <div className="mt-5 border-t border-slate-100 pt-4">
                   <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
                     <Users className="h-3.5 w-3.5" />
@@ -239,73 +272,6 @@ const Valgfag: React.FC = () => {
             Der er ingen åbne valgfag lige nu. Kig tilbage senere for næste forløb.
           </Card>
         )}
-      </section>
-
-      <section className="container-shell pb-16 sm:pb-20 lg:pb-24">
-        <Card className="soft-card border-slate-100 p-6 sm:p-8">
-          <h2 className="text-2xl font-bold text-slate-900">Tilmelding</h2>
-          <p className="mt-2 text-sm text-slate-600">
-            {isAuthenticated
-              ? "Du tilmelder dig med din indloggede Mercantec-bruger. Dit visningsnavn vises på deltagerlisten."
-              : "Log ind med din Mercantec-konto for at tilmelde dig. Alle kan stadig se deltagerlisterne."}
-          </p>
-
-          {!isAuthenticated && (
-            <div className="mt-4 flex flex-wrap gap-3">
-              <Button type="button" className="h-11" onClick={() => void login()}>
-                Log ind for at tilmelde dig
-              </Button>
-              <Button type="button" variant="outline" className="h-11" onClick={() => navigate("/login")}>
-                Gå til login-siden
-              </Button>
-            </div>
-          )}
-
-          <form
-            className="mt-8 grid gap-5 md:grid-cols-2"
-            onSubmit={(e) => {
-              void handleSubmit(e)
-            }}
-          >
-            <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="elective" className="text-sm font-semibold text-slate-700">
-                Vælg valgfag
-              </Label>
-              <select
-                id="elective"
-                name="elective"
-                required
-                disabled={availableElectives.length === 0 || submitLoading}
-                value={selectedKey}
-                onChange={(ev) => setSelectedKey(ev.target.value)}
-                className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30"
-              >
-                <option value="">{availableElectives.length > 0 ? "Vælg et valgfag" : "Ingen åbne valgfag"}</option>
-                {availableElectives.map((e) => (
-                  <option key={e.electiveKey} value={e.electiveKey}>
-                    {e.name}
-                    {myKeys.includes(e.electiveKey) ? " (allerede tilmeldt)" : ""}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {submitMessage && (
-              <p
-                className={`md:col-span-2 text-sm ${submitMessage.type === "ok" ? "text-emerald-700" : "text-red-600"}`}
-                role="status"
-              >
-                {submitMessage.text}
-              </p>
-            )}
-
-            <div className="md:col-span-2">
-              <Button type="submit" className="h-11 w-full sm:w-auto" disabled={submitLoading || availableElectives.length === 0}>
-                {submitLoading ? "Sender…" : isAuthenticated ? "Tilmeld mig" : "Log ind og tilmeld"}
-              </Button>
-            </div>
-          </form>
-        </Card>
       </section>
     </Layout_alt>
   )
