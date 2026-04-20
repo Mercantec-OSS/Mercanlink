@@ -196,9 +196,8 @@ export default function FormPage() {
                                 Beskrivelse
                             </Label>
                             <p className="text-xs text-slate-500">
-                                Du kan bruge Discord-markdown i teksten, fx <code className="rounded bg-slate-100 px-1">**fed**</code>{" "}
-                                eller nye linjer med <code className="rounded bg-slate-100 px-1"># Overskrift</code> i starten af en linje
-                                — se forhåndsvisningen til højre.
+                                Du kan bruge Discord-markdown i beskrivelsen (fed, kursiv, understregning, lister, citater, spoilers, kode,
+                                m.m.) — se den levende forhåndsvisning og listen nederst i preview-panelet.
                             </p>
                             <textarea
                                 id="description"
