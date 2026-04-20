@@ -566,8 +566,8 @@ public class DiscordBotService
             : submission.LinkToPost.Trim();
 
         // Discord: # / ## = større skrift, ** = fed (jf. Discord markdown)
-        return "# 🪐 **Nyt materiale udgivet af:** \r\n"
-            + $"{author}, **Tjek det ud!**\r\n\r\n"
+        return "# 🪐 **Nyt materiale udgivet af:** "
+            + $"{author}, **Tjek det ud!**\r\n\r\n\r\n"
             + $" **{typeEmoji} Materiale type:** {typeLabel}\r\n\r\n"
             + $" **📌 Titel:** {submission.Title}\r\n\r\n"
             + " **✉️ Beskrivelse:**\r\n"
