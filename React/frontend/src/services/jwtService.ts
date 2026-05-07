@@ -13,6 +13,7 @@ interface DecodedJwtPayload {
   iat: number
   iss: string
   aud: string | string[]
+  [key: string]: unknown
 }
 
 function normalizeIssuer(value: string | undefined): string {
@@ -46,6 +47,17 @@ export function decodeTokenAndMapToUser(token: string): User | null {
     }
 
     const username = decoded.preferred_username || decoded.name || decoded.email || "Ukendt bruger"
+    const rolesRaw =
+      decoded.role ??
+      decoded["roles"] ??
+      decoded["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"] ??
+      decoded["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/role"]
+
+    const roles = rolesRaw
+      ? (Array.isArray(rolesRaw) ? rolesRaw : [rolesRaw])
+          .map((r) => String(r))
+          .filter(Boolean)
+      : []
 
     return {
       id: decoded.sub,
@@ -55,9 +67,7 @@ export function decodeTokenAndMapToUser(token: string): User | null {
       discordId: "",
       level: 1,
       experience: 0,
-      roles: decoded.role
-        ? (Array.isArray(decoded.role) ? decoded.role : [decoded.role])
-        : [],
+      roles,
       globalName: decoded.name || username,
       avatarUrl: "",
       firstName: "",

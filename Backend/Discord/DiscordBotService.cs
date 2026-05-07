@@ -761,15 +761,25 @@ public class DiscordHealthSnapshot
 public class DiscordHostedService : IHostedService
 {
     private readonly DiscordBotService _discordBotService;
+    private readonly ILogger<DiscordHostedService> _logger;
 
-    public DiscordHostedService(DiscordBotService discordBotService)
+    public DiscordHostedService(DiscordBotService discordBotService, ILogger<DiscordHostedService> logger)
     {
         _discordBotService = discordBotService;
+        _logger = logger;
     }
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        await _discordBotService.StartAsync();
+        try
+        {
+            await _discordBotService.StartAsync();
+        }
+        catch (Exception ex)
+        {
+            // Kritisk: API skal stadig kunne starte, selv hvis Discord-login fejler (manglende token, netværk, mv.)
+            _logger.LogError(ex, "Discord bot kunne ikke starte. API fortsætter uden Discord.");
+        }
     }
 
     public async Task StopAsync(CancellationToken cancellationToken)
