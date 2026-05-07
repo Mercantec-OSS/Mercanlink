@@ -20,6 +20,9 @@ services:
       - DISCORD_SERVERID=${DISCORD_SERVERID}
       - XP_REWARD_SECRET_CODE=${XP_REWARD_SECRET_CODE}
       - DISCORD_HEALTH_STALE_SECONDS=${DISCORD_HEALTH_STALE_SECONDS:-180}
+      - DISCORD_EVENTCHANNELID=${DISCORD_EVENTCHANNELID}
+      - EVENTS_EDU_EMAIL_REGEX=${EVENTS_EDU_EMAIL_REGEX}
+      - ADMIN_DISCORD_IDS=${ADMIN_DISCORD_IDS}
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://localhost:8080/health || exit 1"]
       interval: 30s
@@ -62,6 +65,22 @@ services:
     networks:
       - app-network
 
+  pgadmin:
+    image: dpage/pgadmin4:9
+    restart: unless-stopped
+    depends_on:
+      - db
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@mercantec.local}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin}
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+    ports:
+      - "9304:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - app-network
+
   uptime-kuma:
     image: louislam/uptime-kuma:1
     restart: unless-stopped
@@ -79,3 +98,4 @@ networks:
 volumes:
   postgres_data:
   uptime_kuma_data:
+  pgadmin_data:
