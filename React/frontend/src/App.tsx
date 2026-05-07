@@ -1,12 +1,18 @@
 import Layout_alt from "@/components/templates/layout"
 import { useNavigate } from "react-router-dom"
-import { ArrowRight, Layers, Rocket, Users2 } from "lucide-react"
+import { ArrowRight, CalendarDays, Layers, Rocket, Users2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardDescription, CardHeader, CardTitle } from "./components/ui/card"
 import { FaDiscord } from "react-icons/fa"
 import teamsIcon from "@/components/images/icons8-microsoft-teams-2019-48.png"
 
 const quickActions = [
+  {
+    title: "Events",
+    description: "LANs, workshops og foredrag — se kommende events og tilmeld dig på et øjeblik.",
+    icon: CalendarDays,
+    href: "/events",
+  },
   {
     title: "Valgfagsoverblik",
     description: "Find næste valgfag og tilmeld dig direkte med tydelig info om uge, underviser og niveau.",
@@ -101,7 +107,7 @@ function App() {
       </section>
 
       <section className="container-shell pb-16 sm:pb-20 lg:pb-24">
-        <div className="grid gap-5 md:grid-cols-3">
+        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
           {quickActions.map((action) => {
             const Icon = action.icon
             return (

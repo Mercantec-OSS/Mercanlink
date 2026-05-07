@@ -236,6 +236,8 @@ public class Program
         builder.Services.AddScoped<AuthService>();
         builder.Services.AddScoped<AuthenticatedUserService>();
         builder.Services.AddScoped<DiscordVerificationService>();
+        builder.Services.AddScoped<EventsService>();
+        builder.Services.AddScoped<EventDiscordAnnouncer>();
         // Tilføj DBAccess        
         builder.Services.AddScoped<AuthDBAccess>();
         builder.Services.AddScoped<DiscordVerificationDBAccess>();
@@ -244,6 +246,9 @@ public class Program
 
         // Tilføj cleanup job
         builder.Services.AddHostedService<CleanupJob>();
+
+        // Tilføj event reminder job
+        builder.Services.AddHostedService<EventReminderHostedService>();
 
         // Tilføj logging konfiguration
         builder.Logging.AddConsole();

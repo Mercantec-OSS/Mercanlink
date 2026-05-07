@@ -52,6 +52,8 @@ public partial class Commands
             { "meme", MemeCommand },
             { "help", HjælpCommand },
             { "info", InfoCommand },
+            { "event", EventCommand },
+            { "events", EventCommand },
         };
 
     // Metode til at hente alle kommandoer

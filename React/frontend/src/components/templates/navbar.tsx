@@ -2,7 +2,7 @@ import { Link, useLocation } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/contexts/AuthContext"
 import { useState } from "react"
-import { Menu, X, LogOut, Users, Layers, FileText, UserCircle2, ShieldCheck } from "lucide-react"
+import { Menu, X, LogOut, Users, Layers, FileText, UserCircle2, ShieldCheck, CalendarDays } from "lucide-react"
 
 export default function Navbar() {
   const { isAuthenticated, logout, user } = useAuth()
@@ -15,10 +15,14 @@ export default function Navbar() {
     }) ?? false
 
   const navItems = [
+    { to: "/events", label: "Events", icon: CalendarDays },
     { to: "/valgfag", label: "Valgfag", icon: Layers },
     { to: "/form", label: "Indsend materiale", icon: FileText },
     ...(canModerateKnowledgeCenter
-      ? [{ to: "/admin/knowledge-center", label: "Moderation", icon: ShieldCheck }]
+      ? [
+          { to: "/admin/knowledge-center", label: "Moderation", icon: ShieldCheck },
+          { to: "/admin/events", label: "Event-admin", icon: CalendarDays },
+        ]
       : []),
   ]
 

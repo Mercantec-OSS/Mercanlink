@@ -114,9 +114,18 @@ public class DiscordBotService
         // Registrer bruger
         _client.UserJoined += HandleRegisterAsync;
 
+        // Knapper på event-announcements
+        _client.ButtonExecuted += HandleEventButtonAsync;
+
         await _client.LoginAsync(TokenType.Bot, _token);
         await _client.StartAsync();
     }
+
+    public DiscordSocketClient Client => _client;
+
+    public ulong GuildId => _guildId;
+
+    public bool IsReady => _isReady && _isConnected;
 
     public DiscordHealthSnapshot GetHealthSnapshot()
     {
@@ -398,6 +407,93 @@ public class DiscordBotService
         UpdateGatewayActivity();
         Console.WriteLine(log);
         return Task.CompletedTask;
+    }
+
+    private async Task HandleEventButtonAsync(SocketMessageComponent component)
+    {
+        UpdateGatewayActivity();
+
+        var customId = component.Data.CustomId ?? string.Empty;
+        if (!customId.StartsWith("event:", StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        var parts = customId.Split(':');
+        if (parts.Length != 3)
+        {
+            return;
+        }
+
+        var eventId = parts[1];
+        var action = parts[2];
+
+        try
+        {
+            using var scope = _serviceProvider.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var eventsService = scope.ServiceProvider.GetRequiredService<Backend.Services.EventsService>();
+
+            var ev = await eventsService.GetByIdAsync(eventId);
+            if (ev == null)
+            {
+                await component.RespondAsync("Eventet findes ikke længere.", ephemeral: true);
+                return;
+            }
+
+            var user = await Backend.DiscordBot.Commands.Commands.ResolveUserFromDiscordAsync(dbContext, component.User.Id.ToString());
+            if (user == null)
+            {
+                await component.RespondAsync(
+                    "Du er ikke registreret i systemet. Brug `!register` og log derefter ind på hub.mercantec.tech.",
+                    ephemeral: true);
+                return;
+            }
+
+            if (action == "register")
+            {
+                var email = user.WebsiteUser?.Email ?? string.Empty;
+                if (!eventsService.IsValidEduEmail(email))
+                {
+                    await component.RespondAsync(
+                        $"Du skal have en gyldig edu-mail på profilen for at kunne tilmelde dig via Discord.\n" +
+                        $"Åbn https://hub.mercantec.tech/events/{ev.Slug} for at tilmelde dig.",
+                        ephemeral: true);
+                    return;
+                }
+
+                var displayName = Backend.Services.AuthenticatedUserService.ResolveDisplayName(user);
+                var outcome = await eventsService.RegisterAsync(ev, user, displayName, email, EventRegistrationSource.Discord);
+                var msg = outcome.Result switch
+                {
+                    Backend.Services.EventRegistrationResult.Success => $"✅ Du er tilmeldt **{ev.Title}**.",
+                    Backend.Services.EventRegistrationResult.AlreadyRegistered => "Du er allerede tilmeldt dette event.",
+                    Backend.Services.EventRegistrationResult.Full => "❌ Eventet er fyldt op.",
+                    Backend.Services.EventRegistrationResult.DeadlinePassed => "❌ Tilmeldingsfristen er overskredet.",
+                    Backend.Services.EventRegistrationResult.NotPublished => "❌ Eventet er ikke åbent for tilmelding.",
+                    _ => "Ukendt fejl ved tilmelding."
+                };
+                await component.RespondAsync(msg, ephemeral: true);
+            }
+            else if (action == "unregister")
+            {
+                var ok = await eventsService.UnregisterAsync(ev.Id, user.Id);
+                await component.RespondAsync(
+                    ok ? $"✅ Du er frameldt **{ev.Title}**." : "Du var ikke tilmeldt dette event.",
+                    ephemeral: true);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Fejl ved event-knap-handler: {ex.Message}");
+            try
+            {
+                await component.RespondAsync("Der opstod en fejl ved håndtering af din handling.", ephemeral: true);
+            }
+            catch
+            {
+            }
+        }
     }
 
     public async Task SendLevelUpMessage(string discordId, int newLevel)

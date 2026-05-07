@@ -20,6 +20,8 @@ public class ApplicationDbContext : DbContext
     public DbSet<XpReward> XpRewards { get; set; }
     public DbSet<KnowledgeSubmission> KnowledgeSubmissions { get; set; }
     public DbSet<ElectiveEnrollment> ElectiveEnrollments { get; set; }
+    public DbSet<Event> Events { get; set; }
+    public DbSet<EventRegistration> EventRegistrations { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -103,6 +105,38 @@ public class ApplicationDbContext : DbContext
             .HasOne(e => e.User)
             .WithMany()
             .HasForeignKey(e => e.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<Event>()
+            .HasIndex(e => e.Slug)
+            .IsUnique();
+
+        modelBuilder.Entity<Event>()
+            .HasIndex(e => e.StartsAt);
+
+        modelBuilder.Entity<Event>()
+            .HasIndex(e => e.Status);
+
+        modelBuilder.Entity<Event>()
+            .HasOne(e => e.CreatedByUser)
+            .WithMany()
+            .HasForeignKey(e => e.CreatedByUserId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<EventRegistration>()
+            .HasIndex(r => new { r.EventId, r.UserId })
+            .IsUnique();
+
+        modelBuilder.Entity<EventRegistration>()
+            .HasOne(r => r.Event)
+            .WithMany(e => e.Registrations)
+            .HasForeignKey(r => r.EventId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<EventRegistration>()
+            .HasOne(r => r.User)
+            .WithMany()
+            .HasForeignKey(r => r.UserId)
             .OnDelete(DeleteBehavior.Cascade);
     }
 }

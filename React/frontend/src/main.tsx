@@ -14,6 +14,9 @@ import "./index.css"
 import Valgfag from "./pages/Valgfag.tsx"
 import FormPage from "./pages/FormPage.tsx"
 import { KnowledgeCenterAdminPage } from "./pages/KnowledgeCenterAdminPage.tsx"
+import EventsPage from "./pages/EventsPage.tsx"
+import EventDetailPage from "./pages/EventDetailPage.tsx"
+import EventsAdminPage from "./pages/EventsAdminPage.tsx"
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
@@ -26,6 +29,8 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             <Route path="/signup" element={<SignupPage />} />
             <Route path="/auth/callback" element={<AuthCallbackPage />} />
             <Route path="/valgfag" element={<Valgfag />} />
+            <Route path="/events" element={<EventsPage />} />
+            <Route path="/events/:slug" element={<EventDetailPage />} />
             <Route element={<ProtectedRoute />}>
               <Route path="/form" element={<FormPage />} />
               <Route path="/profile" element={<ProfilePage />} />
@@ -33,6 +38,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             <Route element={<ProtectedRoute allowedRoles={["Admin", "Teacher"]} />}>
               <Route path="/users" element={<UsersPage />} />
               <Route path="/admin/knowledge-center" element={<KnowledgeCenterAdminPage />} />
+              <Route path="/admin/events" element={<EventsAdminPage />} />
             </Route>
           </Routes>
         </AuthProvider>
