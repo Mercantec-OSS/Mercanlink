@@ -28,6 +28,7 @@ public static class EventSeeder
                     "- Daniel Stölzle (Business Development Sustainability)\n" +
                     "- Ivan Hemmeler (Business Development Manager Spain & Portugal)",
                 SpeakerName = "Roy Maxwell, Daniel Stölzle, Ivan Hemmeler",
+                BannerImageUrl = "/CEDCEBanner.png",
             },
             new()
             {
@@ -37,6 +38,7 @@ public static class EventSeeder
                 EndsAtUtc = new DateTime(2026, 5, 18, 18, 0, 0, DateTimeKind.Utc),
                 Location = "Mercantec",
                 Description = "GF2 afholder brætspilscafé, og alle er velkomne. Kom forbi og spil med!",
+                BannerImageUrl = "/BoardgameBanner.png",
             },
             new()
             {
@@ -47,7 +49,8 @@ public static class EventSeeder
                 Location = "Mercantec",
                 Description = "GitHub workshop for alle med fokus på GitHub til lærepladssøgning og struktur.",
                 Prerequisites = "Medbring gerne en bærbar (valgfrit) og en GitHub-konto.",
-                BringOwnPc = true
+                BringOwnPc = true,
+                BannerImageUrl = "/GitHubBanner.png",
             }
         };
 
