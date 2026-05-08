@@ -18,7 +18,7 @@ using System.Threading.RateLimiting;
 
 public class Program
 {
-    public static void Main(string[] args)
+    public static async Task Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
 
@@ -274,6 +274,7 @@ public class Program
         using (var scope = app.Services.CreateScope())
         {
             var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var eventsService = scope.ServiceProvider.GetRequiredService<EventsService>();
             const int maxMigrationAttempts = 10;
             const int delayBetweenAttemptsMs = 5000;
 
@@ -296,6 +297,15 @@ public class Program
                     );
                     Thread.Sleep(delayBetweenAttemptsMs);
                 }
+            }
+
+            try
+            {
+                await EventSeeder.SeedDefaultsAsync(dbContext, eventsService, logger);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Kunne ikke seede default events.");
             }
         }
 
@@ -362,6 +372,6 @@ public class Program
 
         app.MapControllers();
 
-        app.Run();
+        await app.RunAsync();
     }
 }
