@@ -8,15 +8,12 @@ public static class EventSeeder
 {
     public static async Task SeedDefaultsAsync(ApplicationDbContext db, EventsService eventsService, ILogger logger)
     {
-        // Idempotent: opret kun hvis de ikke allerede findes.
-        var existingSlugs = await db.Events.AsNoTracking().Select(e => e.Slug).ToListAsync();
-        var existing = new HashSet<string>(existingSlugs);
-
         var defaults = new List<EventSeedSpec>
         {
             new()
             {
                 Title = "Webinar: CEDCE – omkring Datacenter Management",
+                Slug = "webinar-cedce-datacenter-management",
                 Type = EventType.Talk,
                 StartsAtUtc = new DateTime(2026, 5, 11, 17, 0, 0, DateTimeKind.Utc),
                 EndsAtUtc = new DateTime(2026, 5, 11, 19, 0, 0, DateTimeKind.Utc),
@@ -33,6 +30,7 @@ public static class EventSeeder
             new()
             {
                 Title = "GF2 brætspilscafé – alle er velkomne",
+                Slug = "gf2-braetspilscafe",
                 Type = EventType.Other,
                 StartsAtUtc = new DateTime(2026, 5, 18, 15, 0, 0, DateTimeKind.Utc),
                 EndsAtUtc = new DateTime(2026, 5, 18, 18, 0, 0, DateTimeKind.Utc),
@@ -43,6 +41,7 @@ public static class EventSeeder
             new()
             {
                 Title = "Git Good At Git – GitHub workshop (H5)",
+                Slug = "git-good-at-git-github-workshop-h5",
                 Type = EventType.Workshop,
                 StartsAtUtc = new DateTime(2026, 5, 20, 14, 0, 0, DateTimeKind.Utc),
                 EndsAtUtc = new DateTime(2026, 5, 20, 16, 0, 0, DateTimeKind.Utc),
@@ -54,54 +53,101 @@ public static class EventSeeder
             }
         };
 
+        // Upsert + oprydning: behold kun ét event pr. seed-spec, og sørg for banner.
+        var titles = defaults.Select(d => d.Title).ToList();
+        var seedCandidates = await db.Events
+            .Where(e => titles.Contains(e.Title) || defaults.Select(d => d.Slug).Contains(e.Slug))
+            .OrderByDescending(e => e.UpdatedAt)
+            .ToListAsync();
+
+        var removed = 0;
         var created = 0;
+        var updated = 0;
+
         foreach (var d in defaults)
         {
-            var slugBase = eventsService.GenerateSlug(d.Title);
-            var slug = await eventsService.EnsureUniqueSlugAsync(slugBase);
-            if (existing.Contains(slug))
+            var matches = seedCandidates
+                .Where(e => e.Slug == d.Slug || e.Title == d.Title)
+                .OrderByDescending(e => e.UpdatedAt)
+                .ToList();
+
+            var keep = matches.FirstOrDefault();
+            if (keep != null)
             {
-                continue;
+                // Slet dubletter
+                foreach (var extra in matches.Skip(1))
+                {
+                    db.Events.Remove(extra);
+                    removed++;
+                }
+
+                // Opdater den "rigtige" række (inkl. banner)
+                keep.Title = d.Title;
+                keep.Slug = d.Slug;
+                keep.Description = d.Description;
+                keep.Type = d.Type;
+                keep.Status = EventStatus.Published;
+                keep.StartsAt = d.StartsAtUtc;
+                keep.EndsAt = d.EndsAtUtc;
+                keep.Location = d.Location;
+                keep.BannerImageUrl = d.BannerImageUrl;
+                keep.SpeakerName = d.SpeakerName;
+                keep.Prerequisites = d.Prerequisites;
+                keep.TeamSize = d.TeamSize;
+                keep.BringOwnPc = d.BringOwnPc;
+                keep.UpdatedAt = DateTime.UtcNow;
+                updated++;
             }
-
-            var ev = new Event
+            else
             {
-                Title = d.Title,
-                Slug = slug,
-                Description = d.Description,
-                Type = d.Type,
-                Status = EventStatus.Published,
-                StartsAt = d.StartsAtUtc,
-                EndsAt = d.EndsAtUtc,
-                Location = d.Location,
-                BannerImageUrl = d.BannerImageUrl,
-                SpeakerName = d.SpeakerName,
-                Prerequisites = d.Prerequisites,
-                TeamSize = d.TeamSize,
-                BringOwnPc = d.BringOwnPc,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
-            };
+                // Hvis slug allerede findes på et andet event, gør slug unik på en kontrolleret måde
+                var desiredSlug = d.Slug;
+                if (await db.Events.AnyAsync(e => e.Slug == desiredSlug))
+                {
+                    desiredSlug = await eventsService.EnsureUniqueSlugAsync(desiredSlug);
+                }
 
-            db.Events.Add(ev);
-            existing.Add(slug);
-            created++;
+                var ev = new Event
+                {
+                    Title = d.Title,
+                    Slug = desiredSlug,
+                    Description = d.Description,
+                    Type = d.Type,
+                    Status = EventStatus.Published,
+                    StartsAt = d.StartsAtUtc,
+                    EndsAt = d.EndsAtUtc,
+                    Location = d.Location,
+                    BannerImageUrl = d.BannerImageUrl,
+                    SpeakerName = d.SpeakerName,
+                    Prerequisites = d.Prerequisites,
+                    TeamSize = d.TeamSize,
+                    BringOwnPc = d.BringOwnPc,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+
+                db.Events.Add(ev);
+                created++;
+            }
         }
 
-        if (created > 0)
+        if (removed > 0 || created > 0 || updated > 0)
         {
             await db.SaveChangesAsync();
-            logger.LogInformation("Seedede {Count} default events.", created);
         }
-        else
-        {
-            logger.LogInformation("Ingen default events seedet (allerede til stede).");
-        }
+
+        logger.LogInformation(
+            "Event seed: created={Created}, updated={Updated}, removedDuplicates={Removed}.",
+            created,
+            updated,
+            removed
+        );
     }
 
     private sealed class EventSeedSpec
     {
         public string Title { get; init; } = string.Empty;
+        public string Slug { get; init; } = string.Empty;
         public EventType Type { get; init; } = EventType.Other;
         public DateTime StartsAtUtc { get; init; }
         public DateTime EndsAtUtc { get; init; }
