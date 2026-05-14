@@ -36,6 +36,8 @@ import {
   isEventPastByEndsAt,
 } from "@/lib/eventFormatting"
 import { uploadEventBannerImage } from "@/services/mediaService"
+import { BannerFocalEditor } from "@/components/events/BannerFocalEditor"
+import { normalizeBannerFraming } from "@/lib/bannerFraming"
 
 interface FormState {
   id?: string
@@ -48,6 +50,9 @@ interface FormState {
   location: string
   locationUrl: string
   bannerImageUrl: string
+  bannerFocalX: number
+  bannerFocalY: number
+  bannerZoom: number
   capacity: string
   registrationDeadline: string
   bringOwnPc: boolean
@@ -66,6 +71,9 @@ const emptyForm: FormState = {
   location: "",
   locationUrl: "",
   bannerImageUrl: "",
+  bannerFocalX: 50,
+  bannerFocalY: 50,
+  bannerZoom: 1,
   capacity: "",
   registrationDeadline: "",
   bringOwnPc: false,
@@ -100,6 +108,9 @@ function buildPayload(form: FormState): CreateEventPayload {
     location: form.location.trim(),
     locationUrl: form.locationUrl.trim() || null,
     bannerImageUrl: form.bannerImageUrl.trim() || null,
+    bannerFocalX: form.bannerImageUrl.trim() ? form.bannerFocalX : null,
+    bannerFocalY: form.bannerImageUrl.trim() ? form.bannerFocalY : null,
+    bannerZoom: form.bannerImageUrl.trim() ? form.bannerZoom : null,
     capacity: form.capacity ? Number(form.capacity) : null,
     registrationDeadline: form.registrationDeadline ? inputToIso(form.registrationDeadline) : null,
     bringOwnPc: form.type === "Lan" ? form.bringOwnPc : null,
@@ -110,6 +121,7 @@ function buildPayload(form: FormState): CreateEventPayload {
 }
 
 function mapEventDetailToFormState(detail: EventDetail): FormState {
+  const b = normalizeBannerFraming(detail.bannerFocalX, detail.bannerFocalY, detail.bannerZoom)
   return {
     id: detail.id,
     title: detail.title,
@@ -121,6 +133,9 @@ function mapEventDetailToFormState(detail: EventDetail): FormState {
     location: detail.location,
     locationUrl: detail.locationUrl ?? "",
     bannerImageUrl: detail.bannerImageUrl ?? "",
+    bannerFocalX: b.focalX,
+    bannerFocalY: b.focalY,
+    bannerZoom: b.zoom,
     capacity: detail.capacity != null ? String(detail.capacity) : "",
     registrationDeadline: isoToInput(detail.registrationDeadline),
     bringOwnPc: detail.bringOwnPc ?? false,
@@ -717,7 +732,13 @@ export default function EventsAdminPage() {
                         setActionMessage(null)
                         try {
                           const url = await uploadEventBannerImage(f)
-                          setForm((prev) => ({ ...prev, bannerImageUrl: url }))
+                          setForm((prev) => ({
+                            ...prev,
+                            bannerImageUrl: url,
+                            bannerFocalX: 50,
+                            bannerFocalY: 50,
+                            bannerZoom: 1,
+                          }))
                           setActionMessage({ ok: true, text: "Banner uploadet — husk at gemme eventet." })
                         } catch (err) {
                           setActionMessage({
@@ -737,15 +758,30 @@ export default function EventsAdminPage() {
                     <input
                       type="url"
                       value={form.bannerImageUrl}
-                      onChange={(e) => setForm({ ...form, bannerImageUrl: e.target.value })}
+                      onChange={(e) => {
+                        const v = e.target.value
+                        setForm((prev) => ({
+                          ...prev,
+                          bannerImageUrl: v,
+                          ...(v.trim()
+                            ? {}
+                            : { bannerFocalX: 50, bannerFocalY: 50, bannerZoom: 1 }),
+                        }))
+                      }}
                       placeholder="https://… (eller brug fil-upload)"
                       className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
                     />
                     {form.bannerImageUrl ? (
-                      <img
-                        src={form.bannerImageUrl}
-                        alt="Banner forhåndsvisning"
-                        className="mt-1 max-h-40 w-full max-w-md rounded-lg border border-slate-200 object-cover"
+                      <BannerFocalEditor
+                        imageUrl={form.bannerImageUrl}
+                        value={{
+                          focalX: form.bannerFocalX,
+                          focalY: form.bannerFocalY,
+                          zoom: form.bannerZoom,
+                        }}
+                        onChange={({ focalX, focalY, zoom }) =>
+                          setForm((prev) => ({ ...prev, bannerFocalX: focalX, bannerFocalY: focalY, bannerZoom: zoom }))
+                        }
                       />
                     ) : null}
                   </div>

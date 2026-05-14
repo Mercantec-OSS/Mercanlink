@@ -14,6 +14,12 @@ export interface EventListItem {
   endsAt: string
   location: string
   bannerImageUrl?: string | null
+  /** 0–100, vandret fokus for banner (object-position / zoom-origin) */
+  bannerFocalX?: number | null
+  /** 0–100, lodret fokus */
+  bannerFocalY?: number | null
+  /** 1–2.5, zoom ind fra fokuspunkt */
+  bannerZoom?: number | null
   capacity?: number | null
   registrationCount: number
   registrationDeadline?: string | null
@@ -60,6 +66,9 @@ export interface CreateEventPayload {
   location: string
   locationUrl?: string | null
   bannerImageUrl?: string | null
+  bannerFocalX?: number | null
+  bannerFocalY?: number | null
+  bannerZoom?: number | null
   capacity?: number | null
   registrationDeadline?: string | null
   bringOwnPc?: boolean | null

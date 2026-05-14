@@ -46,6 +46,15 @@ public class Event : Common
     [MaxLength(500)]
     public string? BannerImageUrl { get; set; }
 
+    /// <summary>Vandret fokus for banner (0–100 %), bruges som object-position og transform-origin.</summary>
+    public double BannerFocalX { get; set; } = 50;
+
+    /// <summary>Lodret fokus for banner (0–100 %).</summary>
+    public double BannerFocalY { get; set; } = 50;
+
+    /// <summary>Zoom ind over fokuspunkt (1 = standard cover, op til ca. 2,5).</summary>
+    public double BannerZoom { get; set; } = 1;
+
     public int? Capacity { get; set; }
 
     public DateTime? RegistrationDeadline { get; set; }

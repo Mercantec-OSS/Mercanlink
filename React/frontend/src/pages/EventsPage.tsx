@@ -23,6 +23,7 @@ import {
   getEventTypeBadgeClasses,
   getEventTypeLabel,
 } from "@/lib/eventFormatting"
+import { EventBannerFrame } from "@/components/events/EventBannerFrame"
 
 const STATUS_FILTERS: { value: EventListStatusFilter; label: string }[] = [
   { value: "upcoming", label: "Kommende" },
@@ -149,13 +150,14 @@ export default function EventsPage() {
                   }`}
                 >
                   {ev.bannerImageUrl ? (
-                    <div className="aspect-[16/8] w-full overflow-hidden bg-slate-100">
-                      <img
-                        src={ev.bannerImageUrl}
-                        alt={ev.title}
-                        className="h-full w-full object-cover"
-                      />
-                    </div>
+                    <EventBannerFrame
+                      url={ev.bannerImageUrl}
+                      alt={ev.title}
+                      focalX={ev.bannerFocalX}
+                      focalY={ev.bannerFocalY}
+                      zoom={ev.bannerZoom}
+                      className="aspect-[16/8] w-full"
+                    />
                   ) : (
                     <div className="aspect-[16/8] w-full bg-gradient-to-br from-indigo-100 via-violet-100 to-pink-100" />
                   )}

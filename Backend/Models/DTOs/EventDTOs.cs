@@ -14,6 +14,9 @@ public class EventListItemDto
     public DateTime EndsAt { get; set; }
     public string Location { get; set; } = string.Empty;
     public string? BannerImageUrl { get; set; }
+    public double BannerFocalX { get; set; } = 50;
+    public double BannerFocalY { get; set; } = 50;
+    public double BannerZoom { get; set; } = 1;
     public int? Capacity { get; set; }
     public int RegistrationCount { get; set; }
     public DateTime? RegistrationDeadline { get; set; }
@@ -67,6 +70,15 @@ public class CreateEventRequest
 
     [MaxLength(500)]
     public string? BannerImageUrl { get; set; }
+
+    [Range(0, 100)]
+    public double? BannerFocalX { get; set; }
+
+    [Range(0, 100)]
+    public double? BannerFocalY { get; set; }
+
+    [Range(1, 2.5)]
+    public double? BannerZoom { get; set; }
 
     [Range(1, 10000)]
     public int? Capacity { get; set; }

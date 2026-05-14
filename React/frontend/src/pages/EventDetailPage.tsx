@@ -31,6 +31,7 @@ import {
   getEventTypeBadgeClasses,
   getEventTypeLabel,
 } from "@/lib/eventFormatting"
+import { EventBannerFrame } from "@/components/events/EventBannerFrame"
 
 export default function EventDetailPage() {
   const { slug } = useParams<{ slug: string }>()
@@ -177,10 +178,13 @@ export default function EventDetailPage() {
             <div className="lg:col-span-2">
               <Card className="overflow-hidden border-slate-100">
                 {event.bannerImageUrl ? (
-                  <img
-                    src={event.bannerImageUrl}
+                  <EventBannerFrame
+                    url={event.bannerImageUrl}
                     alt={event.title}
-                    className="aspect-[16/7] w-full object-cover"
+                    focalX={event.bannerFocalX}
+                    focalY={event.bannerFocalY}
+                    zoom={event.bannerZoom}
+                    className="aspect-[16/7] w-full"
                   />
                 ) : (
                   <div className="aspect-[16/7] w-full bg-gradient-to-br from-indigo-100 via-violet-100 to-pink-100" />

@@ -292,6 +292,9 @@ public class EventsController : ControllerBase
             Location = request.Location.Trim(),
             LocationUrl = request.LocationUrl,
             BannerImageUrl = request.BannerImageUrl,
+            BannerFocalX = Math.Clamp(request.BannerFocalX ?? 50, 0, 100),
+            BannerFocalY = Math.Clamp(request.BannerFocalY ?? 50, 0, 100),
+            BannerZoom = Math.Clamp(request.BannerZoom ?? 1, 1, 2.5),
             Capacity = request.Capacity,
             RegistrationDeadline = request.RegistrationDeadline.HasValue
                 ? DateTime.SpecifyKind(request.RegistrationDeadline.Value, DateTimeKind.Utc)
@@ -338,6 +341,9 @@ public class EventsController : ControllerBase
         ev.Location = request.Location.Trim();
         ev.LocationUrl = request.LocationUrl;
         ev.BannerImageUrl = request.BannerImageUrl;
+        ev.BannerFocalX = Math.Clamp(request.BannerFocalX ?? 50, 0, 100);
+        ev.BannerFocalY = Math.Clamp(request.BannerFocalY ?? 50, 0, 100);
+        ev.BannerZoom = Math.Clamp(request.BannerZoom ?? 1, 1, 2.5);
         ev.Capacity = request.Capacity;
         ev.RegistrationDeadline = request.RegistrationDeadline.HasValue
             ? DateTime.SpecifyKind(request.RegistrationDeadline.Value, DateTimeKind.Utc)
