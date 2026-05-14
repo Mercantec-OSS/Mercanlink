@@ -101,8 +101,6 @@ public sealed class EventBannerStorageService : IDisposable
             InputStream = stream,
             ContentType = file.ContentType,
             AutoCloseStream = true,
-            // MinIO / nogle S3-kompatible endpoints kræver ofte unsigned payload ved stream-upload.
-            DisablePayloadSigning = true,
         };
 
         await _client.PutObjectAsync(put, cancellationToken);

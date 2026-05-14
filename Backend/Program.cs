@@ -30,7 +30,13 @@ public class Program
         {            
             options.AddPolicy("AllowFrontend", policy =>            
             {                
-                policy.WithOrigins("http://localhost:5173", "http://localhost:3000", "http://localhost:4200", "https://hub.mercantec.tech")                      
+                policy.WithOrigins(
+                        "http://localhost:5173",
+                        "http://localhost:3000",
+                        "http://localhost:4200",
+                        "http://localhost:9302",
+                        "https://hub.mercantec.tech",
+                        "https://mercanlink.dk")                      
                 .AllowAnyHeader()                      
                 .AllowAnyMethod()                      
                 .AllowCredentials();            
