@@ -368,13 +368,23 @@ public class Program
                 }
             }
 
-            try
+            // Default events: tidligere kørte seed ved hvert deploy og overskrev matchende events.
+            // Slået fra som standard — sæt EVENTS_SEED_DEFAULTS=true for at aktivere (fx lokalt).
+            _ = bool.TryParse(Environment.GetEnvironmentVariable("EVENTS_SEED_DEFAULTS"), out var seedDefaultEvents);
+            if (seedDefaultEvents)
             {
-                await EventSeeder.SeedDefaultsAsync(dbContext, eventsService, logger);
+                try
+                {
+                    await EventSeeder.SeedDefaultsAsync(dbContext, eventsService, logger);
+                }
+                catch (Exception ex)
+                {
+                    logger.LogWarning(ex, "Kunne ikke seede default events.");
+                }
             }
-            catch (Exception ex)
+            else
             {
-                logger.LogWarning(ex, "Kunne ikke seede default events.");
+                logger.LogDebug("Event seeding er slået fra (sæt EVENTS_SEED_DEFAULTS=true for at køre EventSeeder).");
             }
         }
 

@@ -120,7 +120,8 @@ function Calendar({
         ...classNames,
       }}
       components={{
-        Root: ({ className, rootRef, ...props }: { className?: string; rootRef?: React.Ref<HTMLDivElement>; [key: string]: any }) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DayPicker Root props fra biblioteket
+        Root: ({ className, rootRef, ...props }: any) => {
           return (
             <div
               data-slot="calendar"
@@ -130,7 +131,8 @@ function Calendar({
             />
           )
         },
-        Chevron: ({ className, orientation, ...props }: { className?: string; orientation?: string; [key: string]: any }) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DayPicker Chevron props fra biblioteket
+        Chevron: ({ className, orientation, ...props }: any) => {
           if (orientation === "left") {
             return (
               <ChevronLeftIcon className={cn("size-4", className)} {...props} />
@@ -151,7 +153,8 @@ function Calendar({
           )
         },
         DayButton: CalendarDayButton,
-        WeekNumber: ({ children, ...props }: { children?: React.ReactNode; [key: string]: any }) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DayPicker WeekNumber props fra biblioteket
+        WeekNumber: ({ children, ...props }: any) => {
           return (
             <td {...props}>
               <div className="flex size-(--cell-size) items-center justify-center text-center">

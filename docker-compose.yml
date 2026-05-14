@@ -22,6 +22,8 @@ services:
       - DISCORD_HEALTH_STALE_SECONDS=${DISCORD_HEALTH_STALE_SECONDS:-180}
       - DISCORD_EVENTCHANNELID=${DISCORD_EVENTCHANNELID}
       - EVENTS_EDU_EMAIL_REGEX=${EVENTS_EDU_EMAIL_REGEX}
+      # Default: slået fra så push/deploy ikke overskriver events. Sæt til true i .env for lokal seed.
+      - EVENTS_SEED_DEFAULTS=${EVENTS_SEED_DEFAULTS:-false}
       - ADMIN_DISCORD_IDS=${ADMIN_DISCORD_IDS}
       # PublicBaseUrl: browsere loader billeder herfra. Sæt S3_PUBLIC_BASE_URL=https://s3.mercanlink.dk
       # i .env (på den maskine der kører compose) ELLER direkte som env på backend-containeren —

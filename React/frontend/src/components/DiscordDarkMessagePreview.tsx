@@ -165,12 +165,11 @@ function splitFencedCodeBlocks(text: string): FencePart[] {
     if (start > i) parts.push({ type: "md", text: normalized.slice(i, start) })
     const afterTicks = start + 3
     const nl = normalized.indexOf("\n", afterTicks)
-    let codeStart: number
     if (nl === -1) {
       parts.push({ type: "md", text: normalized.slice(start) })
       break
     }
-    codeStart = nl + 1
+    const codeStart = nl + 1
     const close = normalized.indexOf("```", codeStart)
     if (close === -1) {
       parts.push({ type: "md", text: normalized.slice(start) })
