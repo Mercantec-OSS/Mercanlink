@@ -17,9 +17,6 @@ export default function Footer() {
             .
           </p>
         </div>
-        <p className="mt-1 text-[11px] text-slate-400">
-          CVR 46436490 · Fuldt ansvarlig deltager: Mathias Gaardsdal Steenberg
-        </p>
       </div>
     </footer>
   )

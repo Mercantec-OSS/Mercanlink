@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import Layout_alt from "@/components/templates/layout"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import {
   Plus,
   Pencil,
@@ -10,6 +11,7 @@ import {
   Trash2,
   Users,
   X,
+  HelpCircle,
 } from "lucide-react"
 import {
   cancelEvent,
@@ -30,6 +32,7 @@ import {
   getEventTypeBadgeClasses,
   getEventTypeLabel,
 } from "@/lib/eventFormatting"
+import { uploadEventBannerImage } from "@/services/mediaService"
 
 interface FormState {
   id?: string
@@ -110,9 +113,28 @@ export default function EventsAdminPage() {
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState<FormState>(emptyForm)
   const [submitting, setSubmitting] = useState(false)
+  const [bannerUploading, setBannerUploading] = useState(false)
   const [busyId, setBusyId] = useState<string | null>(null)
   const [registrationsForId, setRegistrationsForId] = useState<string | null>(null)
   const [registrations, setRegistrations] = useState<EventRegistration[]>([])
+  const [actionsHelpOpen, setActionsHelpOpen] = useState(false)
+  const actionsHelpCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const cancelActionsHelpClose = useCallback(() => {
+    if (actionsHelpCloseTimerRef.current != null) {
+      clearTimeout(actionsHelpCloseTimerRef.current)
+      actionsHelpCloseTimerRef.current = null
+    }
+  }, [])
+
+  const scheduleActionsHelpClose = useCallback(() => {
+    cancelActionsHelpClose()
+    actionsHelpCloseTimerRef.current = setTimeout(() => setActionsHelpOpen(false), 200)
+  }, [cancelActionsHelpClose])
+
+  useEffect(() => {
+    return () => cancelActionsHelpClose()
+  }, [cancelActionsHelpClose])
 
   const loadEvents = useCallback(async () => {
     setLoading(true)
@@ -306,7 +328,57 @@ export default function EventsAdminPage() {
                     <th className="px-4 py-3">Status</th>
                     <th className="px-4 py-3">Start</th>
                     <th className="px-4 py-3">Tilmeldte</th>
-                    <th className="px-4 py-3 text-right">Handlinger</th>
+                    <th className="px-4 py-3 text-right align-bottom">
+                      <div className="flex justify-end">
+                        <Popover open={actionsHelpOpen} onOpenChange={setActionsHelpOpen} modal={false}>
+                          <PopoverTrigger asChild>
+                            <button
+                              type="button"
+                              className="inline-flex cursor-help items-center gap-1.5 rounded-md px-1 py-0.5 text-xs font-semibold uppercase tracking-wide text-slate-500 outline-none transition-colors hover:text-indigo-700 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+                              aria-expanded={actionsHelpOpen}
+                              aria-label="Forklaring af handlinger i tabellen"
+                              onMouseEnter={() => {
+                                cancelActionsHelpClose()
+                                setActionsHelpOpen(true)
+                              }}
+                              onMouseLeave={() => scheduleActionsHelpClose()}
+                            >
+                              Handlinger
+                              <HelpCircle className="h-3.5 w-3.5 shrink-0 text-slate-400" aria-hidden />
+                            </button>
+                          </PopoverTrigger>
+                          <PopoverContent
+                            side="top"
+                            align="end"
+                            sideOffset={8}
+                            className="w-[min(22rem,calc(100vw-2rem))] border-slate-200 p-3 text-left text-xs leading-snug text-slate-700 shadow-lg"
+                            onMouseEnter={cancelActionsHelpClose}
+                            onMouseLeave={scheduleActionsHelpClose}
+                            onOpenAutoFocus={(e) => e.preventDefault()}
+                          >
+                            <p className="mb-2 font-semibold text-slate-900">Knapper i hver række</p>
+                            <ul className="list-inside list-disc space-y-1.5 text-slate-600">
+                              <li>
+                                <span className="font-medium text-slate-800">Personer</span> — se tilmeldinger
+                              </li>
+                              <li>
+                                <span className="font-medium text-slate-800">Blyant</span> — rediger event
+                              </li>
+                              <li>
+                                <span className="font-medium text-slate-800">Send</span> — publicer (kun kladder) og
+                                annoncer på Discord
+                              </li>
+                              <li>
+                                <span className="font-medium text-slate-800">Forbud</span> — aflys event
+                              </li>
+                              <li>
+                                <span className="font-medium text-slate-800">Skrald</span> — slet permanent
+                              </li>
+                            </ul>
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -330,16 +402,30 @@ export default function EventsAdminPage() {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex flex-wrap items-center justify-end gap-1.5">
-                          <Button size="sm" variant="outline" onClick={() => openRegistrations(ev.id)}>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            title="Se tilmeldinger"
+                            aria-label="Se tilmeldinger"
+                            onClick={() => openRegistrations(ev.id)}
+                          >
                             <Users className="h-3.5 w-3.5" />
                           </Button>
-                          <Button size="sm" variant="outline" onClick={() => openEdit(ev)}>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            title="Rediger event"
+                            aria-label="Rediger event"
+                            onClick={() => openEdit(ev)}
+                          >
                             <Pencil className="h-3.5 w-3.5" />
                           </Button>
                           {ev.status !== "Published" && ev.status !== "Cancelled" && (
                             <Button
                               size="sm"
                               variant="outline"
+                              title="Publicer event og annoncer på Discord"
+                              aria-label="Publicer event og annoncer på Discord"
                               disabled={busyId === ev.id}
                               onClick={() => void handlePublish(ev.id)}
                             >
@@ -350,6 +436,8 @@ export default function EventsAdminPage() {
                             <Button
                               size="sm"
                               variant="outline"
+                              title="Aflys event"
+                              aria-label="Aflys event"
                               disabled={busyId === ev.id}
                               onClick={() => void handleCancel(ev.id)}
                             >
@@ -359,6 +447,8 @@ export default function EventsAdminPage() {
                           <Button
                             size="sm"
                             variant="outline"
+                            title="Slet event permanent"
+                            aria-label="Slet event permanent"
                             disabled={busyId === ev.id}
                             onClick={() => void handleDelete(ev.id)}
                           >
@@ -482,13 +572,52 @@ export default function EventsAdminPage() {
                     className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
                   />
                 </Field>
-                <Field label="Banner-billede URL (valgfri)">
-                  <input
-                    type="url"
-                    value={form.bannerImageUrl}
-                    onChange={(e) => setForm({ ...form, bannerImageUrl: e.target.value })}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                  />
+                <Field label="Banner (valgfri)" className="sm:col-span-2">
+                  <div className="flex flex-col gap-2">
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/gif,image/webp"
+                      disabled={bannerUploading}
+                      onChange={async (e) => {
+                        const f = e.target.files?.[0]
+                        e.target.value = ""
+                        if (!f) return
+                        setBannerUploading(true)
+                        setActionMessage(null)
+                        try {
+                          const url = await uploadEventBannerImage(f)
+                          setForm((prev) => ({ ...prev, bannerImageUrl: url }))
+                          setActionMessage({ ok: true, text: "Banner uploadet — husk at gemme eventet." })
+                        } catch (err) {
+                          setActionMessage({
+                            ok: false,
+                            text: err instanceof Error ? err.message : "Upload fejlede.",
+                          })
+                        } finally {
+                          setBannerUploading(false)
+                        }
+                      }}
+                      className="block w-full text-sm text-slate-600 file:mr-3 file:rounded-md file:border-0 file:bg-indigo-50 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-indigo-700 hover:file:bg-indigo-100"
+                    />
+                    <p className="text-xs text-slate-500">
+                      Upload til MinIO (S3), max ca. 5 MB — JPEG, PNG, GIF eller WebP. Du kan også indsætte en
+                      direkte URL nedenfor.
+                    </p>
+                    <input
+                      type="url"
+                      value={form.bannerImageUrl}
+                      onChange={(e) => setForm({ ...form, bannerImageUrl: e.target.value })}
+                      placeholder="https://… (eller brug fil-upload)"
+                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    />
+                    {form.bannerImageUrl ? (
+                      <img
+                        src={form.bannerImageUrl}
+                        alt="Banner forhåndsvisning"
+                        className="mt-1 max-h-40 w-full max-w-md rounded-lg border border-slate-200 object-cover"
+                      />
+                    ) : null}
+                  </div>
                 </Field>
                 <Field label="Beskrivelse" required className="sm:col-span-2">
                   <textarea

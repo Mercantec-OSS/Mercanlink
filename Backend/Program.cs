@@ -267,6 +267,9 @@ public class Program
         builder.Services.AddScoped<DiscordVerificationService>();
         builder.Services.AddScoped<EventsService>();
         builder.Services.AddScoped<EventDiscordAnnouncer>();
+        builder.Services.Configure<S3MediaOptions>(
+            builder.Configuration.GetSection(S3MediaOptions.SectionName));
+        builder.Services.AddSingleton<EventBannerStorageService>();
         // Tilføj DBAccess        
         builder.Services.AddScoped<AuthDBAccess>();
         builder.Services.AddScoped<DiscordVerificationDBAccess>();
