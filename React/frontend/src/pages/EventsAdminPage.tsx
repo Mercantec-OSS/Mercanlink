@@ -18,10 +18,12 @@ import {
   createEvent,
   deleteEvent,
   getAdminRegistrations,
+  getEventDetailForAdmin,
   listAllEventsForAdmin,
   publishEvent,
   updateEvent,
   type CreateEventPayload,
+  type EventDetail,
   type EventListItem,
   type EventRegistration,
   type EventType,
@@ -31,6 +33,7 @@ import {
   formatEventDateTime,
   getEventTypeBadgeClasses,
   getEventTypeLabel,
+  isEventPastByEndsAt,
 } from "@/lib/eventFormatting"
 import { uploadEventBannerImage } from "@/services/mediaService"
 
@@ -106,6 +109,38 @@ function buildPayload(form: FormState): CreateEventPayload {
   }
 }
 
+function mapEventDetailToFormState(detail: EventDetail): FormState {
+  return {
+    id: detail.id,
+    title: detail.title,
+    slug: detail.slug,
+    description: detail.description,
+    type: normalizeEventType(detail.type),
+    startsAt: isoToInput(detail.startsAt),
+    endsAt: isoToInput(detail.endsAt),
+    location: detail.location,
+    locationUrl: detail.locationUrl ?? "",
+    bannerImageUrl: detail.bannerImageUrl ?? "",
+    capacity: detail.capacity != null ? String(detail.capacity) : "",
+    registrationDeadline: isoToInput(detail.registrationDeadline),
+    bringOwnPc: detail.bringOwnPc ?? false,
+    speakerName: detail.speakerName ?? "",
+    prerequisites: detail.prerequisites ?? "",
+    teamSize: detail.teamSize != null ? String(detail.teamSize) : "",
+  }
+}
+
+const EVENT_TYPES_ALL: EventType[] = ["Lan", "Workshop", "Talk", "Hackathon", "Other"]
+
+/** API / ældre data kan afvige i casing — sikrer at LAN m.m. matcher og type-specifikke felter vises. */
+function normalizeEventType(value: unknown): EventType {
+  const s = String(value ?? "").trim()
+  const exact = EVENT_TYPES_ALL.find((t) => t === s)
+  if (exact) return exact
+  const ci = EVENT_TYPES_ALL.find((t) => t.toLowerCase() === s.toLowerCase())
+  return ci ?? "Other"
+}
+
 export default function EventsAdminPage() {
   const [events, setEvents] = useState<EventListItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -114,10 +149,12 @@ export default function EventsAdminPage() {
   const [form, setForm] = useState<FormState>(emptyForm)
   const [submitting, setSubmitting] = useState(false)
   const [bannerUploading, setBannerUploading] = useState(false)
+  const [editLoading, setEditLoading] = useState(false)
   const [busyId, setBusyId] = useState<string | null>(null)
   const [registrationsForId, setRegistrationsForId] = useState<string | null>(null)
   const [registrations, setRegistrations] = useState<EventRegistration[]>([])
   const [actionsHelpOpen, setActionsHelpOpen] = useState(false)
+  const [showPastEvents, setShowPastEvents] = useState(false)
   const actionsHelpCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const cancelActionsHelpClose = useCallback(() => {
@@ -160,31 +197,32 @@ export default function EventsAdminPage() {
     [events],
   )
 
+  const { visibleEvents, pastCount } = useMemo(() => {
+    const past = sortedEvents.filter((e) => isEventPastByEndsAt(e.endsAt))
+    const visible = showPastEvents ? sortedEvents : sortedEvents.filter((e) => !isEventPastByEndsAt(e.endsAt))
+    return { visibleEvents: visible, pastCount: past.length }
+  }, [sortedEvents, showPastEvents])
+
   const openCreate = () => {
     setForm(emptyForm)
     setShowForm(true)
   }
 
-  const openEdit = (ev: EventListItem) => {
-    const editForm: FormState = {
-      ...emptyForm,
-      id: ev.id,
-      title: ev.title,
-      slug: ev.slug,
-      type: ev.type,
-      startsAt: isoToInput(ev.startsAt),
-      endsAt: isoToInput(ev.endsAt),
-      location: ev.location,
-      bannerImageUrl: ev.bannerImageUrl ?? "",
-      capacity: ev.capacity ? String(ev.capacity) : "",
-      registrationDeadline: isoToInput(ev.registrationDeadline),
+  const openEdit = async (ev: EventListItem) => {
+    setEditLoading(true)
+    setActionMessage(null)
+    try {
+      const detail = await getEventDetailForAdmin(ev.id)
+      setForm(mapEventDetailToFormState(detail))
+      setShowForm(true)
+    } catch (err) {
+      setActionMessage({
+        ok: false,
+        text: err instanceof Error ? err.message : "Kunne ikke hente event til redigering.",
+      })
+    } finally {
+      setEditLoading(false)
     }
-    setForm(editForm)
-    setShowForm(true)
-    setActionMessage({
-      ok: true,
-      text: "Bemærk: Beskrivelse, type-specifikke felter og lokationslink hentes ikke fra listen — udfyld dem hvis de skal opdateres.",
-    })
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -318,8 +356,47 @@ export default function EventsAdminPage() {
             <div className="p-6 text-sm text-slate-500">Henter events…</div>
           ) : sortedEvents.length === 0 ? (
             <div className="p-6 text-sm text-slate-500">Ingen events oprettet endnu.</div>
+          ) : visibleEvents.length === 0 && !showPastEvents ? (
+            <div className="space-y-4 p-6">
+              <p className="text-sm text-slate-600">
+                Alle {sortedEvents.length} event{sortedEvents.length === 1 ? "" : "s"} er afsluttet (slutdato passeret).
+                Slå «Vis tidligere events» til for at se dem i listen.
+              </p>
+              <label className="inline-flex cursor-pointer items-center gap-2 text-sm text-slate-800">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                  checked={showPastEvents}
+                  onChange={(e) => setShowPastEvents(e.target.checked)}
+                />
+                Vis tidligere events
+              </label>
+            </div>
           ) : (
-            <div className="overflow-x-auto">
+            <div>
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 bg-slate-50/80 px-4 py-3">
+                <label className="inline-flex cursor-pointer items-center gap-2 text-sm text-slate-800">
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                    checked={showPastEvents}
+                    onChange={(e) => setShowPastEvents(e.target.checked)}
+                  />
+                  Vis tidligere events
+                </label>
+                {!showPastEvents && pastCount > 0 ? (
+                  <span className="text-xs text-slate-500">
+                    {pastCount} afsluttet{pastCount === 1 ? "" : "e"} skjult — tænd for at vise alle.
+                  </span>
+                ) : showPastEvents && pastCount > 0 ? (
+                  <span className="text-xs text-slate-500">
+                    Viser alle {sortedEvents.length} — {pastCount} afsluttet{pastCount === 1 ? "" : "e"}.
+                  </span>
+                ) : (
+                  <span className="text-xs text-slate-500">Kun kommende / igangværende events.</span>
+                )}
+              </div>
+              <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead className="border-b border-slate-100 bg-slate-50 text-xs uppercase text-slate-500">
                   <tr>
@@ -382,8 +459,13 @@ export default function EventsAdminPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {sortedEvents.map((ev) => (
-                    <tr key={ev.id} className="border-b border-slate-100 last:border-b-0">
+                  {visibleEvents.map((ev) => {
+                    const past = isEventPastByEndsAt(ev.endsAt)
+                    return (
+                    <tr
+                      key={ev.id}
+                      className={`border-b border-slate-100 last:border-b-0 ${past && showPastEvents ? "bg-slate-50/60" : ""}`}
+                    >
                       <td className="px-4 py-3 font-medium text-slate-900">{ev.title}</td>
                       <td className="px-4 py-3">
                         <span
@@ -416,7 +498,8 @@ export default function EventsAdminPage() {
                             variant="outline"
                             title="Rediger event"
                             aria-label="Rediger event"
-                            onClick={() => openEdit(ev)}
+                            disabled={editLoading || busyId === ev.id}
+                            onClick={() => void openEdit(ev)}
                           >
                             <Pencil className="h-3.5 w-3.5" />
                           </Button>
@@ -457,9 +540,11 @@ export default function EventsAdminPage() {
                         </div>
                       </td>
                     </tr>
-                  ))}
+                    )
+                  })}
                 </tbody>
               </table>
+              </div>
             </div>
           )}
         </Card>
@@ -509,7 +594,7 @@ export default function EventsAdminPage() {
                 <Field label="Type" required>
                   <select
                     value={form.type}
-                    onChange={(e) => setForm({ ...form, type: e.target.value as EventType })}
+                    onChange={(e) => setForm({ ...form, type: normalizeEventType(e.target.value) })}
                     className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
                   >
                     {EVENT_TYPE_OPTIONS.map((opt) => (
@@ -519,6 +604,52 @@ export default function EventsAdminPage() {
                     ))}
                   </select>
                 </Field>
+
+                {form.type === "Lan" && (
+                  <Field label="Medbring egen PC?" className="sm:col-span-2">
+                    <label className="inline-flex cursor-pointer items-center gap-2 text-sm text-slate-800">
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                        checked={form.bringOwnPc}
+                        onChange={(e) => setForm({ ...form, bringOwnPc: e.target.checked })}
+                      />
+                      Ja, deltagerne skal medbringe egen PC
+                    </label>
+                  </Field>
+                )}
+                {form.type === "Talk" && (
+                  <Field label="Oplægsholder" className="sm:col-span-2">
+                    <input
+                      type="text"
+                      value={form.speakerName}
+                      onChange={(e) => setForm({ ...form, speakerName: e.target.value })}
+                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    />
+                  </Field>
+                )}
+                {form.type === "Workshop" && (
+                  <Field label="Forudsætninger (valgfri)" className="sm:col-span-2">
+                    <textarea
+                      rows={3}
+                      value={form.prerequisites}
+                      onChange={(e) => setForm({ ...form, prerequisites: e.target.value })}
+                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    />
+                  </Field>
+                )}
+                {form.type === "Hackathon" && (
+                  <Field label="Holdstørrelse (valgfri)">
+                    <input
+                      type="number"
+                      min={1}
+                      value={form.teamSize}
+                      onChange={(e) => setForm({ ...form, teamSize: e.target.value })}
+                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    />
+                  </Field>
+                )}
+
                 <Field label="Start" required>
                   <input
                     type="datetime-local"
@@ -628,50 +759,6 @@ export default function EventsAdminPage() {
                     className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
                   />
                 </Field>
-
-                {form.type === "Lan" && (
-                  <Field label="Medbring egen PC?" className="sm:col-span-2">
-                    <label className="inline-flex items-center gap-2 text-sm">
-                      <input
-                        type="checkbox"
-                        checked={form.bringOwnPc}
-                        onChange={(e) => setForm({ ...form, bringOwnPc: e.target.checked })}
-                      />
-                      Ja, deltagerne skal medbringe egen PC
-                    </label>
-                  </Field>
-                )}
-                {form.type === "Talk" && (
-                  <Field label="Oplægsholder" className="sm:col-span-2">
-                    <input
-                      type="text"
-                      value={form.speakerName}
-                      onChange={(e) => setForm({ ...form, speakerName: e.target.value })}
-                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                    />
-                  </Field>
-                )}
-                {form.type === "Workshop" && (
-                  <Field label="Forudsætninger (valgfri)" className="sm:col-span-2">
-                    <textarea
-                      rows={3}
-                      value={form.prerequisites}
-                      onChange={(e) => setForm({ ...form, prerequisites: e.target.value })}
-                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                    />
-                  </Field>
-                )}
-                {form.type === "Hackathon" && (
-                  <Field label="Holdstørrelse (valgfri)">
-                    <input
-                      type="number"
-                      min={1}
-                      value={form.teamSize}
-                      onChange={(e) => setForm({ ...form, teamSize: e.target.value })}
-                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                    />
-                  </Field>
-                )}
 
                 <div className="flex justify-end gap-2 pt-2 sm:col-span-2">
                   <Button type="button" variant="outline" onClick={() => setShowForm(false)} disabled={submitting}>

@@ -119,6 +119,10 @@ export async function listAllEventsForAdmin(): Promise<EventListItem[]> {
   return apiClient<EventListItem[]>("/events/admin/all")
 }
 
+export async function getEventDetailForAdmin(id: string): Promise<EventDetail> {
+  return apiClient<EventDetail>(`/events/admin/detail/${encodeURIComponent(id)}`)
+}
+
 export async function createEvent(payload: CreateEventPayload): Promise<EventDetail> {
   return apiClient<EventDetail>("/events", {
     method: "POST",

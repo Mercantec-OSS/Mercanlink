@@ -295,8 +295,17 @@ public class Program
         builder.Services.AddScoped<DiscordVerificationService>();
         builder.Services.AddScoped<EventsService>();
         builder.Services.AddScoped<EventDiscordAnnouncer>();
-        builder.Services.Configure<S3MediaOptions>(
-            builder.Configuration.GetSection(S3MediaOptions.SectionName));
+        builder.Services.AddOptions<S3MediaOptions>()
+            .Bind(builder.Configuration.GetSection(S3MediaOptions.SectionName))
+            .PostConfigure(options =>
+            {
+                // Mange miljøer sætter S3_PUBLIC_BASE_URL direkte uden S3Media__PublicBaseUrl — den vinder over config.
+                var shortcut = Environment.GetEnvironmentVariable("S3_PUBLIC_BASE_URL");
+                if (!string.IsNullOrWhiteSpace(shortcut))
+                {
+                    options.PublicBaseUrl = shortcut.Trim().TrimEnd('/');
+                }
+            });
         builder.Services.AddSingleton<EventBannerStorageService>();
         // Tilføj DBAccess        
         builder.Services.AddScoped<AuthDBAccess>();

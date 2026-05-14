@@ -246,6 +246,23 @@ public class EventsController : ControllerBase
     }
 
     /// <summary>
+    /// Admin: hent ét event med fuld tekst (inkl. Draft) til redigering.
+    /// </summary>
+    [HttpGet("admin/detail/{id}")]
+    [Authorize(Roles = "Admin,Teacher")]
+    public async Task<ActionResult<EventDetailDto>> GetEventForAdmin(string id)
+    {
+        var ev = await _eventsService.GetByIdAsync(id, tracked: false);
+        if (ev == null)
+        {
+            return NotFound(new { message = "Event ikke fundet." });
+        }
+
+        var count = await _eventsService.CountRegistrationsAsync(ev.Id);
+        return Ok(_eventsService.MapDetail(ev, count));
+    }
+
+    /// <summary>
     /// Admin: opret nyt event (status sættes til Draft).
     /// </summary>
     [HttpPost]

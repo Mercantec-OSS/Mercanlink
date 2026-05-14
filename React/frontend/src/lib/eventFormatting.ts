@@ -62,6 +62,13 @@ export function formatEventDateTime(value: string): string {
   return dateTimeFormatter.format(new Date(value))
 }
 
+/** Afsluttet event — samme logik som backend (`EndsAt` før nu). */
+export function isEventPastByEndsAt(endsAt: string, nowMs: number = Date.now()): boolean {
+  const t = new Date(endsAt).getTime()
+  if (Number.isNaN(t)) return false
+  return t < nowMs
+}
+
 export function formatEventRange(startsAt: string, endsAt: string): string {
   const start = new Date(startsAt)
   const end = new Date(endsAt)
