@@ -15,6 +15,7 @@ using Backend.DBAccess;
 using Backend.Discord;
 using Microsoft.Extensions.DependencyInjection;
 using System.Security.Claims;
+using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
 
 public class Program
@@ -23,24 +24,45 @@ public class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
-        // Add services to the container.        
-        builder.Services.AddControllers();        
+        // Add services to the container.
+        builder.Services.AddControllers().AddJsonOptions(options =>
+        {
+            options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(null, allowIntegerValues: true));
+        });
         // Tilføj CORS        
-        builder.Services.AddCors(options =>        
-        {            
-            options.AddPolicy("AllowFrontend", policy =>            
-            {                
-                policy.WithOrigins(
-                        "http://localhost:5173",
-                        "http://localhost:3000",
-                        "http://localhost:4200",
-                        "http://localhost:9302",
-                        "https://hub.mercantec.tech",
-                        "https://mercanlink.dk")                      
-                .AllowAnyHeader()                      
-                .AllowAnyMethod()                      
-                .AllowCredentials();            
-            });        
+        builder.Services.AddCors(options =>
+        {
+            options.AddPolicy("AllowFrontend", policy =>
+            {
+                policy
+                    .SetIsOriginAllowed(static origin =>
+                    {
+                        if (string.IsNullOrWhiteSpace(origin)) return false;
+                        if (!Uri.TryCreate(origin, UriKind.Absolute, out var uri)) return false;
+                        var host = uri.Host;
+                        if (host.Equals("localhost", StringComparison.OrdinalIgnoreCase)
+                            || host.Equals("127.0.0.1", StringComparison.OrdinalIgnoreCase))
+                        {
+                            return true;
+                        }
+
+                        if (host.Equals("mercanlink.dk", StringComparison.OrdinalIgnoreCase)
+                            || host.EndsWith(".mercanlink.dk", StringComparison.OrdinalIgnoreCase))
+                        {
+                            return true;
+                        }
+
+                        if (host.Equals("hub.mercantec.tech", StringComparison.OrdinalIgnoreCase))
+                        {
+                            return true;
+                        }
+
+                        return false;
+                    })
+                    .AllowAnyHeader()
+                    .AllowAnyMethod()
+                    .AllowCredentials();
+            });
         });
 
         // Tilføj PostgreSQL DbContext
