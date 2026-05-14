@@ -65,20 +65,16 @@ services:
     networks:
       - app-network
 
-  pgadmin:
-    image: dpage/pgadmin4:9
+  # Let web-UI til Postgres (tabeller + SQL) — samme creds som `db`-servicen
+  pgweb:
+    image: sosedoff/pgweb:latest
     restart: unless-stopped
     depends_on:
       - db
     environment:
-      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@mercantec.dk}
-      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin}
-      PGADMIN_CONFIG_SERVER_MODE: "False"
+      DATABASE_URL: postgres://appuser:apppassword@db:5432/appdb?sslmode=disable
     ports:
-      - "9304:80"
-    volumes:
-      - pgadmin_data:/var/lib/pgadmin
-      - ./pgadmin/servers.json:/pgadmin4/servers.json:ro
+      - "9304:8081"
     networks:
       - app-network
 
@@ -99,4 +95,3 @@ networks:
 volumes:
   postgres_data:
   uptime_kuma_data:
-  pgadmin_data:
