@@ -82,17 +82,17 @@ services:
       - app-network
 
   # Let web-UI til Postgres (tabeller + SQL) — samme creds som `db`-servicen
-  pgweb:
-    image: sosedoff/pgweb:latest
-    restart: unless-stopped
-    depends_on:
-      - db
-    environment:
-      DATABASE_URL: postgres://appuser:apppassword@db:5432/appdb?sslmode=disable
-    ports:
-      - "9304:8081"
-    networks:
-      - app-network
+  #pgweb:
+  #  image: sosedoff/pgweb:latest
+  #  restart: unless-stopped
+  #  depends_on:
+  #    - db
+  #  environment:
+  #    DATABASE_URL: postgres://appuser:apppassword@db:5432/appdb?sslmode=disable
+  #  ports:
+  #    - "9304:8081"
+  #  networks:
+  #    - app-network
 
   minio:
     image: minio/minio:latest
