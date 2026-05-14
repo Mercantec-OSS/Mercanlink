@@ -57,3 +57,20 @@ export async function apiClient<T>(
 
   return response.json()
 }
+
+export type AuthMeResponse = {
+  userid: string
+  sub?: string
+  email?: string
+  username?: string
+  roles: string[]
+}
+
+/** Bruges til at hente roller efter DB (JWT indeholder ikke Student/Admin). */
+export async function fetchAuthMe(): Promise<AuthMeResponse | null> {
+  try {
+    return await apiClient<AuthMeResponse>("/auth/me")
+  } catch {
+    return null
+  }
+}

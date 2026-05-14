@@ -29,7 +29,7 @@ public class AuthController : ControllerBase
     /// <summary>
     /// Hent information om den nuværende indloggede bruger
     /// </summary>
-    /// <returns>Bruger information fra JWT token</returns>
+    /// <returns>Bruger information: JWT + database-roller tilføjet ved validering.</returns>
     /// <response code="200">Bruger information</response>
     /// <response code="401">Ikke autoriseret</response>
     [HttpGet("me")]

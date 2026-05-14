@@ -1,7 +1,8 @@
-import { createContext, useContext, useState } from "react"
+import { createContext, useContext, useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { type User } from "@/types"
 import { decodeTokenAndMapToUser } from "@/services/jwtService"
+import { fetchAuthMe } from "@/services/apiClient"
 import {
   clearStoredTokens,
   exchangeCodeForTokens,
@@ -26,9 +27,33 @@ function getInitialUser(): User | null {
   return decodeTokenAndMapToUser(token)
 }
 
+function mergeRolesFromAuthMe(base: User, serverRoles: string[] | undefined): User {
+  if (!serverRoles?.length) return base
+  const merged = [...new Set([...base.roles, ...serverRoles])]
+  return { ...base, roles: merged }
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(getInitialUser)
   const navigate = useNavigate()
+
+  useEffect(() => {
+    const token = getAccessToken()
+    if (!token) return
+    const decoded = decodeTokenAndMapToUser(token)
+    if (!decoded) return
+    let cancelled = false
+    void fetchAuthMe().then((me) => {
+      if (cancelled || !me) return
+      setUser((prev) => {
+        const base = prev ?? decoded
+        return mergeRolesFromAuthMe(base, me.roles)
+      })
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const login = async () => {
     await startLoginRedirect()
@@ -40,7 +65,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!newUser) {
       throw new Error("Access token kunne ikke valideres.")
     }
-    setUser(newUser)
+    const me = await fetchAuthMe()
+    setUser(mergeRolesFromAuthMe(newUser, me?.roles))
     navigate("/users")
   }
 

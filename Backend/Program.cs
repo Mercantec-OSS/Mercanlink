@@ -13,6 +13,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Backend.DBAccess;
 using Backend.Discord;
+using Microsoft.Extensions.DependencyInjection;
 using System.Security.Claims;
 using System.Threading.RateLimiting;
 
@@ -94,38 +95,66 @@ public class Program
 
             options.Events = new JwtBearerEvents
             {
-                OnTokenValidated = context =>
+                OnTokenValidated = async context =>
                 {
-                    if (context.Principal?.Identity is ClaimsIdentity identity)
+                    if (context.Principal?.Identity is not ClaimsIdentity identity)
                     {
-                        var roleClaimTypes = new[]
+                        return;
+                    }
+
+                    var roleClaimTypes = new[]
+                    {
+                        "role",
+                        ClaimTypes.Role,
+                        "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
+                    };
+
+                    var jwtRoles = identity.Claims
+                        .Where(c => roleClaimTypes.Contains(c.Type))
+                        .Select(c => c.Value)
+                        .Distinct()
+                        .ToList();
+
+                    foreach (var role in jwtRoles)
+                    {
+                        if (!identity.HasClaim("http://schemas.microsoft.com/ws/2008/06/identity/claims/role", role))
                         {
-                            "role",
-                            ClaimTypes.Role,
-                            "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
-                        };
+                            identity.AddClaim(new Claim("http://schemas.microsoft.com/ws/2008/06/identity/claims/role", role));
+                        }
 
-                        var roles = identity.Claims
-                            .Where(c => roleClaimTypes.Contains(c.Type))
-                            .Select(c => c.Value)
-                            .Distinct()
-                            .ToList();
-
-                        foreach (var role in roles)
+                        if (!identity.HasClaim(ClaimTypes.Role, role))
                         {
-                            if (!identity.HasClaim("http://schemas.microsoft.com/ws/2008/06/identity/claims/role", role))
-                            {
-                                identity.AddClaim(new Claim("http://schemas.microsoft.com/ws/2008/06/identity/claims/role", role));
-                            }
-
-                            if (!identity.HasClaim(ClaimTypes.Role, role))
-                            {
-                                identity.AddClaim(new Claim(ClaimTypes.Role, role));
-                            }
+                            identity.AddClaim(new Claim(ClaimTypes.Role, role));
                         }
                     }
 
-                    return Task.CompletedTask;
+                    // Mercantec JWT har typisk kun identity-roller (fx "User"). App-roller (Student, Admin, …)
+                    // ligger i Postgres på Users.Roles — de tilføjes her så [Authorize(Roles=...)] virker.
+                    var userService = context.HttpContext.RequestServices.GetRequiredService<AuthenticatedUserService>();
+                    var dbUser = await userService.ResolveCurrentUserAsync(context.Principal);
+                    if (dbUser?.Roles is not { Count: > 0 })
+                    {
+                        return;
+                    }
+
+                    var msRole = "http://schemas.microsoft.com/ws/2008/06/identity/claims/role";
+                    foreach (var role in dbUser.Roles)
+                    {
+                        if (string.IsNullOrWhiteSpace(role))
+                        {
+                            continue;
+                        }
+
+                        if (!identity.HasClaim(msRole, role))
+                        {
+                            identity.AddClaim(new Claim(msRole, role));
+                        }
+
+                        if (!identity.HasClaim(ClaimTypes.Role, role))
+                        {
+                            identity.AddClaim(new Claim(ClaimTypes.Role, role));
+                        }
+                    }
                 }
             };
         });
